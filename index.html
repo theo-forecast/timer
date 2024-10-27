@@ -1,240 +1,155 @@
-<div id="timer-container" style="background-color: #000000; color: #ffffff; font-family: 'Inter', 'Helvetica Neue', sans-serif; margin: 0; padding: 0; position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden;">
+<div id="app" style="background:#000;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * {margin:0;padding:0;box-sizing:border-box}
+        body {background:#000;color:#fff;overflow:hidden}
+        #display {font-size:15vw;font-weight:200;letter-spacing:-2px}
+        #mode {font-size:.7rem;letter-spacing:5px;opacity:.5;margin-bottom:1rem}
+        .inputs {
+            display:flex;
+            gap:1rem;
+            margin:1rem 0;
         }
-
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            width: 100%;
-            height: 100%;
+        .input-group {
+            display:flex;
+            flex-direction:column;
+            align-items:center;
         }
-        
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
-        
+        .input-group label {
+            font-size:.6rem;
+            letter-spacing:2px;
+            opacity:.5;
+            margin-bottom:.3rem;
+        }
+        input {
+            background:0;
+            border:0;
+            border-bottom:1px solid #222;
+            color:#fff;
+            font:inherit;
+            font-size:1.2rem;
+            text-align:center;
+            width:3rem;
+            padding:.3rem;
+            transition:.3s;
+            -moz-appearance:textfield;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance:none;
+            margin:0;
+        }
+        input:focus {outline:0;border-color:#444}
+        .btns {display:flex;gap:1rem;margin-top:1rem}
         button {
-            background: transparent;
-            border: none;
-            color: #ffffff;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.7em;
-            letter-spacing: 1px;
-            margin: 0 10px;
-            padding: 8px 0;
-            position: relative;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
-            opacity: 0.7;
+            background:0;border:0;color:#fff;
+            font:inherit;font-size:.7rem;
+            letter-spacing:2px;opacity:.7;
+            cursor:pointer;transition:.2s;
+            text-transform:uppercase;padding:.5rem 0
         }
-        
-        button:hover {
-            opacity: 1;
-        }
-        
-        button::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 1px;
-            bottom: 0;
-            left: 0;
-            background-color: #ffffff;
-            transition: width 0.3s ease;
-        }
-        
-        button:hover::after {
-            width: 100%;
-        }
-        
-        #display {
-            font-size: 6vw;
-            font-weight: 300;
-            letter-spacing: -1px;
-            margin: 0;
-            padding: 0;
-            line-height: 1;
-        }
-        
-        #mode {
-            font-size: 0.8em;
-            letter-spacing: 6px;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            opacity: 0.5;
-        }
-        
-        #timer-input {
-            background: transparent;
-            border: none;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            font-size: 1.2em;
-            margin: 20px 0;
-            padding: 5px;
-            text-align: center;
-            width: 150px;
-            transition: all 0.3s ease;
-        }
-        
-        #timer-input:focus {
-            outline: none;
-            border-bottom-color: rgba(255,255,255,0.5);
-        }
-        
-        #fullscreen-btn {
-            position: fixed;
-            bottom: 15px;
-            right: 15px;
-            font-size: 0.6em;
-            opacity: 0.3;
-            z-index: 1000;
-        }
-        
-        #fullscreen-btn:hover {
-            opacity: 0.7;
-        }
-        
-        .controls {
-            margin-top: 25px;
-        }
-        
-        @media (max-width: 600px) {
-            #display {
-                font-size: 10vw;
-            }
-            .controls {
-                display: flex;
-                flex-direction: row;
-                gap: 15px;
-            }
-            button {
-                margin: 0;
-            }
-        }
+        button:hover {opacity:1}
+        #fs {position:fixed;bottom:1rem;right:1rem;opacity:.3}
     </style>
-    
-    <div id="mode">Timer</div>
+
+    <div id="mode">TIMER</div>
     <div id="display">00:00:00</div>
-    <input type="text" id="timer-input" placeholder="00:00:00" maxlength="8">
-    <div class="controls">
-        <button onclick="startTimer()">Start</button>
-        <button onclick="stopTimer()">Stop</button>
-        <button onclick="resetTimer()">Reset</button>
-        <button onclick="toggleMode()">Mode</button>
+    
+    <div class="inputs">
+        <div class="input-group">
+            <label>H</label>
+            <input type="number" id="hours" min="0" max="99" placeholder="00" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+        </div>
+        <div class="input-group">
+            <label>M</label>
+            <input type="number" id="minutes" min="0" max="59" placeholder="00" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+        </div>
+        <div class="input-group">
+            <label>S</label>
+            <input type="number" id="seconds" min="0" max="59" placeholder="00" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+        </div>
     </div>
-    <button id="fullscreen-btn" onclick="toggleFullScreen()">Fullscreen</button>
-</div>
-
-<script>
-let isRunning = false;
-let isTimer = true;
-let startTime;
-let timerDuration;
-let interval;
-
-function toggleFullScreen() {
-    const elem = document.documentElement;
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) {
-            elem.webkitRequestFullscreen();
-        }
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        }
-    }
-}
-
-function startTimer() {
-    if (isRunning) return;
     
-    if (isTimer) {
-        const input = document.getElementById('timer-input').value;
-        const [hours, minutes, seconds] = input.split(':').map(Number);
-        if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
-            document.getElementById('timer-input').style.borderBottomColor = 'rgba(255,0,0,0.5)';
-            setTimeout(() => {
-                document.getElementById('timer-input').style.borderBottomColor = 'rgba(255,255,255,0.1)';
-            }, 1000);
-            return;
+    <div class="btns">
+        <button onclick="start()">Start</button>
+        <button onclick="stop()">Stop</button>
+        <button onclick="reset()">Reset</button>
+        <button onclick="toggle()">Mode</button>
+    </div>
+    
+    <button id="fs" onclick="fullscreen()">Full</button>
+
+    <script>
+        let running = false, isTimer = true, start_time, duration, interval;
+
+        function start() {
+            if(running) return;
+            if(isTimer) {
+                let h = parseInt(document.getElementById('hours').value) || 0;
+                let m = parseInt(document.getElementById('minutes').value) || 0;
+                let s = parseInt(document.getElementById('seconds').value) || 0;
+                
+                if(m > 59) m = 59;
+                if(s > 59) s = 59;
+                
+                duration = h*3600 + m*60 + s;
+                if(duration === 0) return;
+            }
+            running = true;
+            start_time = Date.now();
+            interval = setInterval(update, 10);
+            document.querySelector('.inputs').style.display = 'none';
         }
-        timerDuration = hours * 3600 + minutes * 60 + seconds;
-    }
-    
-    isRunning = true;
-    startTime = Date.now();
-    interval = setInterval(updateDisplay, 10);
-    document.getElementById('timer-input').style.display = 'none';
-}
 
-function stopTimer() {
-    isRunning = false;
-    clearInterval(interval);
-    if (isTimer) {
-        document.getElementById('timer-input').style.display = 'block';
-    }
-}
+        function stop() {
+            running = false;
+            clearInterval(interval);
+            if(isTimer) document.querySelector('.inputs').style.display = 'flex';
+        }
 
-function resetTimer() {
-    isRunning = false;
-    clearInterval(interval);
-    document.getElementById('display').textContent = '00:00:00';
-    document.getElementById('timer-input').value = '';
-    document.getElementById('timer-input').style.display = 'block';
-}
-
-function toggleMode() {
-    isTimer = !isTimer;
-    resetTimer();
-    document.getElementById('mode').textContent = isTimer ? 'Timer' : 'Stopwatch';
-    document.getElementById('timer-input').style.display = isTimer ? 'block' : 'none';
-}
-
-function updateDisplay() {
-    const now = Date.now();
-    const elapsed = Math.floor((now - startTime) / 1000);
-    
-    if (isTimer) {
-        const remaining = timerDuration - elapsed;
-        if (remaining <= 0) {
-            stopTimer();
+        function reset() {
+            running = false;
+            clearInterval(interval);
             document.getElementById('display').textContent = '00:00:00';
-            return;
+            document.getElementById('hours').value = '';
+            document.getElementById('minutes').value = '';
+            document.getElementById('seconds').value = '';
+            document.querySelector('.inputs').style.display = 'flex';
         }
-        document.getElementById('display').textContent = formatTime(remaining);
-    } else {
-        document.getElementById('display').textContent = formatTime(elapsed);
-    }
-}
 
-function formatTime(totalSeconds) {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-}
+        function toggle() {
+            isTimer = !isTimer;
+            reset();
+            document.getElementById('mode').textContent = isTimer ? 'TIMER' : 'STOPWATCH';
+            document.querySelector('.inputs').style.display = isTimer ? 'flex' : 'none';
+        }
 
-function pad(num) {
-    return num.toString().padStart(2, '0');
-}
+        function update() {
+            let elapsed = Math.floor((Date.now() - start_time)/1000);
+            let time = isTimer ? duration - elapsed : elapsed;
+            if(isTimer && time <= 0) {
+                stop();
+                time = 0;
+            }
+            let h = Math.floor(time/3600);
+            let m = Math.floor(time%3600/60);
+            let s = time%60;
+            document.getElementById('display').textContent = 
+                [h,m,s].map(n => n.toString().padStart(2,'0')).join(':');
+        }
 
-const timerInput = document.getElementById('timer-input');
-timerInput.addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 6) value = value.slice(0, 6);
-    if (value.length >= 2) value = value.slice(0, -2) + ':' + value.slice(-2);
-    if (value.length >= 5) value = value.slice(0, -5) + ':' + value.slice(-5);
-    e.target.value = value;
-});
-</script>
+        // Input validation
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', e => {
+                let value = e.target.value.replace(/\D/g,'');
+                if(value > e.target.max) value = e.target.max;
+                if(value < 0) value = 0;
+                e.target.value = value;
+            });
+        });
+
+        function fullscreen() {
+            document.documentElement.requestFullscreen?.() || 
+            document.documentElement.webkitRequestFullscreen?.();
+        }
+    </script>
+</div>
