@@ -699,11 +699,10 @@
     async function fetchJson(rel){ return JSON.parse(await fetchText(rel)); }
     async function fetchCsv(rel){ return d3.csvParse(await fetchText(rel)); }
 
-    function parsePlateFromNetwork(network){
-      const m = String(network ?? "").match(/TR(\d{2})-districts/i);
-      if (!m) return null;
-      return Number(m[1]);
-    }
+function parsePlateFromNetwork(network){
+  const m = String(network ?? "").match(/TR-?(\d{2})-(districts|counties)/i);
+  return m ? Number(m[1]) : null;
+}
     function uniqueKey(plate, distKey){ return `${plate}|${distKey}`; }
 
     // UI refs
@@ -1380,28 +1379,33 @@
       state.pop = pop;
 
       // prepare features
-      const features = (geo.features || [])
-        .filter(f => (f.properties?.admin_level === "6" || f.properties?.admin_level === 6))
-        .map(f => {
-          const plate = parsePlateFromNetwork(f.properties?.network);
-          const provName = plateToProvince.get(plate) ?? "Unknown";
-          const provKey = keyify(provName);
-          const distName = f.properties?.name ?? "";
-          const distKey = keyify(distName);
-          const uk = uniqueKey(plate ?? 0, distKey);
-          return {
-            ...f,
-            properties: {
-              ...f.properties,
-              __plate: plate,
-              __provName: provName,
-              __provKey: provKey,
-              __distName: distName,
-              __distKey: distKey,
-              __uk: uk,
-            }
-          };
-        });
+const features = (geo.features || [])
+  .filter(f => f.geometry && f.properties && (
+    /TR-?\d{2}-(districts|counties)/i.test(String(f.properties.network ?? "")) ||
+    f.properties.admin_level === "6" || f.properties.admin_level === 6
+  ))
+  .map(f => {
+    const plate = parsePlateFromNetwork(f.properties?.network);
+    const provName = plateToProvince.get(plate) ?? "Unknown";
+    const provKey = keyify(provName);
+    const distName = f.properties?.name ?? "";
+    const distKey = keyify(distName);
+    const uk = `${plate ?? 0}|${distKey}`;
+
+    return {
+      ...f,
+      properties: {
+        ...f.properties,
+        __plate: plate,
+        __provName: provName,
+        __provKey: provKey,
+        __distName: distName,
+        __distKey: distKey,
+        __uk: uk
+      }
+    };
+  });
+
 
       districtLayer.clearLayers();
       districtLayer.addData(features);
