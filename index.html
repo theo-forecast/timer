@@ -9,13 +9,13 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- d3 for CSV parsing -->
+  <!-- d3 (CSV parsing) -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
   <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     *{box-sizing:border-box}
@@ -24,140 +24,135 @@
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
       color:#eaf2ff;
       background:
-        radial-gradient(1200px 800px at 20% 10%, rgba(96,165,250,.18), transparent 60%),
-        radial-gradient(900px 600px at 80% 20%, rgba(167,139,250,.16), transparent 55%),
-        radial-gradient(900px 700px at 50% 90%, rgba(34,211,238,.10), transparent 60%),
-        linear-gradient(180deg,#070a10 0%, #05070b 100%);
+        radial-gradient(1200px 900px at 18% 8%, rgba(103,232,249,.18), transparent 62%),
+        radial-gradient(1000px 800px at 78% 14%, rgba(167,139,250,.16), transparent 60%),
+        radial-gradient(900px 700px at 50% 92%, rgba(34,211,238,.10), transparent 62%),
+        linear-gradient(180deg,#070a10 0%, #04060a 100%);
       overflow:hidden;
     }
 
     :root{
-      --panel: rgba(12,16,26,.62);
-      --panel2: rgba(10,13,20,.72);
+      --panel: rgba(12,16,26,.60);
+      --panel2: rgba(9,12,18,.72);
       --border: rgba(255,255,255,.10);
       --border2: rgba(255,255,255,.16);
-      --shadow: 0 18px 50px rgba(0,0,0,.45);
-      --shadow2: 0 10px 24px rgba(0,0,0,.38);
-      --muted: rgba(220,235,255,.66);
-      --muted2: rgba(220,235,255,.48);
-      --accent: #67e8f9;
-      --accent2:#a78bfa;
-      --good:#7CFFB2;
-      --bad:#FF6B6B;
-      --chip: rgba(255,255,255,.08);
-      --chip2: rgba(255,255,255,.12);
+      --text: #eaf2ff;
+      --muted: rgba(226,238,255,.68);
+      --muted2: rgba(226,238,255,.50);
+      --shadow: 0 22px 70px rgba(0,0,0,.55);
+      --shadow2: 0 14px 34px rgba(0,0,0,.45);
       --radius: 18px;
       --radius2: 14px;
-      --pad: 14px;
+
+      --aqua: #67e8f9;
+      --violet:#a78bfa;
+      --rose: #ff4d6d;
+      --gold: #ffd166;
+      --ink:  #060812;
     }
 
-    /* --- layout --- */
+    /* ===== Topbar ===== */
     .topbar{
-      position:sticky; top:0; z-index:50;
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px; padding:14px 16px;
+      position:sticky;top:0;z-index:50;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:12px;padding:14px 16px;
       border-bottom:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(10,14,22,.78), rgba(6,8,12,.50));
-      backdrop-filter: blur(14px);
+      background: linear-gradient(180deg, rgba(8,10,14,.82), rgba(6,7,10,.55));
+      backdrop-filter: blur(16px);
     }
-    .brand{
-      display:flex; align-items:center; gap:12px;
-      min-width:240px;
+    .brand{display:flex;align-items:center;gap:12px;min-width:260px}
+    .mark{
+      width:36px;height:36px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(103,232,249,.95), rgba(167,139,250,.92));
+      box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 18px 50px rgba(103,232,249,.15);
+      position:relative;overflow:hidden;
     }
-    .logo{
-      width:34px; height:34px; border-radius:12px;
-      background: linear-gradient(135deg, rgba(103,232,249,.95), rgba(167,139,250,.95));
-      box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 12px 30px rgba(103,232,249,.18);
-      position:relative;
+    .mark:before{
+      content:"";
+      position:absolute; inset:-40%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 45%);
+      transform: rotate(18deg);
     }
-    .logo:after{
+    .mark:after{
       content:"";
       position:absolute; inset:8px;
-      border-radius:10px;
-      background: linear-gradient(135deg, rgba(0,0,0,.35), rgba(0,0,0,.05));
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
-    }
-    .title{
-      font-weight:800; letter-spacing:.2px; font-size:14px;
-      display:flex; gap:10px; align-items:center;
-    }
-    .subtitle{font-size:12px; color:var(--muted2); margin-top:2px}
-    .badge{
-      font-size:11px; color:rgba(0,0,0,.85);
-      background: linear-gradient(135deg, rgba(103,232,249,.95), rgba(167,139,250,.95));
-      padding:4px 10px; border-radius:999px;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.16);
+      border-radius:12px;
+      background: linear-gradient(135deg, rgba(0,0,0,.34), rgba(0,0,0,.06));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.10);
     }
 
-    .controls{
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+    .brandText{display:flex;flex-direction:column;gap:2px}
+    .title{
+      font-weight:900;letter-spacing:.2px;font-size:14px;
+      display:flex;align-items:center;gap:10px;
     }
-    .ctl{
-      display:flex; flex-direction:column; gap:6px;
-      min-width: 150px;
+    .sub{
+      font-size:12px;color:var(--muted2);
     }
+    .tag{
+      font-size:11px;font-weight:800;
+      padding:4px 10px;border-radius:999px;
+      color: rgba(0,0,0,.88);
+      background: linear-gradient(135deg, rgba(103,232,249,.95), rgba(167,139,250,.95));
+      box-shadow: 0 0 0 1px rgba(255,255,255,.14);
+    }
+
+    .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .ctl{display:flex;flex-direction:column;gap:6px;min-width:170px}
     .ctl span{
-      font-size:11px; color:var(--muted2);
-      letter-spacing:.18px;
-      text-transform:uppercase;
+      font-size:11px;color:var(--muted2);
+      text-transform:uppercase;letter-spacing:.16px;
     }
+
+    .selectWrap{position:relative}
     select{
       appearance:none;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      color:#eaf2ff;
+      width:100%;
+      background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.06));
+      color: var(--text);
       border:1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 13px;
       padding:10px 38px 10px 12px;
       outline:none;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
       transition: border-color .15s ease, transform .15s ease;
-      position:relative;
     }
-    .selectWrap{position:relative}
     .selectWrap:after{
       content:"";
-      position:absolute; right:12px; top:50%; transform:translateY(-50%);
-      width:10px; height:10px;
+      position:absolute;right:12px;top:50%;
+      width:10px;height:10px;
       border-right:2px solid rgba(255,255,255,.65);
       border-bottom:2px solid rgba(255,255,255,.65);
-      transform: translateY(-58%) rotate(45deg);
+      transform: translateY(-65%) rotate(45deg);
       pointer-events:none;
     }
     select:hover{border-color: var(--border2)}
-    select:focus{border-color: rgba(103,232,249,.45)}
+    select:focus{border-color: rgba(103,232,249,.42)}
 
     .btn{
       border:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      color:#eaf2ff;
+      background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.06));
+      color: var(--text);
       padding:10px 12px;
-      border-radius: 12px;
+      border-radius: 13px;
       cursor:pointer;
-      transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease;
-      box-shadow: 0 10px 22px rgba(0,0,0,.18);
-      display:inline-flex; align-items:center; gap:8px;
-      font-weight:600;
+      transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      box-shadow: 0 16px 34px rgba(0,0,0,.18);
+      display:inline-flex;align-items:center;gap:8px;
+      font-weight:800;
     }
-    .btn:hover{transform: translateY(-1px); border-color: var(--border2); box-shadow: 0 14px 30px rgba(0,0,0,.22)}
-    .btn:active{transform: translateY(0px)}
-    .btn-ghost{
-      background: transparent;
-      box-shadow:none;
-    }
-    .btn-ghost:hover{
-      background: rgba(255,255,255,.06);
-      box-shadow:none;
-    }
-    .ico{
-      width:16px; height:16px; display:inline-block;
-      opacity:.9;
-    }
+    .btn:hover{transform: translateY(-1px);border-color:var(--border2);box-shadow:0 20px 46px rgba(0,0,0,.22)}
+    .btn:active{transform: translateY(0)}
+    .btn-ghost{background:transparent;box-shadow:none}
+    .btn-ghost:hover{background:rgba(255,255,255,.06);box-shadow:none}
 
+    .ico{width:16px;height:16px;display:inline-block;opacity:.92}
+
+    /* ===== Layout ===== */
     .wrap{
       height: calc(100vh - 68px);
       display:grid;
-      grid-template-columns: 1fr 380px;
+      grid-template-columns: 1fr 392px;
       gap: 14px;
       padding: 14px;
     }
@@ -169,15 +164,22 @@
       border: 1px solid rgba(255,255,255,.10);
       box-shadow: var(--shadow);
       position:relative;
+      background: #05070b;
+    }
+    #map:before{
+      content:"";
+      position:absolute; inset:0;
+      pointer-events:none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), inset 0 0 120px rgba(103,232,249,.06);
+      border-radius: var(--radius);
+      z-index: 5;
     }
 
     .sidebar{
       height:100%;
       overflow:auto;
       padding-right:6px;
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
+      display:flex;flex-direction:column;gap:12px;
     }
 
     .card{
@@ -185,157 +187,194 @@
       border: 1px solid rgba(255,255,255,.10);
       border-radius: var(--radius);
       box-shadow: var(--shadow2);
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(18px);
       overflow:hidden;
     }
     .cardHeader{
-      padding: 12px 14px;
-      display:flex; align-items:center; justify-content:space-between;
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding:12px 14px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
       background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
     }
-    .cardTitle{
-      display:flex; align-items:center; gap:10px;
-      font-weight:800; letter-spacing:.2px;
-    }
+    .cardTitle{font-weight:900;letter-spacing:.2px;display:flex;align-items:center;gap:10px}
     .pill{
-      font-size:11px; padding:4px 8px; border-radius:999px;
+      font-size:11px;font-weight:800;
+      padding:4px 9px;border-radius:999px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.06);
       color: var(--muted);
-      font-weight:600;
+      white-space:nowrap;
     }
-    .cardBody{padding: 12px 14px}
+    .cardBody{padding:12px 14px}
 
-    .legend{display:flex; flex-direction:column; gap:10px}
-    .legendItem{
-      display:flex; align-items:center; gap:10px;
-      padding: 8px 10px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.05);
-      border: 1px solid rgba(255,255,255,.08);
-    }
-    .swatch{
-      width:16px; height:16px; border-radius:6px;
-      border: 1px solid rgba(255,255,255,.14);
-      box-shadow: 0 8px 20px rgba(0,0,0,.18);
-      flex: 0 0 auto;
-    }
-    .legendLabel{
-      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
-      width:100%;
-    }
-    .legendLabel b{font-weight:800}
-    .legendLabel span{color:var(--muted2); font-size:12px}
-
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
     .muted{color:var(--muted)}
     .muted2{color:var(--muted2)}
     .small{font-size:12px}
-    .sep{height:1px; background: rgba(255,255,255,.08); margin:10px 0}
-    .kv{display:grid; grid-template-columns: 1fr auto; gap:8px 10px}
-    .k{color:var(--muted2); font-size:12px}
-    .v{font-weight:700}
-    .v.mono{font-weight:600}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
+    .sep{height:1px;background:rgba(255,255,255,.08);margin:12px 0}
 
-    .row{
-      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-      margin-top:10px;
-    }
-
-    .fileBtn{position:relative; overflow:hidden}
-    .fileBtn input{position:absolute; left:-9999px}
-
-    .regions{display:flex; flex-direction:column; gap:10px; margin-top:10px}
-    .region{
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
+    /* ===== Legend ===== */
+    .legend{display:flex;flex-direction:column;gap:10px}
+    .legendItem{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 10px;
       border-radius: 16px;
-      padding: 12px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
       transition: transform .12s ease, border-color .15s ease;
     }
-    .region:hover{transform: translateY(-1px); border-color: rgba(255,255,255,.16)}
-    .regionTop{display:flex; align-items:center; gap:10px; justify-content:space-between}
-    .regionTopLeft{display:flex; align-items:center; gap:10px; flex:1}
-    .regionTop input[type="text"]{
-      width:100%;
-      background: rgba(0,0,0,.24);
-      border: 1px solid rgba(255,255,255,.10);
-      color:#eaf2ff;
-      padding: 8px 10px;
-      border-radius: 12px;
-      outline:none;
+    .legendItem:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.14)}
+    .swatch{
+      width:16px;height:16px;border-radius:7px;
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow: 0 12px 26px rgba(0,0,0,.25);
+      flex:0 0 auto;
     }
-    .regionMeta{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-      padding-top:10px;
-      border-top: 1px dashed rgba(255,255,255,.10);
+    .legendLabel{
+      display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%;
     }
-    .metaK{font-size:11px; color:var(--muted2); text-transform:uppercase; letter-spacing:.16px}
-    .metaV{font-weight:800}
-    .chipRow{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .legendLabel b{font-weight:900}
+    .legendLabel span{color:var(--muted2);font-size:12px}
+
+    .gradWrap{
+      padding:12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .gradBar{
+      height:18px;border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 14px 34px rgba(0,0,0,.25);
+      overflow:hidden;
+      background: linear-gradient(90deg, #0b1220, #67e8f9);
+    }
+    .gradBar.div{
+      background: linear-gradient(90deg, #ff4d6d, #0b1220, #67e8f9);
+    }
+    .gradMeta{
+      display:flex;justify-content:space-between;gap:10px;
+      margin-top:10px;
+      color: var(--muted2);
+      font-size:12px;
+    }
+
+    /* ===== District inspector ===== */
+    .headline{
+      font-size:14px;font-weight:900;letter-spacing:.2px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+    }
+    .subline{margin-top:2px;color:var(--muted2);font-size:12px}
+
+    .kvs{display:grid;grid-template-columns:1fr auto;gap:8px 12px;margin-top:10px}
+    .k{color:var(--muted2);font-size:12px}
+    .v{font-weight:900}
+    .chipRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     .chip{
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: var(--chip);
-      border: 1px solid rgba(255,255,255,.10);
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
       color: var(--muted);
       font-size:12px;
-      display:inline-flex; gap:8px; align-items:center;
+      display:inline-flex;align-items:center;gap:8px;
+    }
+    .winnerDot{
+      width:10px;height:10px;border-radius:999px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 10px 18px rgba(0,0,0,.25);
     }
 
-    /* Selected count chip (floating) */
-    .selectedChip{
-      position:absolute;
-      top: 12px; left: 12px;
-      z-index: 20;
-      padding: 10px 12px;
-      border-radius: 999px;
-      background: rgba(10,14,22,.55);
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 16px 40px rgba(0,0,0,.35);
-      display:flex; align-items:center; gap:10px;
-      user-select:none;
+    .bars{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+    .barRow{
+      display:grid;
+      grid-template-columns: auto 1fr auto;
+      gap:10px;
+      align-items:center;
     }
-    .selectedChip b{font-weight:900}
-    .pulse{
-      width:10px;height:10px;border-radius:999px;background:var(--accent);
-      box-shadow: 0 0 0 0 rgba(103,232,249,.55);
-      animation: pulse 2.2s infinite;
+    .barName{font-size:12px;font-weight:900}
+    .barTrack{
+      height:10px;border-radius:999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.22);
     }
-    @keyframes pulse{
-      0%{box-shadow: 0 0 0 0 rgba(103,232,249,.55)}
-      70%{box-shadow: 0 0 0 10px rgba(103,232,249,0)}
-      100%{box-shadow: 0 0 0 0 rgba(103,232,249,0)}
+    .barFill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(103,232,249,.92), rgba(167,139,250,.85));
     }
+    .barVal{font-size:12px;color:var(--muted2);white-space:nowrap}
 
-    /* Dialog */
+    /* ===== Loading curtain (only at startup) ===== */
+    .curtain{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background: radial-gradient(900px 700px at 50% 30%, rgba(103,232,249,.10), transparent 65%),
+                  linear-gradient(180deg, rgba(6,7,10,.92), rgba(4,5,7,.92));
+      z-index: 999;
+      transition: opacity .28s ease, visibility .28s ease;
+    }
+    .curtain.hide{opacity:0; visibility:hidden; pointer-events:none}
+    .loaderCard{
+      width:min(520px, 92vw);
+      border-radius: 22px;
+      padding: 16px 16px 18px;
+      background: linear-gradient(180deg, rgba(12,16,26,.78), rgba(8,10,14,.82));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 26px 90px rgba(0,0,0,.62);
+      backdrop-filter: blur(20px);
+    }
+    .loaderTop{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .loaderTop .left{display:flex; align-items:center; gap:12px}
+    .spinner{
+      width:18px; height:18px; border-radius:999px;
+      border:2px solid rgba(255,255,255,.22);
+      border-top-color: rgba(103,232,249,.92);
+      animation: spin .9s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loaderTitle{font-weight:900; letter-spacing:.2px}
+    .loaderBody{margin-top:10px; color: var(--muted)}
+    .loaderHint{margin-top:8px; color: var(--muted2); font-size:12px}
+
+    /* ===== Dialog ===== */
     dialog{
       width:min(760px, 92vw);
       border:none;
-      border-radius: 20px;
+      border-radius: 22px;
       padding:0;
       background: linear-gradient(180deg, rgba(12,16,26,.92), rgba(8,10,14,.86));
-      color:#eaf2ff;
-      box-shadow: 0 30px 90px rgba(0,0,0,.65);
+      color: var(--text);
+      box-shadow: 0 30px 110px rgba(0,0,0,.70);
       overflow:hidden;
     }
     dialog::backdrop{background: rgba(0,0,0,.66)}
-    .dlgHead{padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.10); display:flex; align-items:center; justify-content:space-between}
+    .dlgHead{
+      padding:14px 16px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      font-weight:900;
+    }
     .dlgBody{padding:14px 16px}
-    code{background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); padding:2px 8px; border-radius: 10px}
+    code{
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      padding:2px 8px;
+      border-radius: 10px;
+    }
 
-    /* Leaflet controls: make them match */
+    /* Leaflet controls – match theme */
     .leaflet-control-zoom, .leaflet-control-attribution{
       border-radius: 14px !important;
       border: 1px solid rgba(255,255,255,.12) !important;
       overflow:hidden !important;
       backdrop-filter: blur(10px);
-      box-shadow: 0 16px 40px rgba(0,0,0,.30);
+      box-shadow: 0 18px 50px rgba(0,0,0,.30);
       background: rgba(10,14,22,.55) !important;
     }
     .leaflet-control-zoom a{
@@ -358,12 +397,27 @@
 </head>
 
 <body>
+  <!-- Startup loading curtain -->
+  <div id="curtain" class="curtain">
+    <div class="loaderCard">
+      <div class="loaderTop">
+        <div class="left">
+          <div class="spinner"></div>
+          <div class="loaderTitle">Loading Turkey districts…</div>
+        </div>
+        <div class="tag">v0.2</div>
+      </div>
+      <div id="loaderMsg" class="loaderBody">Fetching GeoJSON & population…</div>
+      <div class="loaderHint">Tip: host via GitHub Pages (not <span class="mono">file://</span>) so data loads reliably.</div>
+    </div>
+  </div>
+
   <header class="topbar">
     <div class="brand">
-      <div class="logo" aria-hidden="true"></div>
-      <div>
-        <div class="title">Turkey Redistricter <span class="badge">v0.1</span></div>
-        <div class="subtitle">all districts • elections • population • regions</div>
+      <div class="mark" aria-hidden="true"></div>
+      <div class="brandText">
+        <div class="title">Turkey Redistricter <span class="tag">clean UI</span></div>
+        <div class="sub">districts • elections • population • layers</div>
       </div>
     </div>
 
@@ -380,7 +434,7 @@
         </div>
       </label>
 
-      <label class="ctl">
+      <label class="ctl" id="yearWrap">
         <span>Year</span>
         <div class="selectWrap">
           <select id="yearSelect">
@@ -432,20 +486,13 @@
   </header>
 
   <div class="wrap">
-    <div id="map">
-      <div class="selectedChip" title="Selected districts (click districts to select)">
-        <div class="pulse"></div>
-        <div><b id="selectedCount">0</b> selected</div>
-      </div>
-    </div>
+    <div id="map"></div>
 
     <aside class="sidebar">
       <section class="card">
         <div class="cardHeader">
-          <div class="cardTitle">
-            <span>Legend</span>
-            <span class="pill" id="legendPill">—</span>
-          </div>
+          <div class="cardTitle">Legend</div>
+          <div class="pill" id="legendPill">—</div>
         </div>
         <div class="cardBody">
           <div id="legend" class="legend"></div>
@@ -454,57 +501,11 @@
 
       <section class="card">
         <div class="cardHeader">
-          <div class="cardTitle">
-            <span>District</span>
-            <span class="pill">hover</span>
-          </div>
+          <div class="cardTitle">District</div>
+          <div class="pill">hover</div>
         </div>
         <div class="cardBody">
-          <div id="hoverBox" class="small muted">Hover a district.</div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="cardHeader">
-          <div class="cardTitle">
-            <span>Region Builder</span>
-            <span class="pill" id="regionPill">0 regions</span>
-          </div>
-        </div>
-        <div class="cardBody">
-          <div class="row">
-            <button id="newRegionBtn" class="btn">New region</button>
-            <button id="exportPlanBtn" class="btn btn-ghost">Export</button>
-            <label class="btn btn-ghost fileBtn">
-              Import
-              <input id="importPlanInput" type="file" accept="application/json" />
-            </label>
-          </div>
-
-          <div class="chipRow">
-            <span class="chip"><span class="mono">Click</span> districts to select</span>
-            <span class="chip"><span class="mono">Add</span> selection to active region</span>
-          </div>
-
-          <div class="row">
-            <button id="addToRegionBtn" class="btn">Add selection</button>
-            <button id="removeFromRegionBtn" class="btn btn-ghost">Remove</button>
-            <button id="clearSelectionBtn" class="btn btn-ghost">Clear</button>
-          </div>
-
-          <div id="regionsList" class="regions"></div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="cardHeader">
-          <div class="cardTitle">
-            <span>Status</span>
-            <span class="pill" id="statusPill">loading</span>
-          </div>
-        </div>
-        <div class="cardBody">
-          <div id="statusBox" class="mono small">Loading…</div>
+          <div id="hoverBox" class="muted small">Hover a district.</div>
         </div>
       </section>
     </aside>
@@ -512,22 +513,23 @@
 
   <dialog id="helpDialog">
     <div class="dlgHead">
-      <div style="font-weight:800">Help</div>
+      <div>Help</div>
       <button id="closeHelpBtn" class="btn btn-ghost">Close</button>
     </div>
     <div class="dlgBody">
-      <div class="sep"></div>
-      <ul class="muted">
-        <li>This loads <b>all districts</b> automatically (no province selector).</li>
-        <li>Files in the same folder:
-          <ul>
-            <li><code>turkey-admin-level-6.geojson</code></li>
-            <li><code>province_district_2014_2019_2024.csv</code></li>
-            <li>Election JSONs: <code>Edirne.json</code>, <code>Ankara.json</code>, … (missing is OK)</li>
-          </ul>
-        </li>
-        <li>Hover to inspect. Click to select. Build regions on the right.</li>
-      </ul>
+      <div class="muted">
+        <ul>
+          <li>Loads all districts automatically.</li>
+          <li>Required files in the same folder:
+            <ul>
+              <li><code>turkey-admin-level-6.geojson</code></li>
+              <li><code>province_district_2014_2019_2024.csv</code></li>
+              <li>Election JSONs: <code>Edirne.json</code>, <code>Ankara.json</code>… (missing is OK)</li>
+            </ul>
+          </li>
+          <li>Hover a district to see population + election details.</li>
+        </ul>
+      </div>
     </div>
   </dialog>
 
@@ -569,11 +571,11 @@
       ["MEMLEKET", "#ef233c"],
     ]);
 
+    // Turkish folding
     const TR_MAP = new Map([
       ["İ","I"],["I","I"],["Ş","S"],["Ğ","G"],["Ü","U"],["Ö","O"],["Ç","C"],
       ["ı","I"],["ş","S"],["ğ","G"],["ü","U"],["ö","O"],["ç","C"],
     ]);
-
     function trFold(s){
       if (s == null) return "";
       s = String(s).trim().replace(/\s+/g," ");
@@ -594,6 +596,13 @@
       if (!digits) return null;
       return Number(digits);
     }
+    function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
+    function formatInt(n){
+      if (n == null || Number.isNaN(n)) return "—";
+      return new Intl.NumberFormat("tr-TR").format(n);
+    }
+    function safe(v){ return (v==null || v==="") ? "—" : String(v); }
+
     function lerp(a,b,t){ return a + (b-a)*t; }
     function hexToRgb(hex){
       const h = hex.replace("#","");
@@ -616,13 +625,13 @@
       const b = 80 + ((h>>16) & 0x7f);
       return rgbToHex(r,g,b);
     }
-    function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
-    function formatInt(n){
-      if (n == null || Number.isNaN(n)) return "—";
-      return new Intl.NumberFormat("tr-TR").format(n);
+    function colorForParty(name){
+      if (!name) return "rgba(255,255,255,.08)";
+      const clean = String(name).trim();
+      return PARTY_COLORS.get(clean) ?? hashColor(clean);
     }
-    function safe(v){ return (v==null || v==="") ? "—" : String(v); }
 
+    // Robust URL resolution
     function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
     async function fetchText(rel){
       const url = resolveUrl(rel);
@@ -630,20 +639,8 @@
       if (!resp.ok) throw new Error(`${rel} -> HTTP ${resp.status}`);
       return await resp.text();
     }
-    async function fetchJson(rel){
-      const txt = await fetchText(rel);
-      return JSON.parse(txt);
-    }
-    async function fetchCsv(rel){
-      const txt = await fetchText(rel);
-      return d3.csvParse(txt);
-    }
-
-    function colorForParty(name){
-      if (!name) return "rgba(255,255,255,.08)";
-      const clean = String(name).trim();
-      return PARTY_COLORS.get(clean) ?? hashColor(clean);
-    }
+    async function fetchJson(rel){ return JSON.parse(await fetchText(rel)); }
+    async function fetchCsv(rel){ return d3.csvParse(await fetchText(rel)); }
 
     function parsePlateFromNetwork(network){
       const m = String(network ?? "").match(/TR(\d{2})-districts/i);
@@ -659,44 +656,29 @@
       el.yearSelect = document.getElementById("yearSelect");
       el.yearASelect = document.getElementById("yearASelect");
       el.yearBSelect = document.getElementById("yearBSelect");
+      el.yearWrap = document.getElementById("yearWrap");
       el.yearAWrap = document.getElementById("yearAWrap");
       el.yearBWrap = document.getElementById("yearBWrap");
       el.legend = document.getElementById("legend");
       el.legendPill = document.getElementById("legendPill");
       el.hoverBox = document.getElementById("hoverBox");
-      el.statusBox = document.getElementById("statusBox");
-      el.statusPill = document.getElementById("statusPill");
       el.fitBtn = document.getElementById("fitBtn");
       el.helpBtn = document.getElementById("helpBtn");
       el.helpDialog = document.getElementById("helpDialog");
       el.closeHelpBtn = document.getElementById("closeHelpBtn");
-      el.newRegionBtn = document.getElementById("newRegionBtn");
-      el.exportPlanBtn = document.getElementById("exportPlanBtn");
-      el.importPlanInput = document.getElementById("importPlanInput");
-      el.addToRegionBtn = document.getElementById("addToRegionBtn");
-      el.removeFromRegionBtn = document.getElementById("removeFromRegionBtn");
-      el.clearSelectionBtn = document.getElementById("clearSelectionBtn");
-      el.regionsList = document.getElementById("regionsList");
-      el.selectedCount = document.getElementById("selectedCount");
-      el.regionPill = document.getElementById("regionPill");
-    }
-    function setStatus(msg, pill){
-      el.statusBox.textContent = msg;
-      if (pill) el.statusPill.textContent = pill;
+      el.curtain = document.getElementById("curtain");
+      el.loaderMsg = document.getElementById("loaderMsg");
     }
 
     // State
     const state = {
-      pop: null,
-      elections: new Map(),
-      districtData: new Map(),
+      pop: null, // {provKey: {distKey: {2014,2019,2024}}}
+      elections: new Map(), // uk -> row
+      districtData: new Map(), // uk -> joined
       mode: "election_winner",
       year: 2024,
       yearA: 2014,
       yearB: 2024,
-      selected: new Set(),
-      regions: [],
-      activeRegionId: null,
     };
 
     // Map
@@ -705,12 +687,11 @@
     function initMap(){
       map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([39.0, 35.0], 6);
 
-      // Dark basemap (no key)
-      const dark = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      // Dark basemap, no key
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-      });
-      dark.addTo(map);
+      }).addTo(map);
 
       canvasRenderer = L.canvas({ padding: 0.5 });
 
@@ -722,45 +703,34 @@
     }
 
     function featureStyle(feature){
-      const uk = feature.properties.__uk;
-      const isSelected = state.selected.has(uk);
       const base = colorForFeature(feature);
-
       return {
-        color: isSelected ? "rgba(255,255,255,.92)" : "rgba(255,255,255,.18)",
-        weight: isSelected ? 2.6 : 0.9,
+        color: "rgba(255,255,255,.18)",
+        weight: 0.9,
         opacity: 1,
         fillColor: base,
-        fillOpacity: isSelected ? 0.82 : 0.70,
+        fillOpacity: 0.72,
       };
     }
 
     function onEachDistrict(feature, layer){
       layer.on({
         mouseover: () => {
-          layer.setStyle({ weight: 2.2, color: "rgba(255,255,255,.88)" });
+          layer.setStyle({
+            weight: 2.2,
+            color: "rgba(255,255,255,.86)",
+            fillOpacity: 0.84
+          });
           updateHover(feature);
         },
         mouseout: () => {
           districtLayer.resetStyle(layer);
           el.hoverBox.innerHTML = `<div class="muted small">Hover a district.</div>`;
-        },
-        click: () => {
-          const uk = feature.properties.__uk;
-          if (state.selected.has(uk)) state.selected.delete(uk);
-          else state.selected.add(uk);
-          districtLayer.setStyle(featureStyle);
-          updateSelectedChip();
-          renderRegions();
-        },
+        }
       });
     }
 
-    function updateSelectedChip(){
-      el.selectedCount.textContent = String(state.selected.size);
-    }
-
-    // Election parsing
+    // Elections
     function parseElectionRows(rows){
       const clean = [];
       if (!Array.isArray(rows)) return clean;
@@ -793,6 +763,7 @@
         const winner = partyVotes[0]?.[0] ?? null;
         const winnerVotes = partyVotes[0]?.[1] ?? null;
         const runnerVotes = partyVotes[1]?.[1] ?? null;
+
         row.__winner = winner;
         row.__winnerVotes = winnerVotes;
         row.__runner = partyVotes[1]?.[0] ?? null;
@@ -824,25 +795,17 @@
     async function loadAllElections(){
       const queue = PROVINCES.map(([name, plate]) => ({name, plate}));
       const concurrency = 8;
-      let done = 0, found = 0;
 
       async function worker(){
         while (queue.length){
           const job = queue.shift();
           const raw = await tryFetchElectionJson(job.name, job.plate);
-          done++;
-
           if (raw){
-            found++;
             const parsed = parseElectionRows(raw);
             for (const row of parsed){
               const uk = uniqueKey(job.plate, row.__distKey);
               state.elections.set(uk, row);
             }
-          }
-
-          if (done % 10 === 0){
-            setStatus(`Loading elections… ${done}/81 (found ${found} files)`, "loading");
           }
         }
       }
@@ -885,14 +848,13 @@
         }
       }
       if (!values.length) return "rgba(255,255,255,.06)";
-
       values.sort((a,b)=>a-b);
       const min = values[0], max = values[values.length-1];
-      if (min === max) return "#4cc9f0";
+      if (min === max) return "#67e8f9";
 
       if (kind === "seq"){
         const t = (val - min) / (max - min);
-        // colder palette for dark map
+        // elegant cold gradient on dark
         return mixHex("#0b1220", "#67e8f9", clamp01(t));
       } else {
         const m = Math.max(Math.abs(min), Math.abs(max));
@@ -923,23 +885,22 @@
       if (state.mode === "election_margin"){
         const base = colorForParty(e.__winner);
         const t = clamp01((e.__marginShare ?? 0) / 0.25);
-        // richer shading
         return mixHex(base, "#070a10", 0.40 * t);
       }
       return colorForParty(e.__winner);
     }
 
-    // Legend
+    // Legend render
     function renderLegend(){
       el.legend.innerHTML = "";
 
-      const label =
+      const pill =
         state.mode === "election_winner" ? "Election — winner" :
         state.mode === "election_margin" ? "Election — margin" :
         state.mode === "population_year" ? `Population — ${state.year}` :
         `Population — change ${state.yearA}→${state.yearB}`;
 
-      el.legendPill.textContent = label;
+      el.legendPill.textContent = pill;
 
       if (state.mode === "election_winner" || state.mode === "election_margin"){
         const wins = new Map();
@@ -948,24 +909,27 @@
           if (!w) continue;
           wins.set(w, (wins.get(w) ?? 0) + 1);
         }
+
         const top = [...wins.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 12);
         if (!top.length){
           el.legend.innerHTML = `<div class="muted small">No election files loaded (or missing / misnamed).</div>`;
           return;
         }
-        for (const [p, n] of top){
+
+        for (const [party, n] of top){
           const item = document.createElement("div");
           item.className = "legendItem";
+
           const sw = document.createElement("div");
           sw.className = "swatch";
-          sw.style.background = colorForParty(p);
+          sw.style.background = colorForParty(party);
+
+          const label = document.createElement("div");
+          label.className = "legendLabel";
+          label.innerHTML = `<b>${party}</b><span>${n} districts</span>`;
+
           item.appendChild(sw);
-
-          const right = document.createElement("div");
-          right.className = "legendLabel";
-          right.innerHTML = `<b>${p}</b><span>${n} districts</span>`;
-          item.appendChild(right);
-
+          item.appendChild(label);
           el.legend.appendChild(item);
         }
 
@@ -973,7 +937,7 @@
           const note = document.createElement("div");
           note.className = "muted2 small";
           note.style.marginTop = "10px";
-          note.textContent = "Margin layer darkens the winner color as the lead grows.";
+          note.textContent = "Darker shade = larger winning margin.";
           el.legend.appendChild(note);
         }
         return;
@@ -997,36 +961,30 @@
       values.sort((a,b)=>a-b);
       const min = values[0], max = values[values.length-1];
 
+      const wrap = document.createElement("div");
+      wrap.className = "gradWrap";
+
       const bar = document.createElement("div");
-      bar.style.display = "grid";
-      bar.style.gridTemplateColumns = "repeat(12, 1fr)";
-      bar.style.gap = "6px";
-      bar.style.marginTop = "8px";
+      bar.className = "gradBar" + (state.mode === "population_change" ? " div" : "");
+      wrap.appendChild(bar);
 
-      for (let i=0;i<12;i++){
-        const t = i/11;
-        const v = min + (max-min)*t;
-        const sw = document.createElement("div");
-        sw.className = "swatch";
-        sw.style.width = "100%";
-        sw.style.height = "18px";
-        sw.style.borderRadius = "10px";
-        const kind = state.mode === "population_year" ? "seq" : "div";
-        sw.style.background = numericColor(v, kind);
-        bar.appendChild(sw);
-      }
+      const meta = document.createElement("div");
+      meta.className = "gradMeta mono";
+      meta.innerHTML = `<div>${formatInt(min)}</div><div>${formatInt(max)}</div>`;
+      wrap.appendChild(meta);
 
-      const mm = document.createElement("div");
-      mm.className = "row";
-      mm.style.justifyContent = "space-between";
-      mm.style.marginTop = "10px";
-      mm.innerHTML = `<div class="mono small muted">${formatInt(min)}</div><div class="mono small muted">${formatInt(max)}</div>`;
+      el.legend.appendChild(wrap);
 
-      el.legend.appendChild(bar);
-      el.legend.appendChild(mm);
+      const note = document.createElement("div");
+      note.className = "muted2 small";
+      note.style.marginTop = "10px";
+      note.textContent = state.mode === "population_change"
+        ? "Left = decrease, right = increase."
+        : "Right = higher population.";
+      el.legend.appendChild(note);
     }
 
-    // Hover panel (prettier)
+    // Hover panel
     function updateHover(feature){
       const uk = feature.properties.__uk;
       const joined = state.districtData.get(uk);
@@ -1037,197 +995,92 @@
       const e = joined?.election;
 
       let html = `
-        <div style="font-weight:900; font-size:14px; letter-spacing:.2px">${distName}</div>
-        <div class="muted2 small" style="margin-top:2px">${provName}</div>
+        <div class="headline">
+          <div>${distName}</div>
+        </div>
+        <div class="subline">${provName}</div>
         <div class="sep"></div>
       `;
 
-      html += `<div class="muted2 small" style="text-transform:uppercase; letter-spacing:.16px">Population</div>`;
+      html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Population</div>`;
       if (pop){
         html += `
-          <div class="kv" style="margin-top:8px">
+          <div class="kvs">
             <div class="k">2014</div><div class="v mono">${formatInt(pop[2014])}</div>
             <div class="k">2019</div><div class="v mono">${formatInt(pop[2019])}</div>
             <div class="k">2024</div><div class="v mono">${formatInt(pop[2024])}</div>
           </div>
+          <div class="chipRow">
+            ${
+              state.mode === "population_change"
+                ? (() => {
+                    const a = pop[state.yearA], b = pop[state.yearB];
+                    const delta = (a!=null && b!=null) ? (b-a) : null;
+                    return `<span class="chip"><span class="mono">Δ</span>${state.yearA}→${state.yearB}: <b>${formatInt(delta)}</b></span>`;
+                  })()
+                : `<span class="chip">Selected <span class="mono">${state.year}</span>: <b>${formatInt(pop[state.year])}</b></span>`
+            }
+          </div>
         `;
-        if (state.mode === "population_change"){
-          const a = pop[state.yearA], b = pop[state.yearB];
-          const delta = (a!=null && b!=null) ? (b-a) : null;
-          html += `<div class="chipRow"><span class="chip"><span class="mono">Δ</span> ${state.yearA}→${state.yearB}: <b>${formatInt(delta)}</b></span></div>`;
-        } else {
-          html += `<div class="chipRow"><span class="chip">Selected year <span class="mono">${state.year}</span>: <b>${formatInt(pop[state.year])}</b></span></div>`;
-        }
       } else {
-        html += `<div class="muted small" style="margin-top:6px">—</div>`;
+        html += `<div class="muted small" style="margin-top:8px">—</div>`;
       }
 
       html += `<div class="sep"></div>`;
-      html += `<div class="muted2 small" style="text-transform:uppercase; letter-spacing:.16px">Election</div>`;
+      html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Election</div>`;
+
       if (e){
+        const winnerColor = colorForParty(e.__winner);
+        const valid = e.__valid ?? null;
+
         html += `
-          <div class="kv" style="margin-top:8px">
+          <div class="chipRow" style="margin-top:10px">
+            <span class="chip">
+              <span class="winnerDot" style="background:${winnerColor}"></span>
+              Winner: <b>${safe(e.__winner)}</b>
+              <span class="mono">(${formatInt(e.__winnerVotes)})</span>
+            </span>
+            ${e.__marginVotes!=null ? `<span class="chip">Margin: <b>${formatInt(e.__marginVotes)}</b> <span class="mono">${(100*(e.__marginShare??0)).toFixed(1)}%</span></span>` : ``}
+          </div>
+
+          <div class="kvs" style="margin-top:10px">
             <div class="k">Registered</div><div class="v mono">${formatInt(e.__registered)}</div>
             <div class="k">Cast</div><div class="v mono">${formatInt(e.__cast)}</div>
             <div class="k">Valid</div><div class="v mono">${formatInt(e.__valid)}</div>
           </div>
-          <div class="chipRow" style="margin-top:10px">
-            <span class="chip">
-              Winner: <b>${safe(e.__winner)}</b> <span class="mono">(${formatInt(e.__winnerVotes)})</span>
-            </span>
-            ${e.__marginVotes!=null ? `<span class="chip">Margin: <b>${formatInt(e.__marginVotes)}</b> <span class="mono">${(100*(e.__marginShare??0)).toFixed(1)}%</span></span>` : ""}
-          </div>
         `;
+
+        // Top party bars (up to 5)
+        const top = (e.__partyVotes ?? []).slice(0, 5);
+        if (top.length && valid){
+          html += `<div class="sep"></div><div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Top parties</div>`;
+          html += `<div class="bars">`;
+          for (const [party, votes] of top){
+            const share = valid ? (votes/valid) : 0;
+            const c = colorForParty(party);
+            html += `
+              <div class="barRow">
+                <div class="barName">${party}</div>
+                <div class="barTrack">
+                  <div class="barFill" style="width:${(100*share).toFixed(1)}%; background: linear-gradient(90deg, ${c}, rgba(167,139,250,.72));"></div>
+                </div>
+                <div class="barVal mono">${(100*share).toFixed(1)}%</div>
+              </div>
+            `;
+          }
+          html += `</div>`;
+        }
       } else {
-        html += `<div class="muted small" style="margin-top:8px">No election match.</div>`;
+        html += `<div class="muted small" style="margin-top:10px">No election match for this district.</div>`;
       }
 
       el.hoverBox.innerHTML = html;
     }
 
-    // Region builder (same functionality, nicer list)
-    function newRegion(){
-      const id = crypto.randomUUID?.() ?? String(Date.now());
-      const n = state.regions.length + 1;
-      const region = { id, name: `Region ${n}`, color: hashColor(`REGION-${n}`), districts: new Set() };
-      state.regions.push(region);
-      state.activeRegionId = id;
-      renderRegions();
-    }
-    function addSelectionToRegion(){
-      const r = state.regions.find(x => x.id === state.activeRegionId);
-      if (!r) return;
-      for (const uk of state.selected) r.districts.add(uk);
-      renderRegions();
-    }
-    function removeSelectionFromRegion(){
-      const r = state.regions.find(x => x.id === state.activeRegionId);
-      if (!r) return;
-      for (const uk of state.selected) r.districts.delete(uk);
-      renderRegions();
-    }
-    function clearSelection(){
-      state.selected.clear();
-      districtLayer.setStyle(featureStyle);
-      updateSelectedChip();
-      renderRegions();
-    }
-    function computeRegionStats(region){
-      let popSum = 0;
-      const votes = new Map();
-      let valid = 0;
-
-      for (const uk of region.districts){
-        const j = state.districtData.get(uk);
-        const p = j?.pop?.[state.year] ?? null;
-        if (p!=null) popSum += p;
-
-        const e = j?.election;
-        if (e?.__valid) valid += e.__valid;
-        for (const [party, v] of (e?.__partyVotes ?? [])){
-          votes.set(party, (votes.get(party) ?? 0) + v);
-        }
-      }
-
-      const sortedVotes = [...votes.entries()].sort((a,b)=>b[1]-a[1]);
-      const winner = sortedVotes[0]?.[0] ?? null;
-      const winnerVotes = sortedVotes[0]?.[1] ?? null;
-      const runnerVotes = sortedVotes[1]?.[1] ?? null;
-      const marginVotes = (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes-runnerVotes) : null;
-      const marginShare = (valid && marginVotes!=null) ? (marginVotes/valid) : null;
-
-      return { popSum, valid, winner, marginVotes, marginShare };
-    }
-
-    function renderRegions(){
-      el.regionsList.innerHTML = "";
-      el.regionPill.textContent = `${state.regions.length} regions`;
-
-      if (!state.regions.length){
-        el.regionsList.innerHTML = `<div class="muted small">No regions yet. Click “New region”.</div>`;
-        return;
-      }
-
-      for (const r of state.regions){
-        const isActive = (r.id === state.activeRegionId);
-        const stats = computeRegionStats(r);
-
-        const box = document.createElement("div");
-        box.className = "region";
-        box.style.borderColor = isActive ? "rgba(103,232,249,.35)" : "rgba(255,255,255,.10)";
-        box.style.boxShadow = isActive ? "0 0 0 1px rgba(103,232,249,.18), 0 18px 50px rgba(0,0,0,.35)" : "none";
-
-        const top = document.createElement("div");
-        top.className = "regionTop";
-
-        const left = document.createElement("div");
-        left.className = "regionTopLeft";
-
-        const radio = document.createElement("input");
-        radio.type="radio";
-        radio.name="activeRegion";
-        radio.checked = isActive;
-        radio.addEventListener("change", () => { state.activeRegionId = r.id; renderRegions(); });
-        left.appendChild(radio);
-
-        const name = document.createElement("input");
-        name.type="text";
-        name.value = r.name;
-        name.addEventListener("input", (e)=>{ r.name = e.target.value; });
-        left.appendChild(name);
-
-        top.appendChild(left);
-
-        const color = document.createElement("input");
-        color.type="color";
-        color.value = r.color;
-        color.addEventListener("input", (e)=>{ r.color = e.target.value; });
-        top.appendChild(color);
-
-        box.appendChild(top);
-
-        const meta = document.createElement("div");
-        meta.className = "regionMeta";
-        meta.innerHTML = `
-          <div><div class="metaK">Districts</div><div class="metaV mono">${r.districts.size}</div></div>
-          <div><div class="metaK">Population (${state.year})</div><div class="metaV mono">${formatInt(stats.popSum)}</div></div>
-          <div><div class="metaK">Winner</div><div class="metaV">${safe(stats.winner)}</div></div>
-          <div><div class="metaK">Margin</div><div class="metaV mono">${stats.marginVotes==null ? "—" : `${formatInt(stats.marginVotes)} (${(100*(stats.marginShare??0)).toFixed(1)}%)`}</div></div>
-        `;
-        box.appendChild(meta);
-
-        el.regionsList.appendChild(box);
-      }
-    }
-
-    function exportPlan(){
-      const plan = {
-        year: state.year,
-        regions: state.regions.map(r => ({ id:r.id, name:r.name, color:r.color, districts:[...r.districts] }))
-      };
-      const blob = new Blob([JSON.stringify(plan, null, 2)], {type:"application/json"});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `plan_TR_${state.year}.json`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
-    async function importPlan(file){
-      const txt = await file.text();
-      const plan = JSON.parse(txt);
-      state.regions = (plan.regions ?? []).map(r => ({
-        id: r.id ?? (crypto.randomUUID?.() ?? String(Date.now())),
-        name: r.name ?? "Region",
-        color: r.color ?? "#67e8f9",
-        districts: new Set(r.districts ?? []),
-      }));
-      state.activeRegionId = state.regions[0]?.id ?? null;
-      renderRegions();
-    }
-
+    // UI logic
     function renderModeYearVisibility(){
       const showChange = (state.mode === "population_change");
-      el.yearSelect.closest(".ctl").style.display = showChange ? "none" : "flex";
+      el.yearWrap.style.display = showChange ? "none" : "flex";
       el.yearAWrap.style.display = showChange ? "flex" : "none";
       el.yearBWrap.style.display = showChange ? "flex" : "none";
     }
@@ -1239,17 +1092,19 @@
         districtLayer.setStyle(featureStyle);
         renderLegend();
       });
+
       el.yearSelect.addEventListener("change", () => {
         state.year = Number(el.yearSelect.value);
         districtLayer.setStyle(featureStyle);
         renderLegend();
-        renderRegions();
       });
+
       el.yearASelect.addEventListener("change", () => {
         state.yearA = Number(el.yearASelect.value);
         districtLayer.setStyle(featureStyle);
         renderLegend();
       });
+
       el.yearBSelect.addEventListener("change", () => {
         state.yearB = Number(el.yearBSelect.value);
         districtLayer.setStyle(featureStyle);
@@ -1263,25 +1118,12 @@
       el.helpBtn.addEventListener("click", () => el.helpDialog.showModal());
       el.closeHelpBtn.addEventListener("click", () => el.helpDialog.close());
 
-      el.newRegionBtn.addEventListener("click", newRegion);
-      el.addToRegionBtn.addEventListener("click", addSelectionToRegion);
-      el.removeFromRegionBtn.addEventListener("click", removeSelectionFromRegion);
-      el.clearSelectionBtn.addEventListener("click", clearSelection);
-      el.exportPlanBtn.addEventListener("click", exportPlan);
-
-      el.importPlanInput.addEventListener("change", async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        await importPlan(file);
-        e.target.value = "";
-      });
-
       renderModeYearVisibility();
     }
 
+    // Load all
     async function loadAll(){
-      setStatus("Loading GeoJSON + population…", "loading");
-
+      el.loaderMsg.textContent = "Fetching GeoJSON & population…";
       const [geo, popRows] = await Promise.all([
         fetchJson(FILES.GEOJSON),
         fetchCsv(FILES.POPCSV),
@@ -1329,36 +1171,26 @@
       districtLayer.clearLayers();
       districtLayer.addData(features);
 
-      // initial join
+      // join base
       rebuildDistrictDataIndex();
       districtLayer.setStyle(featureStyle);
 
       try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
 
       renderLegend();
-      renderRegions();
-      updateSelectedChip();
 
-      setStatus("Base ready. Loading elections…", "loading");
-
+      // load elections
+      el.loaderMsg.textContent = "Loading election files (missing files are OK)…";
       await loadAllElections();
 
       rebuildDistrictDataIndex();
       districtLayer.setStyle(featureStyle);
       renderLegend();
-      renderRegions();
 
-      // summary
-      const total = state.districtData.size;
-      let popMatch=0, elecMatch=0;
-      for (const j of state.districtData.values()){
-        if (j.pop) popMatch++;
-        if (j.election) elecMatch++;
-      }
-      setStatus(`Ready. districts: ${total} | pop: ${popMatch}/${total} | election: ${elecMatch}/${total}`, "ready");
+      // done
+      el.curtain.classList.add("hide");
     }
 
-    // --- boot ---
     window.addEventListener("DOMContentLoaded", async () => {
       grabEls();
       initMap();
@@ -1368,7 +1200,8 @@
         await loadAll();
       }catch(err){
         console.error(err);
-        setStatus(`Fatal: ${err.message}`, "fatal");
+        el.loaderMsg.textContent = `Fatal: ${err.message}`;
+        // leave curtain up if something goes wrong
       }
     });
 
