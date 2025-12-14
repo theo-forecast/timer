@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- d3 (CSV parsing) -->
+  <!-- d3 for CSV parsing -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
   <!-- Font -->
@@ -18,349 +18,308 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
+    :root{
+      --bg:#f6f7fb;
+      --bg2:#ffffff;
+      --ink:#0b1220;
+      --muted:#52627a;
+      --muted2:#7a8aa3;
+
+      --border:rgba(12,18,34,.12);
+      --border2:rgba(12,18,34,.18);
+
+      --shadow: 0 16px 60px rgba(12,18,34,.10);
+      --shadow2: 0 12px 30px rgba(12,18,34,.10);
+
+      --radius:16px;
+      --radius2:14px;
+
+      --greenL:#e6f6ea;
+      --greenD:#0f7a3b;
+
+      --redL:#fde8e8;
+      --redD:#b42318;
+
+      --brand:#2563eb;
+      --brand2:#06b6d4;
+
+      --focus:#0ea5e9;
+    }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0}
     body{
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
-      color:#eaf2ff;
       background:
-        radial-gradient(1200px 900px at 16% 8%, rgba(103,232,249,.18), transparent 62%),
-        radial-gradient(1000px 800px at 80% 14%, rgba(167,139,250,.16), transparent 60%),
-        radial-gradient(900px 700px at 50% 92%, rgba(34,211,238,.10), transparent 62%),
-        linear-gradient(180deg,#070a10 0%, #04060a 100%);
+        radial-gradient(1200px 800px at 12% 6%, rgba(37,99,235,.10), transparent 60%),
+        radial-gradient(1100px 900px at 88% 10%, rgba(6,182,212,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg) 0%, #eef2f7 100%);
+      color:var(--ink);
       overflow:hidden;
     }
 
-    :root{
-      --panel: rgba(10,14,22,.62);
-      --panel2: rgba(7,9,14,.78);
-      --border: rgba(255,255,255,.10);
-      --border2: rgba(255,255,255,.16);
-      --text: #eaf2ff;
-      --muted: rgba(226,238,255,.70);
-      --muted2: rgba(226,238,255,.50);
-
-      --shadow: 0 24px 90px rgba(0,0,0,.62);
-      --shadow2: 0 16px 40px rgba(0,0,0,.48);
-
-      --radius: 18px;
-      --radius2: 14px;
-
-      --aqua: #67e8f9;
-      --violet:#a78bfa;
-      --rose: #ff3b6b;
-      --gold: #ffd166;
-
-      --ink:  #05070b;
-      --ink2: #0b1220;
-    }
-
-    /* ===== Topbar ===== */
+    /* Topbar */
     .topbar{
-      position:sticky;top:0;z-index:50;
-      display:flex;align-items:center;justify-content:space-between;
-      gap:12px;padding:14px 16px;
+      position:sticky; top:0; z-index:60;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      background: rgba(255,255,255,.82);
       border-bottom:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(8,10,14,.86), rgba(6,7,10,.58));
-      backdrop-filter: blur(18px);
+      backdrop-filter: blur(14px);
     }
-    .brand{display:flex;align-items:center;gap:12px;min-width:260px}
-    .mark{
-      width:38px;height:38px;border-radius:16px;
-      background: linear-gradient(135deg, rgba(103,232,249,.98), rgba(167,139,250,.94));
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,.14),
-        0 22px 60px rgba(103,232,249,.14),
-        0 22px 60px rgba(167,139,250,.10);
-      position:relative;overflow:hidden;
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      min-width:260px;
     }
-    .mark:before{
+    .logo{
+      width:36px;height:36px;border-radius:14px;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      box-shadow: 0 14px 30px rgba(37,99,235,.18);
+      position:relative; overflow:hidden;
+    }
+    .logo:before{
       content:"";
       position:absolute; inset:-60%;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.40), transparent 45%);
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.55), transparent 45%);
       transform: rotate(18deg);
     }
-    .mark:after{
-      content:"";
-      position:absolute; inset:8px;
-      border-radius:14px;
-      background: linear-gradient(135deg, rgba(0,0,0,.34), rgba(0,0,0,.06));
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.10);
+    .brandText{display:flex; flex-direction:column; gap:2px}
+    .brandTitle{
+      font-weight:900; letter-spacing:.2px; font-size:14px;
+      display:flex; align-items:center; gap:10px;
     }
-
-    .brandText{display:flex;flex-direction:column;gap:2px}
-    .title{
-      font-weight:900;letter-spacing:.2px;font-size:14px;
-      display:flex;align-items:center;gap:10px;
-    }
-    .sub{
-      font-size:12px;color:var(--muted2);
-    }
-    .tag{
-      font-size:11px;font-weight:900;
-      padding:4px 10px;border-radius:999px;
-      color: rgba(0,0,0,.88);
-      background: linear-gradient(135deg, rgba(103,232,249,.98), rgba(167,139,250,.98));
-      box-shadow: 0 0 0 1px rgba(255,255,255,.14);
+    .badge{
+      font-size:11px; font-weight:900;
+      padding:4px 10px; border-radius:999px;
+      background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(6,182,212,.12));
+      border:1px solid rgba(37,99,235,.16);
+      color:#1343c7;
       white-space:nowrap;
     }
+    .brandSub{font-size:12px;color:var(--muted2)}
 
-    .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-    .ctl{display:flex;flex-direction:column;gap:6px;min-width:170px}
-    .ctl span{
-      font-size:11px;color:var(--muted2);
-      text-transform:uppercase;letter-spacing:.16px;
+    .controls{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
     }
-
+    .ctl{display:flex; flex-direction:column; gap:6px; min-width:180px}
+    .ctl span{
+      font-size:11px; color:var(--muted2);
+      text-transform:uppercase; letter-spacing:.16px;
+    }
     .selectWrap{position:relative}
     select{
       appearance:none;
       width:100%;
-      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
-      color: var(--text);
-      border:1px solid var(--border);
-      border-radius: 13px;
       padding:10px 38px 10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
+      color: var(--ink);
+      font-weight:700;
       outline:none;
-      box-shadow:
-        inset 0 0 0 1px rgba(0,0,0,.26),
-        0 14px 30px rgba(0,0,0,.18);
-      transition: border-color .15s ease, transform .15s ease, background .15s ease;
-    }
-    .selectWrap:after{
-      content:"";
-      position:absolute;right:12px;top:50%;
-      width:10px;height:10px;
-      border-right:2px solid rgba(255,255,255,.65);
-      border-bottom:2px solid rgba(255,255,255,.65);
-      transform: translateY(-65%) rotate(45deg);
-      pointer-events:none;
+      transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
     }
     select:hover{border-color: var(--border2)}
     select:focus{
-      border-color: rgba(103,232,249,.45);
-      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+      border-color: rgba(14,165,233,.50);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.12), 0 10px 22px rgba(12,18,34,.06);
     }
-
+    .selectWrap:after{
+      content:"";
+      position:absolute; right:12px; top:50%;
+      width:10px;height:10px;
+      border-right:2px solid rgba(15,23,42,.55);
+      border-bottom:2px solid rgba(15,23,42,.55);
+      transform: translateY(-65%) rotate(45deg);
+      pointer-events:none;
+    }
     .btn{
-      border:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
-      color: var(--text);
       padding:10px 12px;
-      border-radius: 13px;
-      cursor:pointer;
-      transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
-      box-shadow: 0 18px 40px rgba(0,0,0,.18);
-      display:inline-flex;align-items:center;gap:8px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
       font-weight:900;
+      cursor:pointer;
+      display:inline-flex; align-items:center; gap:8px;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
     }
     .btn:hover{
       transform: translateY(-1px);
-      border-color:var(--border2);
-      box-shadow:0 22px 54px rgba(0,0,0,.24);
-      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+      border-color: var(--border2);
+      box-shadow: 0 14px 28px rgba(12,18,34,.08);
     }
     .btn:active{transform: translateY(0)}
-    .btn-ghost{background:transparent;box-shadow:none}
-    .btn-ghost:hover{background:rgba(255,255,255,.06);box-shadow:none}
+    .btn-ghost{background:transparent; box-shadow:none}
+    .btn-ghost:hover{background: rgba(15,23,42,.04); box-shadow:none}
+    .ico{width:16px;height:16px;display:inline-block}
 
-    .ico{width:16px;height:16px;display:inline-block;opacity:.92}
-
-    /* ===== Layout ===== */
+    /* Layout */
     .wrap{
-      height: calc(100vh - 68px);
+      height: calc(100vh - 62px);
       display:grid;
-      grid-template-columns: 1fr 404px;
+      grid-template-columns: 1fr 420px;
       gap: 14px;
       padding: 14px;
     }
-
     #map{
       height:100%;
       border-radius: var(--radius);
       overflow:hidden;
-      border: 1px solid rgba(255,255,255,.10);
+      border: 1px solid var(--border);
       box-shadow: var(--shadow);
+      background:#eef2f7;
       position:relative;
-      background: #05070b;
     }
-    /* Vignette + inner frame */
     #map:before{
       content:"";
       position:absolute; inset:0;
-      pointer-events:none;
       border-radius: var(--radius);
-      box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,.06),
-        inset 0 0 160px rgba(0,0,0,.55),
-        inset 0 0 110px rgba(103,232,249,.05);
-      z-index: 7;
-    }
-    /* Subtle film grain (cheap, effective) */
-    #map:after{
-      content:"";
-      position:absolute; inset:-20%;
       pointer-events:none;
-      background:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
-      opacity:.10;
-      mix-blend-mode: overlay;
-      z-index: 6;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.75), inset 0 40px 120px rgba(37,99,235,.05);
+      z-index:8;
     }
 
     .sidebar{
       height:100%;
       overflow:auto;
       padding-right:6px;
-      display:flex;flex-direction:column;gap:12px;
+      display:flex; flex-direction:column; gap:12px;
     }
-
     .card{
-      background: linear-gradient(180deg, var(--panel), var(--panel2));
-      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.92);
+      border:1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow2);
-      backdrop-filter: blur(20px);
       overflow:hidden;
-      transform: translateZ(0);
+      backdrop-filter: blur(12px);
     }
     .cardHeader{
       padding:12px 14px;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(12,18,34,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.86));
     }
-    .cardTitle{font-weight:900;letter-spacing:.2px;display:flex;align-items:center;gap:10px}
+    .cardTitle{font-weight:900; letter-spacing:.2px}
     .pill{
-      font-size:11px;font-weight:900;
-      padding:4px 9px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
-      color: var(--muted);
+      font-size:11px; font-weight:900;
+      padding:4px 10px; border-radius:999px;
+      background: rgba(15,23,42,.05);
+      border:1px solid rgba(12,18,34,.10);
+      color: rgba(15,23,42,.74);
       white-space:nowrap;
     }
     .cardBody{padding:12px 14px}
-
     .muted{color:var(--muted)}
     .muted2{color:var(--muted2)}
     .small{font-size:12px}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
-    .sep{height:1px;background:rgba(255,255,255,.08);margin:12px 0}
+    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .sep{height:1px;background:rgba(12,18,34,.10); margin:12px 0}
 
-    /* ===== Legend ===== */
-    .legend{display:flex;flex-direction:column;gap:10px}
+    /* Legend */
+    .legend{display:flex; flex-direction:column; gap:10px}
     .legendItem{
-      display:flex;align-items:center;gap:10px;
+      display:flex; align-items:center; gap:10px;
       padding:10px 10px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      transition: transform .12s ease, border-color .15s ease, background .15s ease;
+      border-radius: 14px;
+      background: rgba(15,23,42,.03);
+      border:1px solid rgba(12,18,34,.10);
+      transition: transform .12s ease, border-color .12s ease;
     }
-    .legendItem:hover{
-      transform:translateY(-1px);
-      border-color:rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-    }
+    .legendItem:hover{transform: translateY(-1px); border-color: rgba(12,18,34,.16)}
     .swatch{
-      width:16px;height:16px;border-radius:7px;
-      border:1px solid rgba(255,255,255,.16);
-      box-shadow: 0 14px 28px rgba(0,0,0,.28);
+      width:16px;height:16px;border-radius:6px;
+      border:1px solid rgba(12,18,34,.14);
+      box-shadow: 0 10px 18px rgba(12,18,34,.08);
       flex:0 0 auto;
     }
     .legendLabel{
-      display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%;
+      display:flex; width:100%;
+      align-items:baseline; justify-content:space-between; gap:10px;
     }
     .legendLabel b{font-weight:900}
-    .legendLabel span{color:var(--muted2);font-size:12px}
+    .legendLabel span{font-size:12px;color:var(--muted2)}
 
     .gradWrap{
       padding:12px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      background: rgba(15,23,42,.03);
+      border:1px solid rgba(12,18,34,.10);
     }
     .gradBar{
-      height:18px;border-radius: 999px;
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow:
-        inset 0 0 0 1px rgba(0,0,0,.28),
-        0 16px 40px rgba(0,0,0,.30);
+      height:18px;border-radius:999px;
+      border:1px solid rgba(12,18,34,.14);
       overflow:hidden;
-      background: linear-gradient(90deg, #0b1220, #7c3aed, #67e8f9);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.65), 0 10px 18px rgba(12,18,34,.08);
+      background: linear-gradient(90deg, var(--greenL), var(--greenD));
     }
-    .gradBar.div{
-      background: linear-gradient(90deg, #ff2d55, #0b1220, #22d3ee);
+    .gradBar.divAbs{
+      background: linear-gradient(90deg, var(--redD), var(--redL), #f3f4f6, var(--greenL), var(--greenD));
+    }
+    .gradBar.divPct{
+      background: linear-gradient(90deg, var(--redD), var(--redL), #f3f4f6, var(--greenL), var(--greenD));
     }
     .gradMeta{
-      display:flex;justify-content:space-between;gap:10px;
+      display:flex; justify-content:space-between; gap:10px;
       margin-top:10px;
-      color: var(--muted2);
+      color:var(--muted2);
       font-size:12px;
     }
 
-    /* ===== District inspector ===== */
+    /* District panel (hover + selection) */
     .headline{
-      font-size:14px;font-weight:900;letter-spacing:.2px;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
     }
-    .subline{margin-top:2px;color:var(--muted2);font-size:12px}
-
+    .hTitle{font-size:14px;font-weight:900;letter-spacing:.2px;line-height:1.2}
+    .hSub{margin-top:2px;color:var(--muted2);font-size:12px}
     .kvs{display:grid;grid-template-columns:1fr auto;gap:8px 12px;margin-top:10px}
     .k{color:var(--muted2);font-size:12px}
     .v{font-weight:900}
     .chipRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     .chip{
       padding:6px 10px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
-      color: var(--muted);
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.03);
+      color: rgba(15,23,42,.76);
       font-size:12px;
       display:inline-flex;align-items:center;gap:8px;
+      font-weight:800;
     }
     .winnerDot{
       width:10px;height:10px;border-radius:999px;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 12px 22px rgba(0,0,0,.28);
+      border:1px solid rgba(12,18,34,.18);
+      box-shadow: 0 10px 16px rgba(12,18,34,.08);
     }
 
     .bars{margin-top:12px;display:flex;flex-direction:column;gap:10px}
-    .barRow{
-      display:grid;
-      grid-template-columns: auto 1fr auto;
-      gap:10px;
-      align-items:center;
-    }
+    .barRow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
     .barName{font-size:12px;font-weight:900}
     .barTrack{
       height:10px;border-radius:999px;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.10);
+      background: rgba(15,23,42,.06);
+      border:1px solid rgba(12,18,34,.12);
       overflow:hidden;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.24);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.70);
     }
-    .barFill{
-      height:100%;
-      width:0%;
-      border-radius:999px;
-      filter: saturate(1.25) contrast(1.08);
-    }
+    .barFill{height:100%;width:0%;border-radius:999px}
     .barVal{font-size:12px;color:var(--muted2);white-space:nowrap}
 
-    /* ===== Hover tooltip (map) ===== */
+    /* Map hover tooltip */
     .hoverTip{
       position:absolute;
-      z-index: 40;
+      z-index: 45;
       pointer-events:none;
-      transform: translate(-50%, calc(-100% - 14px));
+      transform: translate(-50%, calc(-100% - 12px));
       display:none;
       min-width: 220px;
-      max-width: 320px;
+      max-width: 340px;
       padding: 10px 11px;
-      border-radius: 16px;
-      background: linear-gradient(180deg, rgba(12,16,26,.88), rgba(7,9,14,.84));
-      border: 1px solid rgba(255,255,255,.14);
-      box-shadow: 0 26px 70px rgba(0,0,0,.62);
-      backdrop-filter: blur(16px);
+      border-radius: 14px;
+      background: rgba(255,255,255,.96);
+      border: 1px solid rgba(12,18,34,.14);
+      box-shadow: 0 18px 50px rgba(12,18,34,.12);
+      backdrop-filter: blur(12px);
     }
     .hoverTip:after{
       content:"";
@@ -368,110 +327,106 @@
       left:50%; bottom:-8px;
       width:16px; height:16px;
       transform: translateX(-50%) rotate(45deg);
-      background: linear-gradient(180deg, rgba(12,16,26,.88), rgba(7,9,14,.84));
-      border-right: 1px solid rgba(255,255,255,.12);
-      border-bottom: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.96);
+      border-right: 1px solid rgba(12,18,34,.12);
+      border-bottom: 1px solid rgba(12,18,34,.12);
     }
-    .hoverTip .t1{font-weight:900; letter-spacing:.2px; font-size:13px}
+    .hoverTip .t1{font-weight:900; font-size:13px}
     .hoverTip .t2{margin-top:2px; color: var(--muted2); font-size:12px; display:flex; justify-content:space-between; gap:10px}
-    .hoverTip .mini{
-      margin-top:8px;
-      display:flex; gap:8px; flex-wrap:wrap;
-    }
+    .hoverTip .mini{margin-top:8px; display:flex; gap:8px; flex-wrap:wrap}
     .miniPill{
       font-size:11px;
       padding:4px 8px;
       border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
-      color: var(--muted);
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.03);
+      color: rgba(15,23,42,.76);
       display:inline-flex; align-items:center; gap:8px;
+      font-weight:800;
     }
 
-    /* ===== Startup loading curtain (only at startup) ===== */
+    /* Loading curtain */
     .curtain{
       position:fixed; inset:0;
       display:flex; align-items:center; justify-content:center;
-      background: radial-gradient(900px 700px at 50% 30%, rgba(103,232,249,.10), transparent 65%),
-                  linear-gradient(180deg, rgba(6,7,10,.92), rgba(4,5,7,.92));
-      z-index: 999;
-      transition: opacity .28s ease, visibility .28s ease;
+      background: rgba(246,247,251,.90);
+      backdrop-filter: blur(10px);
+      z-index:999;
+      transition: opacity .25s ease, visibility .25s ease;
     }
-    .curtain.hide{opacity:0; visibility:hidden; pointer-events:none}
+    .curtain.hide{opacity:0;visibility:hidden;pointer-events:none}
     .loaderCard{
       width:min(560px, 92vw);
-      border-radius: 24px;
+      border-radius: 18px;
       padding: 16px 16px 18px;
-      background: linear-gradient(180deg, rgba(12,16,26,.80), rgba(8,10,14,.84));
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow: 0 30px 110px rgba(0,0,0,.70);
-      backdrop-filter: blur(22px);
+      background: rgba(255,255,255,.96);
+      border:1px solid rgba(12,18,34,.14);
+      box-shadow: 0 22px 70px rgba(12,18,34,.14);
     }
     .loaderTop{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.10);
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding-bottom:10px;border-bottom:1px solid rgba(12,18,34,.10);
     }
-    .loaderTop .left{display:flex; align-items:center; gap:12px}
+    .loaderTop .left{display:flex;align-items:center;gap:12px}
     .spinner{
-      width:18px; height:18px; border-radius:999px;
-      border:2px solid rgba(255,255,255,.22);
-      border-top-color: rgba(103,232,249,.92);
-      animation: spin .9s linear infinite;
+      width:18px;height:18px;border-radius:999px;
+      border:2px solid rgba(12,18,34,.18);
+      border-top-color: rgba(37,99,235,.80);
+      animation: spin .85s linear infinite;
     }
     @keyframes spin{to{transform:rotate(360deg)}}
-    .loaderTitle{font-weight:900; letter-spacing:.2px}
-    .loaderBody{margin-top:10px; color: var(--muted)}
-    .loaderHint{margin-top:8px; color: var(--muted2); font-size:12px}
+    .loaderTitle{font-weight:900}
+    .loaderBody{margin-top:10px;color:var(--muted)}
+    .loaderHint{margin-top:8px;color:var(--muted2);font-size:12px}
 
-    /* ===== Dialog ===== */
+    /* Dialog */
     dialog{
       width:min(760px, 92vw);
       border:none;
-      border-radius: 22px;
+      border-radius: 18px;
       padding:0;
-      background: linear-gradient(180deg, rgba(12,16,26,.92), rgba(8,10,14,.86));
-      color: var(--text);
-      box-shadow: 0 30px 120px rgba(0,0,0,.76);
+      background: rgba(255,255,255,.98);
+      color: var(--ink);
+      box-shadow: 0 26px 110px rgba(12,18,34,.18);
       overflow:hidden;
     }
-    dialog::backdrop{background: rgba(0,0,0,.66)}
+    dialog::backdrop{background: rgba(12,18,34,.45)}
     .dlgHead{
       padding:14px 16px;
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      border-bottom:1px solid rgba(12,18,34,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.92));
       font-weight:900;
     }
     .dlgBody{padding:14px 16px}
     code{
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.10);
+      background: rgba(15,23,42,.04);
+      border:1px solid rgba(12,18,34,.10);
       padding:2px 8px;
       border-radius: 10px;
     }
 
-    /* Leaflet controls – match theme */
+    /* Leaflet control theming */
     .leaflet-control-zoom, .leaflet-control-attribution{
-      border-radius: 14px !important;
-      border: 1px solid rgba(255,255,255,.12) !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(12,18,34,.14) !important;
       overflow:hidden !important;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 18px 50px rgba(0,0,0,.30);
-      background: rgba(10,14,22,.55) !important;
+      box-shadow: 0 12px 30px rgba(12,18,34,.10);
+      background: rgba(255,255,255,.92) !important;
     }
     .leaflet-control-zoom a{
       background: transparent !important;
-      color: #eaf2ff !important;
-      border-bottom: 1px solid rgba(255,255,255,.10) !important;
+      color: rgba(15,23,42,.82) !important;
+      border-bottom: 1px solid rgba(12,18,34,.10) !important;
+      font-weight:900;
     }
     .leaflet-control-zoom a:last-child{border-bottom:none !important}
-    .leaflet-control-zoom a:hover{background: rgba(255,255,255,.08) !important}
-    .leaflet-control-attribution{padding: 6px 10px !important; color: rgba(234,242,255,.70) !important}
+    .leaflet-control-zoom a:hover{background: rgba(15,23,42,.04) !important}
+    .leaflet-control-attribution{padding:6px 10px !important; color: rgba(82,98,122,.88) !important}
 
-    /* Responsive */
     @media (max-width: 980px){
       body{overflow:auto}
-      .wrap{grid-template-columns: 1fr; height:auto; min-height: calc(100vh - 68px)}
+      .wrap{grid-template-columns:1fr; height:auto; min-height: calc(100vh - 62px)}
       #map{height: 62vh}
       .sidebar{height:auto}
     }
@@ -479,7 +434,6 @@
 </head>
 
 <body>
-  <!-- Startup loading curtain -->
   <div id="curtain" class="curtain">
     <div class="loaderCard">
       <div class="loaderTop">
@@ -487,19 +441,19 @@
           <div class="spinner"></div>
           <div class="loaderTitle">Loading Turkey districts…</div>
         </div>
-        <div class="tag">v0.3</div>
+        <div class="badge">light UI</div>
       </div>
       <div id="loaderMsg" class="loaderBody">Fetching GeoJSON & population…</div>
-      <div class="loaderHint">Host via GitHub Pages (not <span class="mono">file://</span>) so fetch works reliably.</div>
+      <div class="loaderHint">Run via GitHub Pages (avoid <span class="mono">file://</span>) so fetch works.</div>
     </div>
   </div>
 
   <header class="topbar">
     <div class="brand">
-      <div class="mark" aria-hidden="true"></div>
+      <div class="logo" aria-hidden="true"></div>
       <div class="brandText">
-        <div class="title">Turkey Redistricter <span class="tag">redistricter-style</span></div>
-        <div class="sub">districts • elections • population • layers</div>
+        <div class="brandTitle">Turkey Redistricter <span class="badge">district view</span></div>
+        <div class="brandSub">hover + click select • elections • population • layers</div>
       </div>
     </div>
 
@@ -508,10 +462,10 @@
         <span>Layer</span>
         <div class="selectWrap">
           <select id="modeSelect">
-            <option value="election_winner">Election: winner (intensity)</option>
-            <option value="election_margin">Election: margin (aggressive)</option>
-            <option value="population_year">Population: year</option>
-            <option value="population_change">Population: change</option>
+            <option value="election_winner">Election: winner (margin → lighter)</option>
+            <option value="population_year">Population: total (green)</option>
+            <option value="population_change_abs">Population: change (red/green)</option>
+            <option value="population_change_pct">Population: change % (red/green)</option>
           </select>
         </div>
       </label>
@@ -557,6 +511,13 @@
         Fit
       </button>
 
+      <button id="clearBtn" class="btn btn-ghost" title="Clear selection (Esc)">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Clear
+      </button>
+
       <button id="helpBtn" class="btn btn-ghost" title="Help">
         <svg class="ico" viewBox="0 0 24 24" fill="none">
           <path d="M12 18h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
@@ -587,10 +548,10 @@
       <section class="card">
         <div class="cardHeader">
           <div class="cardTitle">District</div>
-          <div class="pill">hover</div>
+          <div class="pill" id="selPill">none</div>
         </div>
         <div class="cardBody">
-          <div id="hoverBox" class="muted small">Hover a district.</div>
+          <div id="districtBox" class="muted small">Hover a district or click to select.</div>
         </div>
       </section>
     </aside>
@@ -604,7 +565,6 @@
     <div class="dlgBody">
       <div class="muted">
         <ul>
-          <li>Loads all districts automatically.</li>
           <li>Required files in the same folder:
             <ul>
               <li><code>turkey-admin-level-6.geojson</code></li>
@@ -612,8 +572,9 @@
               <li>Election JSONs: <code>Edirne.json</code>, <code>Ankara.json</code>… (missing is OK)</li>
             </ul>
           </li>
-          <li>Turkish letter matching is normalized (İ/ı/Ş/Ğ/Ü/Ö/Ç).</li>
-          <li><b>Winner layer</b> uses margin to control intensity (close = muted, landslide = vivid).</li>
+          <li>Hover shows info; click locks selection. Press <b>Esc</b> or Clear to reset.</li>
+          <li>Population total: light→dark green. Change maps: red (decrease) / green (increase).</li>
+          <li>Election winner: smaller margins become lighter shades of the winner’s color.</li>
         </ul>
       </div>
     </div>
@@ -641,55 +602,40 @@
     ];
     const plateToProvince = new Map(PROVINCES.map(([n,p]) => [p,n]));
 
-    // Party colors (you can expand this anytime)
+    // Party colors (extend as needed)
     const PARTY_COLORS = new Map([
-      ["CHP", "#ff2d55"],
-      ["AK PARTİ", "#ffb000"],
-      ["MHP", "#b5172b"],
-      ["İYİ PARTİ", "#ffe100"],
-      ["YEŞİL SOL PARTİ", "#00d1b2"],
-      ["DEM PARTİ", "#00d1b2"],
-      ["TİP", "#ff0035"],
-      ["ZAFER PARTİSİ", "#3a86ff"],
-      ["YENİDEN REFAH", "#24d37e"],
-      ["SAADET", "#2ad36b"],
-      ["DEVA", "#4cc9f0"],
-      ["GELECEK", "#8a2be2"],
-      ["MEMLEKET", "#ff4d6d"],
+      ["CHP", "#e11d48"],
+      ["AK PARTİ", "#f59e0b"],
+      ["MHP", "#b91c1c"],
+      ["İYİ PARTİ", "#facc15"],
+      ["YEŞİL SOL PARTİ", "#10b981"],
+      ["DEM PARTİ", "#10b981"],
+      ["TİP", "#ef4444"],
+      ["ZAFER PARTİSİ", "#2563eb"],
+      ["YENİDEN REFAH", "#16a34a"],
+      ["SAADET", "#22c55e"],
+      ["DEVA", "#06b6d4"],
+      ["GELECEK", "#7c3aed"],
+      ["MEMLEKET", "#fb7185"],
     ]);
 
-    // ---------- Robust Turkish keying (fixes İ / combining dots etc.) ----------
-    const HAS_UNICODE_PROPS = (() => {
-      try { new RegExp("\\p{L}", "u"); return true; } catch { return false; }
-    })();
+    // --- Robust Turkish letter normalization (fixes İ + combining dot & friends) ---
+    const HAS_UNICODE_PROPS = (() => { try { new RegExp("\\p{L}", "u"); return true; } catch { return false; } })();
 
     function stripDiacritics(s){
-      // NFKD breaks Ş into S + combining; remove combining marks
-      return s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+      return String(s).normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
     }
-
     function keyify(s){
       if (s == null) return "";
       let x = String(s).trim();
-
-      // normalize “İ” issues + remove combining marks
       x = stripDiacritics(x);
-
-      // dotless i survives diacritic stripping → handle explicitly
-      x = x.replace(/ı/g, "i");
-
-      // normalize punctuation & whitespace
+      x = x.replace(/ı/g, "i"); // dotless i
       x = x.replace(/[’']/g, " ");
-      x = HAS_UNICODE_PROPS
-        ? x.replace(/[^\p{L}\p{N}]+/gu, " ")
-        : x.replace(/[^A-Za-z0-9]+/g, " ");
-
+      x = HAS_UNICODE_PROPS ? x.replace(/[^\p{L}\p{N}]+/gu, " ") : x.replace(/[^A-Za-z0-9]+/g, " ");
       x = x.replace(/\s+/g, " ").trim().toUpperCase();
       return x;
     }
-
     function asciiName(s){
-      // for file name candidates
       if (s == null) return "";
       let x = stripDiacritics(String(s));
       x = x.replace(/ı/g, "i");
@@ -705,13 +651,13 @@
       if (!digits) return null;
       return Number(digits);
     }
-
-    function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
     function formatInt(n){
       if (n == null || Number.isNaN(n)) return "—";
       return new Intl.NumberFormat("tr-TR").format(n);
     }
     function safe(v){ return (v==null || v==="") ? "—" : String(v); }
+    function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
+    function curve(t){ t=clamp01(t); return Math.pow(t, 0.65); } // punchy but not cartoon
 
     // Color helpers
     function lerp(a,b,t){ return a + (b-a)*t; }
@@ -731,18 +677,18 @@
     function hashColor(str){
       let h=0;
       for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i))>>>0;
-      const r = 90 + (h & 0x7f);
-      const g = 90 + ((h>>8) & 0x7f);
-      const b = 90 + ((h>>16) & 0x7f);
+      const r = 80 + (h & 0x7f);
+      const g = 80 + ((h>>8) & 0x7f);
+      const b = 80 + ((h>>16) & 0x7f);
       return rgbToHex(r,g,b);
     }
     function colorForParty(name){
-      if (!name) return "rgba(255,255,255,.08)";
+      if (!name) return "#cbd5e1";
       const clean = String(name).trim();
       return PARTY_COLORS.get(clean) ?? hashColor(clean);
     }
 
-    // Robust URL resolution (fixes “string did not match expected pattern” cases)
+    // Robust URL resolution (prevents “expected pattern” issues)
     function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
     async function fetchText(rel){
       const url = resolveUrl(rel);
@@ -772,8 +718,10 @@
       el.yearBWrap = document.getElementById("yearBWrap");
       el.legend = document.getElementById("legend");
       el.legendPill = document.getElementById("legendPill");
-      el.hoverBox = document.getElementById("hoverBox");
+      el.districtBox = document.getElementById("districtBox");
+      el.selPill = document.getElementById("selPill");
       el.fitBtn = document.getElementById("fitBtn");
+      el.clearBtn = document.getElementById("clearBtn");
       el.helpBtn = document.getElementById("helpBtn");
       el.helpDialog = document.getElementById("helpDialog");
       el.closeHelpBtn = document.getElementById("closeHelpBtn");
@@ -792,16 +740,19 @@
       year: 2024,
       yearA: 2014,
       yearB: 2024,
+
+      hoverUk: null,
+      selectedUk: null,
     };
 
     // Map
     let map, districtLayer, canvasRenderer;
 
     function initMap(){
-      map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([39.0, 35.0], 6);
+      map = L.map("map", { zoomControl:true, preferCanvas:true }).setView([39.0, 35.0], 6);
 
-      // Dark basemap
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      // Light basemap (clean)
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
       }).addTo(map);
@@ -815,89 +766,42 @@
       }).addTo(map);
     }
 
-    // Intensity curve for “more extreme” map
-    function curve(t){
-      // make small differences pop
-      t = clamp01(t);
-      return Math.pow(t, 0.55);
-    }
-
-    // More aggressive borders on hover for “Redistricter feel”
-    function featureStyle(feature){
-      const base = colorForFeature(feature);
+    function styleBase(feature){
       return {
-        color: "rgba(255,255,255,.22)",
-        weight: 1.0,
+        color: "rgba(15,23,42,.28)",
+        weight: 0.9,
         opacity: 1,
-        fillColor: base,
-        fillOpacity: 0.86,
+        fillColor: colorForFeature(feature),
+        fillOpacity: 0.92
       };
     }
 
-    function showHoverTip(feature, ev){
-      const uk = feature.properties.__uk;
-      const j = state.districtData.get(uk);
-      const prov = j?.provName ?? "";
-      const dist = j?.distName ?? "";
-
-      const e = j?.election;
-      const pop = j?.pop?.[state.year] ?? null;
-
-      const winner = e?.__winner ?? null;
-      const mShare = e?.__marginShare ?? null;
-
-      const dot = winner ? `<span class="winnerDot" style="background:${colorForParty(winner)}"></span>` : "";
-
-      el.hoverTip.innerHTML = `
-        <div class="t1">${dist}</div>
-        <div class="t2"><span>${prov}</span><span class="mono">${pop==null?"—":formatInt(pop)}</span></div>
-        <div class="mini">
-          ${winner ? `<span class="miniPill">${dot}<b>${winner}</b></span>` : `<span class="miniPill">No election</span>`}
-          ${mShare!=null ? `<span class="miniPill"><span class="mono">±</span>${(100*mShare).toFixed(1)}%</span>` : ``}
-        </div>
-      `;
-
-      const rect = el.mapDiv.getBoundingClientRect();
-      const x = ev.originalEvent.clientX - rect.left;
-      const y = ev.originalEvent.clientY - rect.top;
-
-      el.hoverTip.style.left = `${x}px`;
-      el.hoverTip.style.top  = `${y}px`;
-      el.hoverTip.style.display = "block";
+    function styleHover(){
+      return {
+        weight: 2.6,
+        color: "rgba(14,165,233,.95)",
+        fillOpacity: 0.96
+      };
     }
 
-    function moveHoverTip(ev){
-      const rect = el.mapDiv.getBoundingClientRect();
-      const x = ev.originalEvent.clientX - rect.left;
-      const y = ev.originalEvent.clientY - rect.top;
-      el.hoverTip.style.left = `${x}px`;
-      el.hoverTip.style.top  = `${y}px`;
+    function styleSelected(){
+      return {
+        weight: 3.2,
+        color: "rgba(37,99,235,.98)",
+        fillOpacity: 0.98
+      };
     }
 
-    function hideHoverTip(){
-      el.hoverTip.style.display = "none";
+    function featureStyle(feature){
+      // base style; selection/hover adjustments happen via setStyle on events
+      return styleBase(feature);
     }
 
-    function onEachDistrict(feature, layer){
-      layer.on({
-        mouseover: (ev) => {
-          // more dramatic hover
-          layer.setStyle({
-            weight: 2.8,
-            color: "rgba(255,255,255,.92)",
-            fillOpacity: 0.95
-          });
-          updateHover(feature);
-          showHoverTip(feature, ev);
-        },
-        mousemove: (ev) => {
-          moveHoverTip(ev);
-        },
-        mouseout: () => {
-          districtLayer.resetStyle(layer);
-          el.hoverBox.innerHTML = `<div class="muted small">Hover a district.</div>`;
-          hideHoverTip();
-        }
+    function refreshFeatureStyles(){
+      districtLayer.eachLayer(layer => {
+        const uk = layer.feature?.properties?.__uk;
+        layer.setStyle(styleBase(layer.feature));
+        if (uk && state.selectedUk === uk) layer.setStyle(styleSelected());
       });
     }
 
@@ -913,8 +817,6 @@
 
         const row = { ...r };
         row.__district = (r["İlçe Adı"] ?? r["Ilçe Adı"] ?? r["Ilce Adı"] ?? r["İlçe Adi"] ?? "").toString().trim();
-
-        // KEY FIX: normalize Turkish letters + combining marks
         row.__distKey = keyify(row.__district);
 
         row.__registered = parseIntTR(r["Kayıtlı Seçmen Sayısı"]);
@@ -982,7 +884,6 @@
           }
         }
       }
-
       await Promise.all(Array.from({length: concurrency}, worker));
     }
 
@@ -1006,212 +907,182 @@
       });
     }
 
-    // Coloring
-    function numericColor(val, kind){
-      if (val==null || Number.isNaN(val)) return "rgba(255,255,255,.06)";
-
+    // Scaling helper: get ranges for current layer
+    function getLayerStats(){
       const values = [];
+      const pctValues = [];
       for (const j of state.districtData.values()){
+        const pop = j.pop;
+        if (!pop) continue;
+        const a = pop[state.yearA], b = pop[state.yearB];
         if (state.mode === "population_year"){
-          const v = j.pop?.[state.year];
+          const v = pop[state.year];
           if (v!=null) values.push(v);
-        } else if (state.mode === "population_change"){
-          const a=j.pop?.[state.yearA], b=j.pop?.[state.yearB];
+        } else if (state.mode === "population_change_abs"){
           if (a!=null && b!=null) values.push(b-a);
+        } else if (state.mode === "population_change_pct"){
+          if (a!=null && b!=null && a !== 0) pctValues.push((b-a)/a);
         }
       }
-      if (!values.length) return "rgba(255,255,255,.06)";
-      values.sort((a,b)=>a-b);
-      const min = values[0], max = values[values.length-1];
-      if (min === max) return "#67e8f9";
+      values.sort((x,y)=>x-y);
+      pctValues.sort((x,y)=>x-y);
 
-      if (kind === "seq"){
-        let t = (val - min) / (max - min);
-        t = curve(t);
-        // much more dramatic: violet -> aqua, with dark floor
-        const mid = mixHex("#7c3aed", "#22d3ee", t);
-        return mixHex("#0b1220", mid, 0.92);
-      } else {
-        const m = Math.max(Math.abs(min), Math.abs(max));
-        let t = clamp01((val + m) / (2*m));
-        // non-linear to exaggerate tails
-        t = t < 0.5 ? 0.5 * curve(t/0.5) : 0.5 + 0.5 * curve((t-0.5)/0.5);
-
-        if (t < 0.5) {
-          // decrease: hot rose
-          const u = t/0.5;
-          const c = mixHex("#ff2d55", "#0b1220", u);
-          return mixHex("#0b1220", c, 0.96);
-        } else {
-          // increase: bright aqua
-          const u = (t-0.5)/0.5;
-          const c = mixHex("#0b1220", "#22d3ee", u);
-          return mixHex("#0b1220", c, 0.96);
-        }
-      }
+      return {
+        popMin: values.length ? values[0] : null,
+        popMax: values.length ? values[values.length-1] : null,
+        changeAbsMax: values.length ? Math.max(Math.abs(values[0]), Math.abs(values[values.length-1])) : null,
+        pctMin: pctValues.length ? pctValues[0] : null,
+        pctMax: pctValues.length ? pctValues[pctValues.length-1] : null,
+        changePctMax: pctValues.length ? Math.max(Math.abs(pctValues[0]), Math.abs(pctValues[pctValues.length-1])) : null,
+      };
     }
 
+    // Color for features per layer
     function colorForFeature(feature){
       const uk = feature.properties.__uk;
       const joined = state.districtData.get(uk);
 
+      // Missing data fallback
+      if (!joined) return "#e5e7eb";
+
+      // Population total (green, light->dark)
       if (state.mode === "population_year"){
-        const val = joined?.pop?.[state.year];
-        return numericColor(val, "seq");
-      }
-      if (state.mode === "population_change"){
-        const a = joined?.pop?.[state.yearA];
-        const b = joined?.pop?.[state.yearB];
-        const val = (a!=null && b!=null) ? (b - a) : null;
-        return numericColor(val, "div");
+        const v = joined.pop?.[state.year];
+        if (v==null) return "#eef2f7";
+        const {popMin, popMax} = getLayerStats();
+        if (popMin==null || popMax==null || popMin===popMax) return "#34a853";
+        let t = (v - popMin) / (popMax - popMin);
+        t = curve(t);
+        return mixHex(getCss("--greenL"), getCss("--greenD"), t);
       }
 
-      const e = joined?.election;
-      if (!e) return "rgba(255,255,255,.06)";
+      // Population change (absolute)
+      if (state.mode === "population_change_abs"){
+        const pop = joined.pop;
+        const a = pop?.[state.yearA], b = pop?.[state.yearB];
+        if (a==null || b==null) return "#eef2f7";
+        const delta = b - a;
+        const {changeAbsMax} = getLayerStats();
+        if (!changeAbsMax) return "#eef2f7";
+        if (delta === 0) return "#f3f4f6";
+        const t = curve(Math.min(1, Math.abs(delta) / changeAbsMax));
+        return delta < 0
+          ? mixHex(getCss("--redL"), getCss("--redD"), t)
+          : mixHex(getCss("--greenL"), getCss("--greenD"), t);
+      }
+
+      // Population change (percentage)
+      if (state.mode === "population_change_pct"){
+        const pop = joined.pop;
+        const a = pop?.[state.yearA], b = pop?.[state.yearB];
+        if (a==null || b==null || a===0) return "#eef2f7";
+        const pct = (b - a) / a;
+        const {changePctMax} = getLayerStats();
+        if (!changePctMax) return "#eef2f7";
+        if (pct === 0) return "#f3f4f6";
+        const t = curve(Math.min(1, Math.abs(pct) / changePctMax));
+        return pct < 0
+          ? mixHex(getCss("--redL"), getCss("--redD"), t)
+          : mixHex(getCss("--greenL"), getCss("--greenD"), t);
+      }
+
+      // Election winner (margin smaller => lighter shade of party color)
+      const e = joined.election;
+      if (!e) return "#eef2f7";
 
       const base = colorForParty(e.__winner);
       const m = e.__marginShare ?? 0;
 
-      if (state.mode === "election_winner"){
-        // EXTREME: intensity by margin.
-        // close races: muted towards dark; landslides: near pure base color.
-        let t = clamp01(m / 0.22);   // 22% lead ~ "maxed"
-        t = curve(t);
-
-        // near-neutral for close races
-        const muted = mixHex("#0b1220", base, 0.35);
-        // vivid for landslides
-        const vivid = mixHex("#0b1220", base, 0.98);
-
-        return mixHex(muted, vivid, t);
-      }
-
-      // election_margin: even more aggressive contrast.
-      // close => pale (almost white-tinted), huge margins => deep saturated.
+      // Scale: 0% margin = very light tint; 25%+ margin ≈ near full color
       let t = clamp01(m / 0.25);
       t = curve(t);
 
-      const pale = mixHex("#ffffff", base, 0.55);  // readable on dark
-      const deep = mixHex("#0b1220", base, 0.98);
-
-      return mixHex(pale, deep, t);
+      // Keep readable on light map: never pure white
+      const lightTint = mixHex("#ffffff", base, 0.30);   // very light party tint
+      const strong    = mixHex("#ffffff", base, 0.92);   // strong party color
+      return mixHex(lightTint, strong, t);
     }
 
-    // Legend render
-    function renderLegend(){
-      el.legend.innerHTML = "";
-
-      const pill =
-        state.mode === "election_winner" ? "Election — winner (intensity)" :
-        state.mode === "election_margin" ? "Election — margin (aggressive)" :
-        state.mode === "population_year" ? `Population — ${state.year}` :
-        `Population — change ${state.yearA}→${state.yearB}`;
-
-      el.legendPill.textContent = pill;
-
-      if (state.mode === "election_winner" || state.mode === "election_margin"){
-        // Top parties by district count
-        const wins = new Map();
-        for (const j of state.districtData.values()){
-          const w = j.election?.__winner;
-          if (!w) continue;
-          wins.set(w, (wins.get(w) ?? 0) + 1);
-        }
-
-        const top = [...wins.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 12);
-        if (!top.length){
-          el.legend.innerHTML = `<div class="muted small">No election files loaded (or missing / misnamed).</div>`;
-          return;
-        }
-
-        for (const [party, n] of top){
-          const item = document.createElement("div");
-          item.className = "legendItem";
-
-          const sw = document.createElement("div");
-          sw.className = "swatch";
-          sw.style.background = colorForParty(party);
-
-          const label = document.createElement("div");
-          label.className = "legendLabel";
-          label.innerHTML = `<b>${party}</b><span>${n} districts</span>`;
-
-          item.appendChild(sw);
-          item.appendChild(label);
-          el.legend.appendChild(item);
-        }
-
-        const note = document.createElement("div");
-        note.className = "muted2 small";
-        note.style.marginTop = "10px";
-        note.textContent =
-          state.mode === "election_winner"
-            ? "Close races are muted; landslides become vivid."
-            : "Low margin is pale; high margin is deep/saturated.";
-        el.legend.appendChild(note);
-
-        return;
-      }
-
-      // numeric legend
-      const values = [];
-      for (const j of state.districtData.values()){
-        if (state.mode === "population_year"){
-          const v = j.pop?.[state.year];
-          if (v!=null) values.push(v);
-        } else if (state.mode === "population_change"){
-          const a=j.pop?.[state.yearA], b=j.pop?.[state.yearB];
-          if (a!=null && b!=null) values.push(b-a);
-        }
-      }
-      if (!values.length){
-        el.legend.innerHTML = `<div class="muted small">No population matched.</div>`;
-        return;
-      }
-      values.sort((a,b)=>a-b);
-      const min = values[0], max = values[values.length-1];
-
-      const wrap = document.createElement("div");
-      wrap.className = "gradWrap";
-
-      const bar = document.createElement("div");
-      bar.className = "gradBar" + (state.mode === "population_change" ? " div" : "");
-      wrap.appendChild(bar);
-
-      const meta = document.createElement("div");
-      meta.className = "gradMeta mono";
-      meta.innerHTML = `<div>${formatInt(min)}</div><div>${formatInt(max)}</div>`;
-      wrap.appendChild(meta);
-
-      el.legend.appendChild(wrap);
-
-      const note = document.createElement("div");
-      note.className = "muted2 small";
-      note.style.marginTop = "10px";
-      note.textContent = state.mode === "population_change"
-        ? "Left = decrease, right = increase."
-        : "Right = higher population.";
-      el.legend.appendChild(note);
+    function getCss(name){
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     }
 
-    // Hover panel
-    function updateHover(feature){
+    // Hover tooltip
+    function showHoverTip(feature, ev){
       const uk = feature.properties.__uk;
-      const joined = state.districtData.get(uk);
+      const j = state.districtData.get(uk);
+      if (!j) return;
 
-      const provName = joined?.provName ?? "—";
-      const distName = joined?.distName ?? "—";
-      const pop = joined?.pop;
-      const e = joined?.election;
+      const prov = j.provName ?? "";
+      const dist = j.distName ?? "";
+
+      const popSel = j.pop?.[state.year] ?? null;
+
+      const e = j.election;
+      const winner = e?.__winner ?? null;
+      const mShare = e?.__marginShare ?? null;
+
+      const dot = winner ? `<span class="winnerDot" style="background:${colorForParty(winner)}"></span>` : "";
+
+      el.hoverTip.innerHTML = `
+        <div class="t1">${dist}</div>
+        <div class="t2"><span>${prov}</span><span class="mono">${popSel==null?"—":formatInt(popSel)}</span></div>
+        <div class="mini">
+          ${winner ? `<span class="miniPill">${dot}<b>${winner}</b></span>` : `<span class="miniPill">No election</span>`}
+          ${mShare!=null ? `<span class="miniPill"><span class="mono">±</span>${(100*mShare).toFixed(1)}%</span>` : ``}
+        </div>
+      `;
+
+      const rect = el.mapDiv.getBoundingClientRect();
+      const x = ev.originalEvent.clientX - rect.left;
+      const y = ev.originalEvent.clientY - rect.top;
+
+      el.hoverTip.style.left = `${x}px`;
+      el.hoverTip.style.top  = `${y}px`;
+      el.hoverTip.style.display = "block";
+    }
+
+    function moveHoverTip(ev){
+      const rect = el.mapDiv.getBoundingClientRect();
+      const x = ev.originalEvent.clientX - rect.left;
+      const y = ev.originalEvent.clientY - rect.top;
+      el.hoverTip.style.left = `${x}px`;
+      el.hoverTip.style.top  = `${y}px`;
+    }
+    function hideHoverTip(){ el.hoverTip.style.display = "none"; }
+
+    // District panel render (works for hover or selection)
+    function renderDistrictPanel(uk, modeLabel){
+      const j = state.districtData.get(uk);
+      if (!j){
+        el.districtBox.innerHTML = `<div class="muted small">No data.</div>`;
+        return;
+      }
+
+      const provName = j.provName ?? "—";
+      const distName = j.distName ?? "—";
+      const pop = j.pop;
+      const e = j.election;
+
+      el.selPill.textContent = modeLabel;
 
       let html = `
-        <div class="headline"><div>${distName}</div></div>
-        <div class="subline">${provName}</div>
+        <div class="headline">
+          <div>
+            <div class="hTitle">${distName}</div>
+            <div class="hSub">${provName}</div>
+          </div>
+        </div>
         <div class="sep"></div>
       `;
 
+      // Population section
       html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Population</div>`;
       if (pop){
+        const a = pop[state.yearA], b = pop[state.yearB];
+        const delta = (a!=null && b!=null) ? (b-a) : null;
+        const pct = (a!=null && b!=null && a!==0) ? ((b-a)/a) : null;
+
         html += `
           <div class="kvs">
             <div class="k">2014</div><div class="v mono">${formatInt(pop[2014])}</div>
@@ -1219,21 +1090,16 @@
             <div class="k">2024</div><div class="v mono">${formatInt(pop[2024])}</div>
           </div>
           <div class="chipRow">
-            ${
-              state.mode === "population_change"
-                ? (() => {
-                    const a = pop[state.yearA], b = pop[state.yearB];
-                    const delta = (a!=null && b!=null) ? (b-a) : null;
-                    return `<span class="chip"><span class="mono">Δ</span>${state.yearA}→${state.yearB}: <b>${formatInt(delta)}</b></span>`;
-                  })()
-                : `<span class="chip">Selected <span class="mono">${state.year}</span>: <b>${formatInt(pop[state.year])}</b></span>`
-            }
+            <span class="chip">Selected <span class="mono">${state.year}</span>: <b>${formatInt(pop[state.year])}</b></span>
+            ${delta!=null ? `<span class="chip"><span class="mono">Δ</span>${state.yearA}→${state.yearB}: <b>${formatInt(delta)}</b></span>` : ``}
+            ${pct!=null ? `<span class="chip"><span class="mono">%</span>${state.yearA}→${state.yearB}: <b>${(pct*100).toFixed(1)}%</b></span>` : ``}
           </div>
         `;
       } else {
         html += `<div class="muted small" style="margin-top:8px">—</div>`;
       }
 
+      // Election section
       html += `<div class="sep"></div>`;
       html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Election</div>`;
 
@@ -1269,7 +1135,7 @@
               <div class="barRow">
                 <div class="barName">${party}</div>
                 <div class="barTrack">
-                  <div class="barFill" style="width:${(100*share).toFixed(1)}%; background: linear-gradient(90deg, ${c}, rgba(255,255,255,.16));"></div>
+                  <div class="barFill" style="width:${(100*share).toFixed(1)}%; background: linear-gradient(90deg, ${mixHex("#ffffff", c, 0.85)}, ${mixHex("#ffffff", c, 0.55)});"></div>
                 </div>
                 <div class="barVal mono">${(100*share).toFixed(1)}%</div>
               </div>
@@ -1281,45 +1147,207 @@
         html += `<div class="muted small" style="margin-top:10px">No election match for this district.</div>`;
       }
 
-      el.hoverBox.innerHTML = html;
+      el.districtBox.innerHTML = html;
+    }
+
+    function clearSelection(){
+      state.selectedUk = null;
+      el.selPill.textContent = "none";
+      el.districtBox.innerHTML = `<div class="muted small">Hover a district or click to select.</div>`;
+      refreshFeatureStyles();
+    }
+
+    // Feature interaction
+    function onEachDistrict(feature, layer){
+      const uk = feature.properties.__uk;
+
+      layer.on({
+        mouseover: (ev) => {
+          state.hoverUk = uk;
+
+          // hover styling only if not selected
+          if (state.selectedUk !== uk){
+            layer.setStyle(styleHover());
+          }
+
+          // tooltip + hover panel (unless selection exists)
+          showHoverTip(feature, ev);
+
+          if (!state.selectedUk){
+            renderDistrictPanel(uk, "hover");
+          }
+        },
+        mousemove: (ev) => {
+          moveHoverTip(ev);
+        },
+        mouseout: () => {
+          state.hoverUk = null;
+          hideHoverTip();
+
+          // revert hover styling unless selected
+          if (state.selectedUk !== uk){
+            layer.setStyle(styleBase(feature));
+          }
+
+          // if no selection, reset panel
+          if (!state.selectedUk){
+            el.selPill.textContent = "none";
+            el.districtBox.innerHTML = `<div class="muted small">Hover a district or click to select.</div>`;
+          }
+        },
+        click: () => {
+          // toggle select
+          if (state.selectedUk === uk){
+            clearSelection();
+            return;
+          }
+          state.selectedUk = uk;
+          refreshFeatureStyles();
+          renderDistrictPanel(uk, "selected");
+        }
+      });
+    }
+
+    // Legend
+    function renderLegend(){
+      el.legend.innerHTML = "";
+
+      const pill =
+        state.mode === "election_winner" ? "Election — winner" :
+        state.mode === "population_year" ? `Population — ${state.year}` :
+        state.mode === "population_change_abs" ? `Population Δ — ${state.yearA}→${state.yearB}` :
+        `Population % — ${state.yearA}→${state.yearB}`;
+
+      el.legendPill.textContent = pill;
+
+      if (state.mode === "election_winner"){
+        const wins = new Map();
+        for (const j of state.districtData.values()){
+          const w = j.election?.__winner;
+          if (!w) continue;
+          wins.set(w, (wins.get(w) ?? 0) + 1);
+        }
+
+        const top = [...wins.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 12);
+        if (!top.length){
+          el.legend.innerHTML = `<div class="muted small">No election files loaded (or missing / misnamed).</div>`;
+          return;
+        }
+
+        for (const [party, n] of top){
+          const item = document.createElement("div");
+          item.className = "legendItem";
+
+          const sw = document.createElement("div");
+          sw.className = "swatch";
+          sw.style.background = colorForParty(party);
+
+          const label = document.createElement("div");
+          label.className = "legendLabel";
+          label.innerHTML = `<b>${party}</b><span>${n} districts</span>`;
+
+          item.appendChild(sw);
+          item.appendChild(label);
+          el.legend.appendChild(item);
+        }
+
+        const note = document.createElement("div");
+        note.className = "muted2 small";
+        note.style.marginTop = "10px";
+        note.textContent = "Smaller margin → lighter shade of the winner’s color.";
+        el.legend.appendChild(note);
+        return;
+      }
+
+      const stats = getLayerStats();
+
+      const wrap = document.createElement("div");
+      wrap.className = "gradWrap";
+
+      const bar = document.createElement("div");
+      bar.className = "gradBar";
+      if (state.mode === "population_change_abs") bar.className = "gradBar divAbs";
+      if (state.mode === "population_change_pct") bar.className = "gradBar divPct";
+      wrap.appendChild(bar);
+
+      const meta = document.createElement("div");
+      meta.className = "gradMeta mono";
+
+      if (state.mode === "population_year"){
+        meta.innerHTML = `<div>${formatInt(stats.popMin)}</div><div>${formatInt(stats.popMax)}</div>`;
+      } else if (state.mode === "population_change_abs"){
+        const m = stats.changeAbsMax ?? 0;
+        meta.innerHTML = `<div>-${formatInt(m)}</div><div>0</div><div>+${formatInt(m)}</div>`;
+        meta.style.justifyContent = "space-between";
+      } else {
+        const m = stats.changePctMax ?? 0;
+        meta.innerHTML = `<div>${(-m*100).toFixed(1)}%</div><div>0%</div><div>${(m*100).toFixed(1)}%</div>`;
+        meta.style.justifyContent = "space-between";
+      }
+      wrap.appendChild(meta);
+
+      el.legend.appendChild(wrap);
+
+      const note = document.createElement("div");
+      note.className = "muted2 small";
+      note.style.marginTop = "10px";
+      note.textContent =
+        state.mode === "population_year" ? "Light green = smaller, dark green = larger." :
+        state.mode === "population_change_abs" ? "Red = decrease, green = increase." :
+        "Red = % decrease, green = % increase.";
+      el.legend.appendChild(note);
     }
 
     // UI logic
     function renderModeYearVisibility(){
-      const showChange = (state.mode === "population_change");
-      el.yearWrap.style.display = showChange ? "none" : "flex";
-      el.yearAWrap.style.display = showChange ? "flex" : "none";
-      el.yearBWrap.style.display = showChange ? "flex" : "none";
+      const isYear = (state.mode === "population_year");
+      const isChange = (state.mode === "population_change_abs" || state.mode === "population_change_pct");
+
+      el.yearWrap.style.display = isYear ? "flex" : "none";
+      el.yearAWrap.style.display = isChange ? "flex" : "none";
+      el.yearBWrap.style.display = isChange ? "flex" : "none";
     }
 
     function wireUI(){
       el.modeSelect.addEventListener("change", () => {
         state.mode = el.modeSelect.value;
         renderModeYearVisibility();
-        districtLayer.setStyle(featureStyle);
+        refreshFeatureStyles();
         renderLegend();
+
+        // if a selection exists, refresh its panel label content (still selected)
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
 
       el.yearSelect.addEventListener("change", () => {
         state.year = Number(el.yearSelect.value);
-        districtLayer.setStyle(featureStyle);
+        refreshFeatureStyles();
         renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
 
       el.yearASelect.addEventListener("change", () => {
         state.yearA = Number(el.yearASelect.value);
-        districtLayer.setStyle(featureStyle);
+        refreshFeatureStyles();
         renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
 
       el.yearBSelect.addEventListener("change", () => {
         state.yearB = Number(el.yearBSelect.value);
-        districtLayer.setStyle(featureStyle);
+        refreshFeatureStyles();
         renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
 
       el.fitBtn.addEventListener("click", () => {
         try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
+      });
+
+      el.clearBtn.addEventListener("click", clearSelection);
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") clearSelection();
       });
 
       el.helpBtn.addEventListener("click", () => el.helpDialog.showModal());
@@ -1328,7 +1356,7 @@
       renderModeYearVisibility();
     }
 
-    // Load all
+    // Load everything
     async function loadAll(){
       el.loaderMsg.textContent = "Fetching GeoJSON & population…";
       const [geo, popRows] = await Promise.all([
@@ -1336,7 +1364,7 @@
         fetchCsv(FILES.POPCSV),
       ]);
 
-      // population index (KEY FIX: keyify)
+      // population index (keyify)
       const pop = {};
       for (const row of popRows){
         const prov = keyify(row.Province ?? row.province ?? row.PROVINCE);
@@ -1351,7 +1379,7 @@
       }
       state.pop = pop;
 
-      // features (KEY FIX: keyify district names)
+      // prepare features
       const features = (geo.features || [])
         .filter(f => (f.properties?.admin_level === "6" || f.properties?.admin_level === 6))
         .map(f => {
@@ -1379,17 +1407,18 @@
       districtLayer.addData(features);
 
       rebuildDistrictDataIndex();
-      districtLayer.setStyle(featureStyle);
+      refreshFeatureStyles();
 
       try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
 
       renderLegend();
 
+      // elections
       el.loaderMsg.textContent = "Loading election files (missing files are OK)…";
       await loadAllElections();
 
       rebuildDistrictDataIndex();
-      districtLayer.setStyle(featureStyle);
+      refreshFeatureStyles();
       renderLegend();
 
       el.curtain.classList.add("hide");
