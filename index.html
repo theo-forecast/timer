@@ -5,28 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Turkey Redistricter</title>
 
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     *{box-sizing:border-box}
     :root{
-      --bg:#0b0f14;
-      --panel:#0f1620;
-      --panel2:#0c121a;
-      --text:#e7eef7;
-      --muted:#9fb0c4;
-      --border:rgba(255,255,255,.08);
-      --shadow:0 10px 30px rgba(0,0,0,.35);
-      --accent:#6ae4ff;
+      --bg:#0b0f14; --panel:#0f1620; --panel2:#0c121a;
+      --text:#e7eef7; --muted:#9fb0c4; --border:rgba(255,255,255,.08);
+      --shadow:0 10px 30px rgba(0,0,0,.35); --accent:#6ae4ff;
     }
     html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-    .topbar{
-      display:flex;align-items:center;justify-content:space-between;
-      gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);
-      background:linear-gradient(180deg,var(--panel),var(--panel2));
-      position:sticky;top:0;z-index:10;
-    }
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg,var(--panel),var(--panel2));position:sticky;top:0;z-index:10;}
     .brand{display:flex;align-items:center;gap:10px;min-width:240px}
     .dot{width:12px;height:12px;border-radius:999px;background:var(--accent);box-shadow:0 0 18px rgba(106,228,255,.5)}
     .title{font-weight:700;letter-spacing:.2px}
@@ -34,27 +24,17 @@
     .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end;justify-content:flex-end}
     .ctl{display:flex;flex-direction:column;gap:4px}
     .ctl span{font-size:11px;color:var(--muted)}
-    select{
-      background:#0b1119;color:var(--text);border:1px solid var(--border);
-      padding:8px 10px;border-radius:10px;min-width:170px;outline:none;
-    }
+    select{background:#0b1119;color:var(--text);border:1px solid var(--border);padding:8px 10px;border-radius:10px;min-width:170px;outline:none;}
     .main{display:grid;grid-template-columns:1fr 360px;gap:12px;padding:12px;height:calc(100vh - 62px)}
     #map{height:100%;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
     .sidebar{display:flex;flex-direction:column;gap:12px;height:100%;overflow:auto;padding-right:4px}
-    .card{
-      background:linear-gradient(180deg,var(--panel),var(--panel2));
-      border:1px solid var(--border);border-radius:14px;padding:12px;
-      box-shadow:var(--shadow)
-    }
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:var(--shadow)}
     .cardTitle{font-weight:700;margin-bottom:8px}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
     .small{font-size:12px}
     .muted{color:var(--muted)}
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
-    .btn{
-      background:#132133;color:var(--text);border:1px solid var(--border);
-      padding:8px 10px;border-radius:10px;cursor:pointer;
-    }
+    .btn{background:#132133;color:var(--text);border:1px solid var(--border);padding:8px 10px;border-radius:10px;cursor:pointer;}
     .btn:hover{border-color:rgba(255,255,255,.18)}
     .btn-ghost{background:transparent}
     .fileBtn{position:relative;overflow:hidden}
@@ -65,26 +45,18 @@
     .regions{display:flex;flex-direction:column;gap:8px;margin-top:10px}
     .region{border:1px solid var(--border);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
     .regionTop{display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .regionTop input[type="text"]{
-      width:100%; background:#0b1119;color:var(--text);
-      border:1px solid var(--border);border-radius:10px;padding:6px 8px
-    }
+    .regionTop input[type="text"]{width:100%;background:#0b1119;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:6px 8px}
     .regionMeta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
     .metaK{color:var(--muted);font-size:11px}
     .metaV{font-size:12px}
-    #helpDialog{
-      width:min(720px, 92vw);
-      border:1px solid var(--border);
-      border-radius:16px;
-      background:linear-gradient(180deg,var(--panel),var(--panel2));
-      color:var(--text);
-      box-shadow:var(--shadow);
-    }
+    #helpDialog{width:min(720px, 92vw);border:1px solid var(--border);border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--panel2));color:var(--text);box-shadow:var(--shadow);}
     #helpDialog::backdrop{background:rgba(0,0,0,.6)}
     #helpDialog code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px;border:1px solid var(--border)}
-    /* Leaflet tweaks */
     .leaflet-control-attribution{background:rgba(0,0,0,.4)!important;color:rgba(255,255,255,.75)!important;border-radius:10px!important;border:1px solid var(--border)!important}
     .leaflet-container{background:#071018}
+    .diag{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+    .ok{color:#8ef0b0}
+    .bad{color:#ff9aa2}
   </style>
 </head>
 
@@ -181,6 +153,7 @@
       <section class="card">
         <div class="cardTitle">Status</div>
         <div id="statusBox" class="mono small">Loading…</div>
+        <div id="diagBox" class="mono small diag"></div>
       </section>
     </aside>
   </main>
@@ -188,24 +161,20 @@
   <dialog id="helpDialog">
     <h3>How to use</h3>
     <ul>
-      <li>This loads <b>all districts</b> automatically.</li>
-      <li><b>Layer:</b> winner, margin, population, change.</li>
-      <li><b>Click district:</b> select for region building.</li>
       <li>Files required next to this HTML:
         <ul>
           <li><code>turkey-admin-level-6.geojson</code></li>
           <li><code>province_district_2014_2019_2024.csv</code></li>
-          <li>Election JSONs like <code>Edirne.json</code>, <code>Ankara.json</code>… (missing is OK)</li>
+          <li>Election JSONs: <code>Edirne.json</code>, <code>Ankara.json</code>… (missing is OK)</li>
         </ul>
       </li>
-      <li>If you see <b>Load failed</b>, you probably opened with <code>file://</code>. Use GitHub Pages or a local server.</li>
+      <li>If you see load errors: check the <b>Status → Diagnostics</b> panel (it shows the exact URL it tried).</li>
     </ul>
     <div class="row" style="justify-content:flex-end; margin-top:12px;">
       <button id="closeHelpBtn" class="btn">Close</button>
     </div>
   </dialog>
 
-  <!-- Dependencies (must be before our script) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
@@ -213,13 +182,14 @@
   (function(){
     "use strict";
 
-    const CONFIG = {
-      GEOJSON_PATH: "./turkey-admin-level-6.geojson",
-      POP_CSV_PATH: "./province_district_2014_2019_2024.csv",
-      ELECTION_PATH_PRIMARY: (provinceName) => `./${provinceName}.json`,
-      ELECTION_PATH_FALLBACK: (plate) => `./${String(plate)}.json`,
+    // --- CONFIG: these MUST be in the same folder as index.html on the deployed site ---
+    const FILES = {
+      GEOJSON: "turkey-admin-level-6.geojson",
+      POPCSV: "province_district_2014_2019_2024.csv",
+      // elections: {ProvinceName}.json preferred, then {plate}.json fallback
     };
 
+    // --- Province list (plate codes) ---
     const PROVINCES = [
       ["Adana", 1],["Adıyaman", 2],["Afyonkarahisar", 3],["Ağrı", 4],["Amasya", 5],["Ankara", 6],["Antalya", 7],["Artvin", 8],["Aydın", 9],["Balıkesir", 10],
       ["Bilecik", 11],["Bingöl", 12],["Bitlis", 13],["Bolu", 14],["Burdur", 15],["Bursa", 16],["Çanakkale", 17],["Çankırı", 18],["Çorum", 19],["Denizli", 20],
@@ -231,9 +201,9 @@
       ["Kırıkkale", 71],["Batman", 72],["Şırnak", 73],["Bartın", 74],["Ardahan", 75],["Iğdır", 76],["Yalova", 77],["Karabük", 78],["Kilis", 79],["Osmaniye", 80],
       ["Düzce", 81],
     ];
-
     const plateToProvince = new Map(PROVINCES.map(([n,p]) => [p,n]));
 
+    // Party colors (extend later)
     const PARTY_COLORS = new Map([
       ["CHP", "#e5383b"],
       ["AK PARTİ", "#f59f00"],
@@ -250,7 +220,7 @@
       ["MEMLEKET", "#ef233c"],
     ]);
 
-    // Turkish folding
+    // --- Utilities ---
     const TR_MAP = new Map([
       ["İ","I"],["I","I"],["Ş","S"],["Ğ","G"],["Ü","U"],["Ö","O"],["Ç","C"],
       ["ı","I"],["ş","S"],["ğ","G"],["ü","U"],["ö","O"],["ç","C"],
@@ -264,7 +234,7 @@
       return s;
     }
     function trAsciiName(s){
-      // for file name fallback (İstanbul.json vs Istanbul.json, Şanlıurfa.json vs Sanliurfa.json, etc.)
+      // Use ASCII-ish for filenames if user doesn't want Turkish chars in filenames
       return Array.from(String(s||"")).map(ch => TR_MAP.get(ch) ?? ch).join("").replace(/ı/g,"i");
     }
     function parseIntTR(x){
@@ -298,13 +268,17 @@
       const b = 80 + ((h>>16) & 0x7f);
       return rgbToHex(r,g,b);
     }
+    function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
     function formatInt(n){
       if (n == null || Number.isNaN(n)) return "—";
       return new Intl.NumberFormat("tr-TR").format(n);
     }
     function safe(v){ return (v==null || v==="") ? "—" : String(v); }
-    function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
-
+    function colorForParty(name){
+      if (!name) return "rgba(255,255,255,.08)";
+      const clean = String(name).trim();
+      return PARTY_COLORS.get(clean) ?? hashColor(clean);
+    }
     function parsePlateFromNetwork(network){
       const m = String(network ?? "").match(/TR(\d{2})-districts/i);
       if (!m) return null;
@@ -312,7 +286,29 @@
     }
     function uniqueKey(plate, distKey){ return `${plate}|${distKey}`; }
 
-    // UI
+    // --- Robust URL resolver (fixes “string did not match expected pattern”) ---
+    function resolveUrl(rel){
+      // always resolves against the current page location and returns a valid encoded URL string
+      return new URL(rel, window.location.href).toString();
+    }
+
+    async function fetchText(rel){
+      const url = resolveUrl(rel);
+      const resp = await fetch(url, { cache: "no-store" });
+      if (!resp.ok) throw new Error(`${rel} -> HTTP ${resp.status}`);
+      return await resp.text();
+    }
+    async function fetchJson(rel){
+      const txt = await fetchText(rel);
+      try { return JSON.parse(txt); }
+      catch(e){ throw new Error(`${rel} -> JSON parse error`); }
+    }
+    async function fetchCsv(rel){
+      const txt = await fetchText(rel);
+      return d3.csvParse(txt);
+    }
+
+    // --- UI ---
     const el = {};
     function grabEls(){
       el.modeSelect = document.getElementById("modeSelect");
@@ -324,6 +320,7 @@
       el.legend = document.getElementById("legend");
       el.hoverBox = document.getElementById("hoverBox");
       el.statusBox = document.getElementById("statusBox");
+      el.diagBox = document.getElementById("diagBox");
       el.fitBtn = document.getElementById("fitBtn");
       el.helpBtn = document.getElementById("helpBtn");
       el.helpDialog = document.getElementById("helpDialog");
@@ -337,38 +334,27 @@
       el.regionsList = document.getElementById("regionsList");
     }
     function setStatus(msg){ el.statusBox.textContent = msg; }
+    function setDiag(lines){
+      el.diagBox.innerHTML = lines.map(s => `<div>${s}</div>`).join("");
+    }
 
-    // State
+    // --- State ---
     const state = {
-      geo: null,
-      pop: null,                 // provKey -> distKey -> years
-      elections: new Map(),       // uk -> election row
-      districtData: new Map(),    // uk -> joined
-      mode: "election_winner",
-      year: 2024,
-      yearA: 2014,
-      yearB: 2024,
-      selected: new Set(),        // uk
-      regions: [],
-      activeRegionId: null,
+      pop: null, elections: new Map(), districtData: new Map(),
+      mode: "election_winner", year: 2024, yearA: 2014, yearB: 2024,
+      selected: new Set(), regions: [], activeRegionId: null,
     };
 
-    // Map
+    // --- Map ---
     let map, districtLayer, canvasRenderer;
 
     function initMap(){
       map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([39.0, 35.0], 6);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19, attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
-
       canvasRenderer = L.canvas({ padding: 0.5 });
-      districtLayer = L.geoJSON([], {
-        renderer: canvasRenderer,
-        style: featureStyle,
-        onEachFeature: onEachDistrict,
-      }).addTo(map);
+      districtLayer = L.geoJSON([], { renderer: canvasRenderer, style: featureStyle, onEachFeature: onEachDistrict }).addTo(map);
     }
 
     function featureStyle(feature){
@@ -378,41 +364,52 @@
       return {
         color: isSelected ? "#ffffff" : "rgba(255,255,255,.22)",
         weight: isSelected ? 2.2 : 0.9,
-        opacity: 1,
-        fillColor: base,
-        fillOpacity: 0.72,
+        opacity: 1, fillColor: base, fillOpacity: 0.72,
       };
     }
 
     function onEachDistrict(feature, layer){
       layer.on({
-        mouseover: () => {
-          layer.setStyle({ weight: 2.2, color: "#ffffff" });
-          updateHover(feature);
-        },
-        mouseout: () => {
-          districtLayer.resetStyle(layer);
-          el.hoverBox.innerHTML = `<span class="muted mono small">Hover a district.</span>`;
-        },
+        mouseover: () => { layer.setStyle({ weight: 2.2, color: "#ffffff" }); updateHover(feature); },
+        mouseout: () => { districtLayer.resetStyle(layer); el.hoverBox.innerHTML = `<span class="muted mono small">Hover a district.</span>`; },
         click: () => {
           const uk = feature.properties.__uk;
-          if (state.selected.has(uk)) state.selected.delete(uk);
-          else state.selected.add(uk);
+          if (state.selected.has(uk)) state.selected.delete(uk); else state.selected.add(uk);
           districtLayer.setStyle(featureStyle);
           renderRegions();
         },
       });
     }
 
+    // --- Core load ---
+    async function diagnostics(){
+      const tests = [
+        ["GeoJSON", FILES.GEOJSON],
+        ["Population CSV", FILES.POPCSV],
+      ];
+      const lines = [
+        `<span class="muted">Base URL:</span> ${safe(location.href)}`,
+        `<span class="muted">Resolved folder:</span> ${safe(resolveUrl("./"))}`,
+      ];
+
+      for (const [label, file] of tests){
+        const url = resolveUrl(file);
+        try{
+          const r = await fetch(url, { method:"GET", cache:"no-store" });
+          lines.push(`${r.ok ? "<span class='ok'>OK</span>" : "<span class='bad'>BAD</span>"} ${label}: ${file} <span class="muted">(${r.status})</span>`);
+        }catch(e){
+          lines.push(`<span class='bad'>BAD</span> ${label}: ${file} <span class="muted">(fetch threw)</span>`);
+        }
+      }
+      setDiag(lines);
+    }
+
     async function loadAll(){
+      await diagnostics();
+
       setStatus("Loading GeoJSON + population…");
-
-      const [geo, popRows] = await Promise.all([
-        fetch(CONFIG.GEOJSON_PATH).then(r => { if (!r.ok) throw new Error(`GeoJSON fetch failed: ${r.status}`); return r.json(); }),
-        d3.csv(CONFIG.POP_CSV_PATH),
-      ]);
-
-      state.geo = geo;
+      const geo = await fetchJson(FILES.GEOJSON);
+      const popRows = await fetchCsv(FILES.POPCSV);
 
       // Population index
       const pop = {};
@@ -421,15 +418,11 @@
         const dist = trFold(row.District ?? row.district ?? row.DISTRICT);
         if (!prov || !dist) continue;
         pop[prov] ??= {};
-        pop[prov][dist] = {
-          2014: parseIntTR(row["2014"]),
-          2019: parseIntTR(row["2019"]),
-          2024: parseIntTR(row["2024"]),
-        };
+        pop[prov][dist] = { 2014: parseIntTR(row["2014"]), 2019: parseIntTR(row["2019"]), 2024: parseIntTR(row["2024"]) };
       }
       state.pop = pop;
 
-      // Prepare ALL district features
+      // Prepare all district features
       const features = (geo.features || [])
         .filter(f => (f.properties?.admin_level === "6" || f.properties?.admin_level === 6))
         .map(f => {
@@ -439,38 +432,22 @@
           const distName = f.properties?.name ?? "";
           const distKey = trFold(distName);
           const uk = uniqueKey(plate ?? 0, distKey);
-          return {
-            ...f,
-            properties: {
-              ...f.properties,
-              __plate: plate,
-              __provName: provName,
-              __provKey: provKey,
-              __distName: distName,
-              __distKey: distKey,
-              __uk: uk,
-            }
-          };
+          return { ...f, properties: { ...f.properties, __plate: plate, __provName: provName, __provKey: provKey, __distName: distName, __distKey: distKey, __uk: uk } };
         });
 
       districtLayer.clearLayers();
       districtLayer.addData(features);
+      rebuildDistrictDataIndex();
       districtLayer.setStyle(featureStyle);
 
-      rebuildDistrictDataIndex();
-
       try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
-
-      renderLegend();
-      renderRegions();
+      renderLegend(); renderRegions();
       reportJoinStatus("Base ready. Loading elections…");
 
       await loadAllElections();
-
       rebuildDistrictDataIndex();
       districtLayer.setStyle(featureStyle);
-      renderLegend();
-      renderRegions();
+      renderLegend(); renderRegions();
       reportJoinStatus("Elections loaded.");
     }
 
@@ -487,7 +464,6 @@
     function parseElectionRows(rows){
       const clean = [];
       if (!Array.isArray(rows)) return clean;
-
       for (const r of rows){
         const idRaw = (r["İlçe Id"] ?? r["Ilçe Id"] ?? r["Ilce Id"] ?? r["İLÇE ID"]);
         const idStr = String(idRaw ?? "").trim();
@@ -528,14 +504,21 @@
       return clean;
     }
 
-    async function fetchFirstOkJson(urls){
-      for (const url of urls){
+    async function tryFetchElectionJson(provName, plate){
+      // Try: exact name, ASCII version, then plate.json
+      const candidates = [
+        `${provName}.json`,
+        `${trAsciiName(provName)}.json`,
+        `${plate}.json`,
+      ];
+      for (const rel of candidates){
         try{
-          const resp = await fetch(url);
+          const url = resolveUrl(rel);
+          const resp = await fetch(url, { cache:"no-store" });
           if (!resp.ok) continue;
           return await resp.json();
         }catch(_){
-          // next
+          // continue
         }
       }
       return null;
@@ -546,21 +529,10 @@
       const concurrency = 8;
       let done = 0, found = 0;
 
-      function electionCandidateUrls(provName, plate){
-        const ascii = trAsciiName(provName);
-        // try exact province name, ascii variant, and plate fallback
-        return [
-          CONFIG.ELECTION_PATH_PRIMARY(provName),
-          CONFIG.ELECTION_PATH_PRIMARY(ascii),
-          CONFIG.ELECTION_PATH_FALLBACK(plate),
-        ];
-      }
-
       async function worker(){
         while (queue.length){
           const job = queue.shift();
-          const urls = electionCandidateUrls(job.name, job.plate);
-          const raw = await fetchFirstOkJson(urls);
+          const raw = await tryFetchElectionJson(job.name, job.plate);
           done++;
 
           if (raw){
@@ -571,11 +543,9 @@
               state.elections.set(uk, row);
             }
           }
-
-          if (done % 6 === 0) setStatus(`Loading elections… ${done}/81 (found ${found} files)`);
+          if (done % 10 === 0) setStatus(`Loading elections… ${done}/81 (found ${found} files)`);
         }
       }
-
       await Promise.all(Array.from({length: concurrency}, worker));
     }
 
@@ -584,30 +554,11 @@
       districtLayer.eachLayer(layer => {
         const f = layer.feature;
         const p = f.properties || {};
-        const plate = p.__plate ?? 0;
-        const provKey = p.__provKey ?? "";
-        const distKey = p.__distKey ?? "";
         const uk = p.__uk;
-
-        const pop = state.pop?.[provKey]?.[distKey] ?? null;
+        const pop = state.pop?.[p.__provKey]?.[p.__distKey] ?? null;
         const election = state.elections.get(uk) ?? null;
-
-        state.districtData.set(uk, {
-          feature: f,
-          pop,
-          election,
-          plate,
-          provName: p.__provName,
-          distName: p.__distName,
-        });
+        state.districtData.set(uk, { feature: f, pop, election, provName: p.__provName, distName: p.__distName });
       });
-    }
-
-    // Coloring
-    function colorForParty(name){
-      if (!name) return "rgba(255,255,255,.08)";
-      const clean = String(name).trim();
-      return PARTY_COLORS.get(clean) ?? hashColor(clean);
     }
 
     function numericColor(val, kind){
@@ -652,10 +603,8 @@
         const val = (a!=null && b!=null) ? (b - a) : null;
         return numericColor(val, "div");
       }
-
       const e = joined?.election;
       if (!e) return "rgba(255,255,255,.08)";
-
       if (state.mode === "election_margin"){
         const base = colorForParty(e.__winner);
         const t = clamp01((e.__marginShare ?? 0) / 0.25);
@@ -664,10 +613,8 @@
       return colorForParty(e.__winner);
     }
 
-    // Legend + hover
     function renderLegend(){
       el.legend.innerHTML = "";
-
       if (state.mode === "election_winner" || state.mode === "election_margin"){
         const wins = new Map();
         for (const j of state.districtData.values()){
@@ -677,7 +624,7 @@
         }
         const top = [...wins.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 12);
         if (!top.length){
-          el.legend.innerHTML = `<div class="small muted">No election files loaded (or they’re missing / misnamed).</div>`;
+          el.legend.innerHTML = `<div class="small muted">No election files loaded (or missing).</div>`;
           return;
         }
         for (const [p, n] of top){
@@ -692,16 +639,10 @@
           item.appendChild(label);
           el.legend.appendChild(item);
         }
-        if (state.mode === "election_margin"){
-          const note = document.createElement("div");
-          note.className = "small muted";
-          note.style.marginTop = "8px";
-          note.textContent = "Margin layer darkens winner color as margin increases.";
-          el.legend.appendChild(note);
-        }
         return;
       }
 
+      // numeric
       const values = [];
       for (const j of state.districtData.values()){
         if (state.mode === "population_year"){
@@ -727,18 +668,12 @@
       el.legend.appendChild(title);
 
       const bar = document.createElement("div");
-      bar.style.display="grid";
-      bar.style.gridTemplateColumns="repeat(10, 1fr)";
-      bar.style.gap="6px";
-      bar.style.marginTop="8px";
-
+      bar.style.display="grid"; bar.style.gridTemplateColumns="repeat(10, 1fr)"; bar.style.gap="6px"; bar.style.marginTop="8px";
       for (let i=0;i<10;i++){
         const t = i/9;
         const val = min + (max-min)*t;
         const sw = document.createElement("div");
-        sw.className="swatch";
-        sw.style.height="16px";
-        sw.style.width="100%";
+        sw.className="swatch"; sw.style.height="16px"; sw.style.width="100%";
         const kind = state.mode === "population_year" ? "seq" : "div";
         sw.style.background = numericColor(val, kind);
         bar.appendChild(sw);
@@ -746,9 +681,7 @@
       el.legend.appendChild(bar);
 
       const mm = document.createElement("div");
-      mm.className="row";
-      mm.style.justifyContent="space-between";
-      mm.style.margin="8px 0 0";
+      mm.className="row"; mm.style.justifyContent="space-between"; mm.style.margin="8px 0 0";
       mm.innerHTML = `<div class="small muted mono">${formatInt(min)}</div><div class="small muted mono">${formatInt(max)}</div>`;
       el.legend.appendChild(mm);
     }
@@ -762,18 +695,17 @@
       const pop = joined?.pop;
       const e = joined?.election;
 
-      let html = `<div class="mono"><b>${distName}</b></div>`;
-      html += `<div class="mono small muted">${provName}</div>`;
+      let html = `<div class="mono"><b>${distName}</b></div><div class="mono small muted">${provName}</div>`;
 
       if (pop){
         const y = state.year;
-        const pa = pop[state.yearA], pb = pop[state.yearB];
-        const delta = (pa!=null && pb!=null) ? (pb-pa) : null;
         html += `<div class="small muted" style="margin-top:8px">Population</div>`;
         html += `<div class="mono small">2014: ${formatInt(pop[2014])}</div>`;
         html += `<div class="mono small">2019: ${formatInt(pop[2019])}</div>`;
         html += `<div class="mono small">2024: ${formatInt(pop[2024])}</div>`;
         if (state.mode === "population_change"){
+          const a = pop[state.yearA], b = pop[state.yearB];
+          const delta = (a!=null && b!=null) ? (b-a) : null;
           html += `<div class="mono small">Δ ${state.yearA}→${state.yearB}: ${formatInt(delta)}</div>`;
         } else {
           html += `<div class="mono small">Selected (${y}): ${formatInt(pop[y])}</div>`;
@@ -788,19 +720,6 @@
         html += `<div class="mono small">Cast: ${formatInt(e.__cast)}</div>`;
         html += `<div class="mono small">Valid: ${formatInt(e.__valid)}</div>`;
         html += `<div class="mono small"><b>Winner:</b> ${safe(e.__winner)} (${formatInt(e.__winnerVotes)})</div>`;
-        if (e.__runner){
-          html += `<div class="mono small">Runner-up: ${safe(e.__runner)}</div>`;
-          if (e.__marginVotes != null){
-            html += `<div class="mono small">Margin: ${formatInt(e.__marginVotes)} (${(100*(e.__marginShare??0)).toFixed(1)}%)</div>`;
-          }
-        }
-        const top = (e.__partyVotes || []).slice(0, 6);
-        if (top.length){
-          html += `<div class="mono small" style="margin-top:6px">Top votes:</div>`;
-          for (const [p,v] of top){
-            html += `<div class="mono small">• ${p}: ${formatInt(v)}</div>`;
-          }
-        }
       } else {
         html += `<div style="margin-top:10px" class="small muted">Election</div><div class="mono small">No election data matched.</div>`;
       }
@@ -808,7 +727,7 @@
       el.hoverBox.innerHTML = html;
     }
 
-    // Region builder
+    // --- Region tools (minimal) ---
     function newRegion(){
       const id = crypto.randomUUID?.() ?? String(Date.now());
       const n = state.regions.length + 1;
@@ -834,119 +753,21 @@
       districtLayer.setStyle(featureStyle);
       renderRegions();
     }
-    function computeRegionStats(region){
-      let pop = 0;
-      const votes = new Map();
-      let valid = 0;
-
-      for (const uk of region.districts){
-        const j = state.districtData.get(uk);
-        const p = j?.pop?.[state.year] ?? null;
-        if (p!=null) pop += p;
-
-        const e = j?.election;
-        if (e?.__valid) valid += e.__valid;
-        for (const [party, v] of (e?.__partyVotes ?? [])){
-          votes.set(party, (votes.get(party) ?? 0) + v);
-        }
-      }
-
-      const sortedVotes = [...votes.entries()].sort((a,b)=>b[1]-a[1]);
-      const winner = sortedVotes[0]?.[0] ?? null;
-      const winnerVotes = sortedVotes[0]?.[1] ?? null;
-      const runnerVotes = sortedVotes[1]?.[1] ?? null;
-
-      const marginVotes = (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes - runnerVotes) : null;
-      const marginShare = (valid && marginVotes!=null) ? (marginVotes/valid) : null;
-
-      return { pop, valid, winner, winnerVotes, marginVotes, marginShare, sortedVotes };
-    }
     function renderRegions(){
       el.regionsList.innerHTML = "";
       if (!state.regions.length){
         el.regionsList.innerHTML = `<div class="small muted">No regions yet. Click “New region”.</div>`;
         return;
       }
-
       for (const r of state.regions){
         const box = document.createElement("div");
         box.className = "region";
-
-        const top = document.createElement("div");
-        top.className = "regionTop";
-
-        const left = document.createElement("div");
-        left.style.display="flex";
-        left.style.alignItems="center";
-        left.style.gap="8px";
-        left.style.flex="1";
-
-        const radio = document.createElement("input");
-        radio.type="radio";
-        radio.name="activeRegion";
-        radio.checked = (r.id === state.activeRegionId);
-        radio.addEventListener("change", () => { state.activeRegionId = r.id; renderRegions(); });
-        left.appendChild(radio);
-
-        const name = document.createElement("input");
-        name.type="text";
-        name.value = r.name;
-        name.addEventListener("input", (e)=>{ r.name = e.target.value; });
-        left.appendChild(name);
-
-        top.appendChild(left);
-
-        const color = document.createElement("input");
-        color.type="color";
-        color.value = r.color;
-        color.addEventListener("input", (e)=>{ r.color = e.target.value; });
-        top.appendChild(color);
-
-        box.appendChild(top);
-
-        const stats = computeRegionStats(r);
-        const meta = document.createElement("div");
-        meta.className = "regionMeta";
-        meta.innerHTML = `
-          <div>
-            <div class="metaK">Districts</div>
-            <div class="metaV mono">${r.districts.size}</div>
-          </div>
-          <div>
-            <div class="metaK">Population (${state.year})</div>
-            <div class="metaV mono">${formatInt(stats.pop)}</div>
-          </div>
-          <div>
-            <div class="metaK">Election winner</div>
-            <div class="metaV mono">${safe(stats.winner)}</div>
-          </div>
-          <div>
-            <div class="metaK">Margin</div>
-            <div class="metaV mono">${stats.marginVotes==null ? "—" : `${formatInt(stats.marginVotes)} (${(100*(stats.marginShare??0)).toFixed(1)}%)`}</div>
-          </div>
-        `;
-        box.appendChild(meta);
-
-        const topVotes = stats.sortedVotes.slice(0, 4);
-        if (topVotes.length){
-          const list = document.createElement("div");
-          list.className="small mono";
-          list.style.marginTop="8px";
-          list.innerHTML = topVotes.map(([p,v]) => `• ${p}: ${formatInt(v)}`).join("<br/>");
-          box.appendChild(list);
-        }
-
+        box.innerHTML = `<div class="mono"><b>${r.name}</b></div><div class="mono small muted">Districts: ${r.districts.size}</div>`;
         el.regionsList.appendChild(box);
       }
     }
-
     function exportPlan(){
-      const plan = {
-        year: state.year,
-        regions: state.regions.map(r => ({
-          id: r.id, name: r.name, color: r.color, districts: [...r.districts],
-        }))
-      };
+      const plan = { year: state.year, regions: state.regions.map(r => ({ id:r.id, name:r.name, color:r.color, districts:[...r.districts] })) };
       const blob = new Blob([JSON.stringify(plan, null, 2)], {type:"application/json"});
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -957,14 +778,8 @@
     async function importPlan(file){
       const txt = await file.text();
       const plan = JSON.parse(txt);
-      const regions = (plan.regions ?? []).map(r => ({
-        id: r.id ?? (crypto.randomUUID?.() ?? String(Date.now())),
-        name: r.name ?? "Region",
-        color: r.color ?? "#4cc9f0",
-        districts: new Set(r.districts ?? []),
-      }));
-      state.regions = regions;
-      state.activeRegionId = regions[0]?.id ?? null;
+      state.regions = (plan.regions ?? []).map(r => ({ id:r.id ?? String(Date.now()), name:r.name ?? "Region", color:r.color ?? "#4cc9f0", districts:new Set(r.districts ?? []) }));
+      state.activeRegionId = state.regions[0]?.id ?? null;
       renderRegions();
     }
 
@@ -978,12 +793,10 @@
         districtLayer.setStyle(featureStyle);
         renderLegend();
       });
-
       el.yearSelect.addEventListener("change", () => {
         state.year = Number(el.yearSelect.value);
         districtLayer.setStyle(featureStyle);
         renderLegend();
-        renderRegions();
       });
       el.yearASelect.addEventListener("change", () => {
         state.yearA = Number(el.yearASelect.value);
@@ -995,31 +808,20 @@
         districtLayer.setStyle(featureStyle);
         renderLegend();
       });
-
-      el.fitBtn.addEventListener("click", () => {
-        try{ map.fitBounds(districtLayer.getBounds(), {padding:[18,18]}); }catch(_){}
-      });
-
+      el.fitBtn.addEventListener("click", () => { try{ map.fitBounds(districtLayer.getBounds(), {padding:[18,18]}); }catch(_){ } });
       el.helpBtn.addEventListener("click", () => el.helpDialog.showModal());
       el.closeHelpBtn.addEventListener("click", () => el.helpDialog.close());
-
       el.newRegionBtn.addEventListener("click", newRegion);
       el.addToRegionBtn.addEventListener("click", addSelectionToRegion);
       el.removeFromRegionBtn.addEventListener("click", removeSelectionFromRegion);
       el.clearSelectionBtn.addEventListener("click", clearSelection);
-
       el.exportPlanBtn.addEventListener("click", exportPlan);
-      el.importPlanInput.addEventListener("change", async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        await importPlan(file);
-        e.target.value = "";
-      });
-
+      el.importPlanInput.addEventListener("change", async (e) => { const f=e.target.files?.[0]; if(f) await importPlan(f); e.target.value=""; });
       el.yearAWrap.style.display = "none";
       el.yearBWrap.style.display = "none";
     }
 
+    // Boot
     window.addEventListener("DOMContentLoaded", async () => {
       grabEls();
       initMap();
@@ -1028,8 +830,8 @@
         await loadAll();
       }catch(err){
         console.error(err);
-        const hint = (location.protocol === "file:") ? " (You opened via file:// — use GitHub Pages or a local server)" : "";
-        setStatus(`Fatal: ${err.message}${hint}`);
+        setStatus(`Fatal: ${err.message}`);
+        // Diagnostics already printed: check Status -> Diagnostics panel
       }
     });
 
