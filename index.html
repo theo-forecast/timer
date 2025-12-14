@@ -217,6 +217,32 @@
     .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
     .sep{height:1px;background:rgba(12,18,34,.10); margin:12px 0}
 
+    /* Inputs */
+    .srOnly{position:absolute;left:-9999px}
+    .inputWrap{position:relative}
+    .input{
+      width:100%;
+      padding:11px 12px 11px 36px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
+      color: var(--ink);
+      font-weight:700;
+      outline:none;
+      transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+    }
+    .input:hover{border-color: var(--border2)}
+    .input:focus{
+      border-color: rgba(14,165,233,.50);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.12), 0 10px 22px rgba(12,18,34,.06);
+    }
+    .inputIcon{
+      position:absolute;
+      left:12px; top:50%; transform: translateY(-50%);
+      width:16px; height:16px; color: rgba(15,23,42,.55);
+    }
+
     /* Legend */
     .legend{display:flex; flex-direction:column; gap:10px}
     .legendItem{
@@ -291,6 +317,34 @@
       border:1px solid rgba(12,18,34,.18);
       box-shadow: 0 10px 16px rgba(12,18,34,.08);
     }
+
+    /* Overview + search */
+    .statGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:4px}
+    .stat{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(12,18,34,.10);
+      background: rgba(15,23,42,.03);
+      display:flex; flex-direction:column; gap:4px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.65);
+    }
+    .statLabel{font-size:12px;color:var(--muted2);letter-spacing:.16px;text-transform:uppercase}
+    .statValue{font-weight:900;font-size:15px;display:flex;align-items:baseline;gap:6px}
+    .statHint{font-size:12px;color:var(--muted)}
+
+    .searchList{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+    .resultBtn{
+      text-align:left;
+      padding:9px 10px;
+      border-radius:12px;
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.02);
+      cursor:pointer;
+      transition: transform .1s ease, border-color .12s ease, background .12s ease;
+    }
+    .resultBtn:hover{transform: translateY(-1px); border-color: rgba(12,18,34,.18); background: rgba(15,23,42,.04)}
+    .resultTitle{font-weight:900}
+    .resultMeta{font-size:12px;color:var(--muted2)}
 
     .bars{margin-top:12px;display:flex;flex-direction:column;gap:10px}
     .barRow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
@@ -537,6 +591,34 @@
     <aside class="sidebar">
       <section class="card">
         <div class="cardHeader">
+          <div class="cardTitle">Overview</div>
+          <div class="pill" id="overviewPill">loading…</div>
+        </div>
+        <div class="cardBody">
+          <div id="overviewBox" class="muted small">Loading metrics…</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardHeader">
+          <div class="cardTitle">Find district</div>
+          <div class="pill">search</div>
+        </div>
+        <div class="cardBody">
+          <label class="inputWrap">
+            <span class="srOnly">Search by province or district</span>
+            <svg class="inputIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="m15.5 15.5 3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <input id="searchInput" class="input" type="search" placeholder="Type a province or district…" autocomplete="off"/>
+          </label>
+          <div id="searchResults" class="searchList muted small">Start typing to jump anywhere.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardHeader">
           <div class="cardTitle">Legend</div>
           <div class="pill" id="legendPill">—</div>
         </div>
@@ -719,6 +801,10 @@ function parsePlateFromNetwork(network){
       el.legendPill = document.getElementById("legendPill");
       el.districtBox = document.getElementById("districtBox");
       el.selPill = document.getElementById("selPill");
+      el.overviewBox = document.getElementById("overviewBox");
+      el.overviewPill = document.getElementById("overviewPill");
+      el.searchInput = document.getElementById("searchInput");
+      el.searchResults = document.getElementById("searchResults");
       el.fitBtn = document.getElementById("fitBtn");
       el.clearBtn = document.getElementById("clearBtn");
       el.helpBtn = document.getElementById("helpBtn");
@@ -740,12 +826,24 @@ function parsePlateFromNetwork(network){
       yearA: 2014,
       yearB: 2024,
 
+      searchIndex: [],
+
       hoverUk: null,
       selectedUk: null,
     };
 
     // Map
     let map, districtLayer, canvasRenderer;
+
+    function findLayerByUk(uk){
+      let found = null;
+      districtLayer?.eachLayer(layer => {
+        if (layer.feature?.properties?.__uk === uk){
+          found = layer;
+        }
+      });
+      return found;
+    }
 
     function initMap(){
       map = L.map("map", { zoomControl:true, preferCanvas:true }).setView([39.0, 35.0], 6);
@@ -904,6 +1002,127 @@ function parsePlateFromNetwork(network){
           distName: p.__distName,
         });
       });
+    }
+
+    function buildSearchIndex(){
+      state.searchIndex = [];
+      for (const [uk, data] of state.districtData.entries()){
+        const prov = data.provName ?? "";
+        const dist = data.distName ?? "";
+        state.searchIndex.push({
+          uk,
+          prov,
+          dist,
+          text: `${prov} ${dist}`.toLowerCase(),
+        });
+      }
+      state.searchIndex.sort((a,b)=>a.prov.localeCompare(b.prov) || a.dist.localeCompare(b.dist));
+    }
+
+    function renderSearchResults(){
+      const qRaw = el.searchInput?.value ?? "";
+      const q = qRaw.trim().toLowerCase();
+
+      if (!state.searchIndex.length){
+        el.searchResults.innerHTML = `<div class="muted small">No districts loaded.</div>`;
+        return;
+      }
+
+      if (!q){
+        el.searchResults.innerHTML = `<div class="muted small">Start typing to jump anywhere.</div>`;
+        return;
+      }
+
+      const matches = state.searchIndex.filter(x => x.text.includes(q)).slice(0, 20);
+      if (!matches.length){
+        el.searchResults.innerHTML = `<div class="muted small">No matches for “${safe(qRaw)}”.</div>`;
+        return;
+      }
+
+      el.searchResults.innerHTML = "";
+      for (const m of matches){
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "resultBtn";
+        btn.innerHTML = `
+          <div class="resultTitle">${m.dist || "Unknown district"}</div>
+          <div class="resultMeta">${m.prov || "Unknown province"}</div>
+        `;
+        btn.addEventListener("click", () => jumpToDistrict(m.uk));
+        el.searchResults.appendChild(btn);
+      }
+    }
+
+    function renderOverview(){
+      const total = state.districtData.size;
+      if (!total){
+        el.overviewPill.textContent = "no data";
+        el.overviewBox.innerHTML = `<div class="muted small">Nothing loaded yet.</div>`;
+        return;
+      }
+
+      let popTotal = 0, popCount = 0;
+      let baseTotal = 0, baseCount = 0;
+      let compTotal = 0, compCount = 0;
+      let electionCount = 0;
+
+      for (const j of state.districtData.values()){
+        const pop = j.pop;
+        if (pop){
+          const v = pop[state.year];
+          if (v!=null){ popTotal += v; popCount++; }
+
+          const a = pop[state.yearA];
+          const b = pop[state.yearB];
+          if (a!=null){ baseTotal += a; baseCount++; }
+          if (b!=null){ compTotal += b; compCount++; }
+        }
+        if (j.election) electionCount++;
+      }
+
+      const avgPop = popCount ? Math.round(popTotal / popCount) : null;
+      const changeAbs = (baseCount && compCount) ? (compTotal - baseTotal) : null;
+      const changePct = (baseTotal && compCount) ? ((compTotal - baseTotal) / baseTotal) : null;
+      const coverage = total ? (electionCount / total) : 0;
+      const changeSign = changeAbs==null ? "" : changeAbs>0 ? "+" : changeAbs<0 ? "−" : "";
+
+      el.overviewPill.textContent = `${total} districts`;
+
+      const cards = [
+        {
+          label: "Election coverage",
+          value: `${Math.round(coverage*100)}%`,
+          hint: `${formatInt(electionCount)} with winners`,
+        },
+        {
+          label: `Population ${state.year}`,
+          value: formatInt(popTotal),
+          hint: avgPop ? `Avg ${formatInt(avgPop)}` : "—",
+        },
+        {
+          label: `${state.yearA}→${state.yearB} change`,
+          value: changeAbs==null ? "—" : `${changeSign}${formatInt(Math.abs(changeAbs))}`,
+          hint: changePct!=null ? `${(changePct*100).toFixed(1)}% total` : "—",
+        },
+      ];
+
+      el.overviewBox.innerHTML = `
+        <div class="statGrid">
+          ${cards.map(c => `
+            <div class="stat">
+              <div class="statLabel">${c.label}</div>
+              <div class="statValue">${c.value}</div>
+              <div class="statHint">${c.hint}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function refreshSummaries(){
+      renderOverview();
+      buildSearchIndex();
+      renderSearchResults();
     }
 
     // Scaling helper: get ranges for current layer
@@ -1149,6 +1368,20 @@ function parsePlateFromNetwork(network){
       el.districtBox.innerHTML = html;
     }
 
+    function jumpToDistrict(uk){
+      if (!uk) return;
+      const layer = findLayerByUk(uk);
+      if (!layer) return;
+
+      state.selectedUk = uk;
+      refreshFeatureStyles();
+      renderDistrictPanel(uk, "selected");
+
+      try{
+        map.fitBounds(layer.getBounds(), { padding:[18,18] });
+      }catch(_){ }
+    }
+
     function clearSelection(){
       state.selectedUk = null;
       el.selPill.textContent = "none";
@@ -1313,6 +1546,7 @@ function parsePlateFromNetwork(network){
         renderModeYearVisibility();
         refreshFeatureStyles();
         renderLegend();
+        renderOverview();
 
         // if a selection exists, refresh its panel label content (still selected)
         if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
@@ -1322,6 +1556,7 @@ function parsePlateFromNetwork(network){
         state.year = Number(el.yearSelect.value);
         refreshFeatureStyles();
         renderLegend();
+        renderOverview();
         if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
 
@@ -1329,6 +1564,7 @@ function parsePlateFromNetwork(network){
         state.yearA = Number(el.yearASelect.value);
         refreshFeatureStyles();
         renderLegend();
+        renderOverview();
         if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
 
@@ -1336,6 +1572,7 @@ function parsePlateFromNetwork(network){
         state.yearB = Number(el.yearBSelect.value);
         refreshFeatureStyles();
         renderLegend();
+        renderOverview();
         if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
 
@@ -1351,6 +1588,17 @@ function parsePlateFromNetwork(network){
 
       el.helpBtn.addEventListener("click", () => el.helpDialog.showModal());
       el.closeHelpBtn.addEventListener("click", () => el.helpDialog.close());
+
+      el.searchInput.addEventListener("input", () => {
+        renderSearchResults();
+      });
+      el.searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter"){
+          const q = el.searchInput.value.trim().toLowerCase();
+          const hit = state.searchIndex.find(x => x.text.includes(q));
+          if (hit) jumpToDistrict(hit.uk);
+        }
+      });
 
       renderModeYearVisibility();
     }
@@ -1412,6 +1660,7 @@ const features = (geo.features || [])
 
       rebuildDistrictDataIndex();
       refreshFeatureStyles();
+      refreshSummaries();
 
       try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
 
@@ -1423,6 +1672,7 @@ const features = (geo.features || [])
 
       rebuildDistrictDataIndex();
       refreshFeatureStyles();
+      refreshSummaries();
       renderLegend();
 
       el.curtain.classList.add("hide");
