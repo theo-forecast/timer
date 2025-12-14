@@ -24,31 +24,35 @@
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
       color:#eaf2ff;
       background:
-        radial-gradient(1200px 900px at 18% 8%, rgba(103,232,249,.18), transparent 62%),
-        radial-gradient(1000px 800px at 78% 14%, rgba(167,139,250,.16), transparent 60%),
+        radial-gradient(1200px 900px at 16% 8%, rgba(103,232,249,.18), transparent 62%),
+        radial-gradient(1000px 800px at 80% 14%, rgba(167,139,250,.16), transparent 60%),
         radial-gradient(900px 700px at 50% 92%, rgba(34,211,238,.10), transparent 62%),
         linear-gradient(180deg,#070a10 0%, #04060a 100%);
       overflow:hidden;
     }
 
     :root{
-      --panel: rgba(12,16,26,.60);
-      --panel2: rgba(9,12,18,.72);
+      --panel: rgba(10,14,22,.62);
+      --panel2: rgba(7,9,14,.78);
       --border: rgba(255,255,255,.10);
       --border2: rgba(255,255,255,.16);
       --text: #eaf2ff;
-      --muted: rgba(226,238,255,.68);
+      --muted: rgba(226,238,255,.70);
       --muted2: rgba(226,238,255,.50);
-      --shadow: 0 22px 70px rgba(0,0,0,.55);
-      --shadow2: 0 14px 34px rgba(0,0,0,.45);
+
+      --shadow: 0 24px 90px rgba(0,0,0,.62);
+      --shadow2: 0 16px 40px rgba(0,0,0,.48);
+
       --radius: 18px;
       --radius2: 14px;
 
       --aqua: #67e8f9;
       --violet:#a78bfa;
-      --rose: #ff4d6d;
+      --rose: #ff3b6b;
       --gold: #ffd166;
-      --ink:  #060812;
+
+      --ink:  #05070b;
+      --ink2: #0b1220;
     }
 
     /* ===== Topbar ===== */
@@ -57,26 +61,29 @@
       display:flex;align-items:center;justify-content:space-between;
       gap:12px;padding:14px 16px;
       border-bottom:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(8,10,14,.82), rgba(6,7,10,.55));
-      backdrop-filter: blur(16px);
+      background: linear-gradient(180deg, rgba(8,10,14,.86), rgba(6,7,10,.58));
+      backdrop-filter: blur(18px);
     }
     .brand{display:flex;align-items:center;gap:12px;min-width:260px}
     .mark{
-      width:36px;height:36px;border-radius:14px;
-      background: linear-gradient(135deg, rgba(103,232,249,.95), rgba(167,139,250,.92));
-      box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 18px 50px rgba(103,232,249,.15);
+      width:38px;height:38px;border-radius:16px;
+      background: linear-gradient(135deg, rgba(103,232,249,.98), rgba(167,139,250,.94));
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.14),
+        0 22px 60px rgba(103,232,249,.14),
+        0 22px 60px rgba(167,139,250,.10);
       position:relative;overflow:hidden;
     }
     .mark:before{
       content:"";
-      position:absolute; inset:-40%;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 45%);
+      position:absolute; inset:-60%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.40), transparent 45%);
       transform: rotate(18deg);
     }
     .mark:after{
       content:"";
       position:absolute; inset:8px;
-      border-radius:12px;
+      border-radius:14px;
       background: linear-gradient(135deg, rgba(0,0,0,.34), rgba(0,0,0,.06));
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.10);
     }
@@ -90,11 +97,12 @@
       font-size:12px;color:var(--muted2);
     }
     .tag{
-      font-size:11px;font-weight:800;
+      font-size:11px;font-weight:900;
       padding:4px 10px;border-radius:999px;
       color: rgba(0,0,0,.88);
-      background: linear-gradient(135deg, rgba(103,232,249,.95), rgba(167,139,250,.95));
+      background: linear-gradient(135deg, rgba(103,232,249,.98), rgba(167,139,250,.98));
       box-shadow: 0 0 0 1px rgba(255,255,255,.14);
+      white-space:nowrap;
     }
 
     .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
@@ -108,14 +116,16 @@
     select{
       appearance:none;
       width:100%;
-      background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.06));
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
       color: var(--text);
       border:1px solid var(--border);
       border-radius: 13px;
       padding:10px 38px 10px 12px;
       outline:none;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
-      transition: border-color .15s ease, transform .15s ease;
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,.26),
+        0 14px 30px rgba(0,0,0,.18);
+      transition: border-color .15s ease, transform .15s ease, background .15s ease;
     }
     .selectWrap:after{
       content:"";
@@ -127,21 +137,29 @@
       pointer-events:none;
     }
     select:hover{border-color: var(--border2)}
-    select:focus{border-color: rgba(103,232,249,.42)}
+    select:focus{
+      border-color: rgba(103,232,249,.45);
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+    }
 
     .btn{
       border:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.06));
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
       color: var(--text);
       padding:10px 12px;
       border-radius: 13px;
       cursor:pointer;
       transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
-      box-shadow: 0 16px 34px rgba(0,0,0,.18);
+      box-shadow: 0 18px 40px rgba(0,0,0,.18);
       display:inline-flex;align-items:center;gap:8px;
-      font-weight:800;
+      font-weight:900;
     }
-    .btn:hover{transform: translateY(-1px);border-color:var(--border2);box-shadow:0 20px 46px rgba(0,0,0,.22)}
+    .btn:hover{
+      transform: translateY(-1px);
+      border-color:var(--border2);
+      box-shadow:0 22px 54px rgba(0,0,0,.24);
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+    }
     .btn:active{transform: translateY(0)}
     .btn-ghost{background:transparent;box-shadow:none}
     .btn-ghost:hover{background:rgba(255,255,255,.06);box-shadow:none}
@@ -152,7 +170,7 @@
     .wrap{
       height: calc(100vh - 68px);
       display:grid;
-      grid-template-columns: 1fr 392px;
+      grid-template-columns: 1fr 404px;
       gap: 14px;
       padding: 14px;
     }
@@ -166,13 +184,28 @@
       position:relative;
       background: #05070b;
     }
+    /* Vignette + inner frame */
     #map:before{
       content:"";
       position:absolute; inset:0;
       pointer-events:none;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), inset 0 0 120px rgba(103,232,249,.06);
       border-radius: var(--radius);
-      z-index: 5;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.06),
+        inset 0 0 160px rgba(0,0,0,.55),
+        inset 0 0 110px rgba(103,232,249,.05);
+      z-index: 7;
+    }
+    /* Subtle film grain (cheap, effective) */
+    #map:after{
+      content:"";
+      position:absolute; inset:-20%;
+      pointer-events:none;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+      opacity:.10;
+      mix-blend-mode: overlay;
+      z-index: 6;
     }
 
     .sidebar{
@@ -187,18 +220,19 @@
       border: 1px solid rgba(255,255,255,.10);
       border-radius: var(--radius);
       box-shadow: var(--shadow2);
-      backdrop-filter: blur(18px);
+      backdrop-filter: blur(20px);
       overflow:hidden;
+      transform: translateZ(0);
     }
     .cardHeader{
       padding:12px 14px;
       display:flex;align-items:center;justify-content:space-between;gap:10px;
       border-bottom:1px solid rgba(255,255,255,.08);
-      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
     }
     .cardTitle{font-weight:900;letter-spacing:.2px;display:flex;align-items:center;gap:10px}
     .pill{
-      font-size:11px;font-weight:800;
+      font-size:11px;font-weight:900;
       padding:4px 9px;border-radius:999px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.06);
@@ -221,13 +255,17 @@
       border-radius: 16px;
       background: rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.08);
-      transition: transform .12s ease, border-color .15s ease;
+      transition: transform .12s ease, border-color .15s ease, background .15s ease;
     }
-    .legendItem:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.14)}
+    .legendItem:hover{
+      transform:translateY(-1px);
+      border-color:rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+    }
     .swatch{
       width:16px;height:16px;border-radius:7px;
       border:1px solid rgba(255,255,255,.16);
-      box-shadow: 0 12px 26px rgba(0,0,0,.25);
+      box-shadow: 0 14px 28px rgba(0,0,0,.28);
       flex:0 0 auto;
     }
     .legendLabel{
@@ -245,12 +283,14 @@
     .gradBar{
       height:18px;border-radius: 999px;
       border:1px solid rgba(255,255,255,.12);
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 14px 34px rgba(0,0,0,.25);
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,.28),
+        0 16px 40px rgba(0,0,0,.30);
       overflow:hidden;
-      background: linear-gradient(90deg, #0b1220, #67e8f9);
+      background: linear-gradient(90deg, #0b1220, #7c3aed, #67e8f9);
     }
     .gradBar.div{
-      background: linear-gradient(90deg, #ff4d6d, #0b1220, #67e8f9);
+      background: linear-gradient(90deg, #ff2d55, #0b1220, #22d3ee);
     }
     .gradMeta{
       display:flex;justify-content:space-between;gap:10px;
@@ -280,7 +320,7 @@
     }
     .winnerDot{
       width:10px;height:10px;border-radius:999px;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 10px 18px rgba(0,0,0,.25);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 12px 22px rgba(0,0,0,.28);
     }
 
     .bars{margin-top:12px;display:flex;flex-direction:column;gap:10px}
@@ -296,17 +336,59 @@
       background: rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.10);
       overflow:hidden;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.22);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.24);
     }
     .barFill{
       height:100%;
       width:0%;
       border-radius:999px;
-      background: linear-gradient(90deg, rgba(103,232,249,.92), rgba(167,139,250,.85));
+      filter: saturate(1.25) contrast(1.08);
     }
     .barVal{font-size:12px;color:var(--muted2);white-space:nowrap}
 
-    /* ===== Loading curtain (only at startup) ===== */
+    /* ===== Hover tooltip (map) ===== */
+    .hoverTip{
+      position:absolute;
+      z-index: 40;
+      pointer-events:none;
+      transform: translate(-50%, calc(-100% - 14px));
+      display:none;
+      min-width: 220px;
+      max-width: 320px;
+      padding: 10px 11px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(12,16,26,.88), rgba(7,9,14,.84));
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 26px 70px rgba(0,0,0,.62);
+      backdrop-filter: blur(16px);
+    }
+    .hoverTip:after{
+      content:"";
+      position:absolute;
+      left:50%; bottom:-8px;
+      width:16px; height:16px;
+      transform: translateX(-50%) rotate(45deg);
+      background: linear-gradient(180deg, rgba(12,16,26,.88), rgba(7,9,14,.84));
+      border-right: 1px solid rgba(255,255,255,.12);
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+    .hoverTip .t1{font-weight:900; letter-spacing:.2px; font-size:13px}
+    .hoverTip .t2{margin-top:2px; color: var(--muted2); font-size:12px; display:flex; justify-content:space-between; gap:10px}
+    .hoverTip .mini{
+      margin-top:8px;
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .miniPill{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      display:inline-flex; align-items:center; gap:8px;
+    }
+
+    /* ===== Startup loading curtain (only at startup) ===== */
     .curtain{
       position:fixed; inset:0;
       display:flex; align-items:center; justify-content:center;
@@ -317,13 +399,13 @@
     }
     .curtain.hide{opacity:0; visibility:hidden; pointer-events:none}
     .loaderCard{
-      width:min(520px, 92vw);
-      border-radius: 22px;
+      width:min(560px, 92vw);
+      border-radius: 24px;
       padding: 16px 16px 18px;
-      background: linear-gradient(180deg, rgba(12,16,26,.78), rgba(8,10,14,.82));
+      background: linear-gradient(180deg, rgba(12,16,26,.80), rgba(8,10,14,.84));
       border:1px solid rgba(255,255,255,.12);
-      box-shadow: 0 26px 90px rgba(0,0,0,.62);
-      backdrop-filter: blur(20px);
+      box-shadow: 0 30px 110px rgba(0,0,0,.70);
+      backdrop-filter: blur(22px);
     }
     .loaderTop{
       display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -349,7 +431,7 @@
       padding:0;
       background: linear-gradient(180deg, rgba(12,16,26,.92), rgba(8,10,14,.86));
       color: var(--text);
-      box-shadow: 0 30px 110px rgba(0,0,0,.70);
+      box-shadow: 0 30px 120px rgba(0,0,0,.76);
       overflow:hidden;
     }
     dialog::backdrop{background: rgba(0,0,0,.66)}
@@ -357,7 +439,7 @@
       padding:14px 16px;
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       border-bottom:1px solid rgba(255,255,255,.10);
-      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       font-weight:900;
     }
     .dlgBody{padding:14px 16px}
@@ -405,10 +487,10 @@
           <div class="spinner"></div>
           <div class="loaderTitle">Loading Turkey districts…</div>
         </div>
-        <div class="tag">v0.2</div>
+        <div class="tag">v0.3</div>
       </div>
       <div id="loaderMsg" class="loaderBody">Fetching GeoJSON & population…</div>
-      <div class="loaderHint">Tip: host via GitHub Pages (not <span class="mono">file://</span>) so data loads reliably.</div>
+      <div class="loaderHint">Host via GitHub Pages (not <span class="mono">file://</span>) so fetch works reliably.</div>
     </div>
   </div>
 
@@ -416,7 +498,7 @@
     <div class="brand">
       <div class="mark" aria-hidden="true"></div>
       <div class="brandText">
-        <div class="title">Turkey Redistricter <span class="tag">clean UI</span></div>
+        <div class="title">Turkey Redistricter <span class="tag">redistricter-style</span></div>
         <div class="sub">districts • elections • population • layers</div>
       </div>
     </div>
@@ -426,8 +508,8 @@
         <span>Layer</span>
         <div class="selectWrap">
           <select id="modeSelect">
-            <option value="election_winner">Election: winner</option>
-            <option value="election_margin">Election: margin</option>
+            <option value="election_winner">Election: winner (intensity)</option>
+            <option value="election_margin">Election: margin (aggressive)</option>
             <option value="population_year">Population: year</option>
             <option value="population_change">Population: change</option>
           </select>
@@ -474,6 +556,7 @@
         </svg>
         Fit
       </button>
+
       <button id="helpBtn" class="btn btn-ghost" title="Help">
         <svg class="ico" viewBox="0 0 24 24" fill="none">
           <path d="M12 18h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
@@ -486,7 +569,9 @@
   </header>
 
   <div class="wrap">
-    <div id="map"></div>
+    <div id="map">
+      <div id="hoverTip" class="hoverTip"></div>
+    </div>
 
     <aside class="sidebar">
       <section class="card">
@@ -527,7 +612,8 @@
               <li>Election JSONs: <code>Edirne.json</code>, <code>Ankara.json</code>… (missing is OK)</li>
             </ul>
           </li>
-          <li>Hover a district to see population + election details.</li>
+          <li>Turkish letter matching is normalized (İ/ı/Ş/Ğ/Ü/Ö/Ç).</li>
+          <li><b>Winner layer</b> uses margin to control intensity (close = muted, landslide = vivid).</li>
         </ul>
       </div>
     </div>
@@ -555,38 +641,61 @@
     ];
     const plateToProvince = new Map(PROVINCES.map(([n,p]) => [p,n]));
 
+    // Party colors (you can expand this anytime)
     const PARTY_COLORS = new Map([
-      ["CHP", "#e5383b"],
-      ["AK PARTİ", "#f59f00"],
-      ["MHP", "#9b2226"],
-      ["İYİ PARTİ", "#ffd500"],
-      ["YEŞİL SOL PARTİ", "#2a9d8f"],
-      ["DEM PARTİ", "#2a9d8f"],
-      ["TİP", "#c1121f"],
-      ["ZAFER PARTİSİ", "#4361ee"],
-      ["YENİDEN REFAH", "#40916c"],
-      ["SAADET", "#2b9348"],
+      ["CHP", "#ff2d55"],
+      ["AK PARTİ", "#ffb000"],
+      ["MHP", "#b5172b"],
+      ["İYİ PARTİ", "#ffe100"],
+      ["YEŞİL SOL PARTİ", "#00d1b2"],
+      ["DEM PARTİ", "#00d1b2"],
+      ["TİP", "#ff0035"],
+      ["ZAFER PARTİSİ", "#3a86ff"],
+      ["YENİDEN REFAH", "#24d37e"],
+      ["SAADET", "#2ad36b"],
       ["DEVA", "#4cc9f0"],
-      ["GELECEK", "#7209b7"],
-      ["MEMLEKET", "#ef233c"],
+      ["GELECEK", "#8a2be2"],
+      ["MEMLEKET", "#ff4d6d"],
     ]);
 
-    // Turkish folding
-    const TR_MAP = new Map([
-      ["İ","I"],["I","I"],["Ş","S"],["Ğ","G"],["Ü","U"],["Ö","O"],["Ç","C"],
-      ["ı","I"],["ş","S"],["ğ","G"],["ü","U"],["ö","O"],["ç","C"],
-    ]);
-    function trFold(s){
+    // ---------- Robust Turkish keying (fixes İ / combining dots etc.) ----------
+    const HAS_UNICODE_PROPS = (() => {
+      try { new RegExp("\\p{L}", "u"); return true; } catch { return false; }
+    })();
+
+    function stripDiacritics(s){
+      // NFKD breaks Ş into S + combining; remove combining marks
+      return s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function keyify(s){
       if (s == null) return "";
-      s = String(s).trim().replace(/\s+/g," ");
-      s = Array.from(s).map(ch => TR_MAP.get(ch) ?? ch).join("");
-      s = s.toUpperCase();
-      s = s.replace(/[()\-,\.]/g," ").replace(/\s+/g," ").trim();
-      return s;
+      let x = String(s).trim();
+
+      // normalize “İ” issues + remove combining marks
+      x = stripDiacritics(x);
+
+      // dotless i survives diacritic stripping → handle explicitly
+      x = x.replace(/ı/g, "i");
+
+      // normalize punctuation & whitespace
+      x = x.replace(/[’']/g, " ");
+      x = HAS_UNICODE_PROPS
+        ? x.replace(/[^\p{L}\p{N}]+/gu, " ")
+        : x.replace(/[^A-Za-z0-9]+/g, " ");
+
+      x = x.replace(/\s+/g, " ").trim().toUpperCase();
+      return x;
     }
-    function trAsciiName(s){
-      return Array.from(String(s||"")).map(ch => TR_MAP.get(ch) ?? ch).join("").replace(/ı/g,"i");
+
+    function asciiName(s){
+      // for file name candidates
+      if (s == null) return "";
+      let x = stripDiacritics(String(s));
+      x = x.replace(/ı/g, "i");
+      return x;
     }
+
     function parseIntTR(x){
       if (x == null) return null;
       const s = String(x).trim();
@@ -596,6 +705,7 @@
       if (!digits) return null;
       return Number(digits);
     }
+
     function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
     function formatInt(n){
       if (n == null || Number.isNaN(n)) return "—";
@@ -603,6 +713,7 @@
     }
     function safe(v){ return (v==null || v==="") ? "—" : String(v); }
 
+    // Color helpers
     function lerp(a,b,t){ return a + (b-a)*t; }
     function hexToRgb(hex){
       const h = hex.replace("#","");
@@ -620,9 +731,9 @@
     function hashColor(str){
       let h=0;
       for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i))>>>0;
-      const r = 80 + (h & 0x7f);
-      const g = 80 + ((h>>8) & 0x7f);
-      const b = 80 + ((h>>16) & 0x7f);
+      const r = 90 + (h & 0x7f);
+      const g = 90 + ((h>>8) & 0x7f);
+      const b = 90 + ((h>>16) & 0x7f);
       return rgbToHex(r,g,b);
     }
     function colorForParty(name){
@@ -631,7 +742,7 @@
       return PARTY_COLORS.get(clean) ?? hashColor(clean);
     }
 
-    // Robust URL resolution
+    // Robust URL resolution (fixes “string did not match expected pattern” cases)
     function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
     async function fetchText(rel){
       const url = resolveUrl(rel);
@@ -668,13 +779,15 @@
       el.closeHelpBtn = document.getElementById("closeHelpBtn");
       el.curtain = document.getElementById("curtain");
       el.loaderMsg = document.getElementById("loaderMsg");
+      el.hoverTip = document.getElementById("hoverTip");
+      el.mapDiv = document.getElementById("map");
     }
 
     // State
     const state = {
-      pop: null, // {provKey: {distKey: {2014,2019,2024}}}
-      elections: new Map(), // uk -> row
-      districtData: new Map(), // uk -> joined
+      pop: null,                 // {provKey: {distKey: {2014,2019,2024}}}
+      elections: new Map(),      // uk -> row
+      districtData: new Map(),   // uk -> joined
       mode: "election_winner",
       year: 2024,
       yearA: 2014,
@@ -687,7 +800,7 @@
     function initMap(){
       map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([39.0, 35.0], 6);
 
-      // Dark basemap, no key
+      // Dark basemap
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
@@ -702,30 +815,88 @@
       }).addTo(map);
     }
 
+    // Intensity curve for “more extreme” map
+    function curve(t){
+      // make small differences pop
+      t = clamp01(t);
+      return Math.pow(t, 0.55);
+    }
+
+    // More aggressive borders on hover for “Redistricter feel”
     function featureStyle(feature){
       const base = colorForFeature(feature);
       return {
-        color: "rgba(255,255,255,.18)",
-        weight: 0.9,
+        color: "rgba(255,255,255,.22)",
+        weight: 1.0,
         opacity: 1,
         fillColor: base,
-        fillOpacity: 0.72,
+        fillOpacity: 0.86,
       };
+    }
+
+    function showHoverTip(feature, ev){
+      const uk = feature.properties.__uk;
+      const j = state.districtData.get(uk);
+      const prov = j?.provName ?? "";
+      const dist = j?.distName ?? "";
+
+      const e = j?.election;
+      const pop = j?.pop?.[state.year] ?? null;
+
+      const winner = e?.__winner ?? null;
+      const mShare = e?.__marginShare ?? null;
+
+      const dot = winner ? `<span class="winnerDot" style="background:${colorForParty(winner)}"></span>` : "";
+
+      el.hoverTip.innerHTML = `
+        <div class="t1">${dist}</div>
+        <div class="t2"><span>${prov}</span><span class="mono">${pop==null?"—":formatInt(pop)}</span></div>
+        <div class="mini">
+          ${winner ? `<span class="miniPill">${dot}<b>${winner}</b></span>` : `<span class="miniPill">No election</span>`}
+          ${mShare!=null ? `<span class="miniPill"><span class="mono">±</span>${(100*mShare).toFixed(1)}%</span>` : ``}
+        </div>
+      `;
+
+      const rect = el.mapDiv.getBoundingClientRect();
+      const x = ev.originalEvent.clientX - rect.left;
+      const y = ev.originalEvent.clientY - rect.top;
+
+      el.hoverTip.style.left = `${x}px`;
+      el.hoverTip.style.top  = `${y}px`;
+      el.hoverTip.style.display = "block";
+    }
+
+    function moveHoverTip(ev){
+      const rect = el.mapDiv.getBoundingClientRect();
+      const x = ev.originalEvent.clientX - rect.left;
+      const y = ev.originalEvent.clientY - rect.top;
+      el.hoverTip.style.left = `${x}px`;
+      el.hoverTip.style.top  = `${y}px`;
+    }
+
+    function hideHoverTip(){
+      el.hoverTip.style.display = "none";
     }
 
     function onEachDistrict(feature, layer){
       layer.on({
-        mouseover: () => {
+        mouseover: (ev) => {
+          // more dramatic hover
           layer.setStyle({
-            weight: 2.2,
-            color: "rgba(255,255,255,.86)",
-            fillOpacity: 0.84
+            weight: 2.8,
+            color: "rgba(255,255,255,.92)",
+            fillOpacity: 0.95
           });
           updateHover(feature);
+          showHoverTip(feature, ev);
+        },
+        mousemove: (ev) => {
+          moveHoverTip(ev);
         },
         mouseout: () => {
           districtLayer.resetStyle(layer);
           el.hoverBox.innerHTML = `<div class="muted small">Hover a district.</div>`;
+          hideHoverTip();
         }
       });
     }
@@ -742,7 +913,9 @@
 
         const row = { ...r };
         row.__district = (r["İlçe Adı"] ?? r["Ilçe Adı"] ?? r["Ilce Adı"] ?? r["İlçe Adi"] ?? "").toString().trim();
-        row.__distKey = trFold(row.__district);
+
+        // KEY FIX: normalize Turkish letters + combining marks
+        row.__distKey = keyify(row.__district);
 
         row.__registered = parseIntTR(r["Kayıtlı Seçmen Sayısı"]);
         row.__cast = parseIntTR(r["Oy Kullanan Seçmen Sayısı"]);
@@ -778,7 +951,7 @@
     async function tryFetchElectionJson(provName, plate){
       const candidates = [
         `${provName}.json`,
-        `${trAsciiName(provName)}.json`,
+        `${asciiName(provName)}.json`,
         `${plate}.json`,
       ];
       for (const rel of candidates){
@@ -853,14 +1026,28 @@
       if (min === max) return "#67e8f9";
 
       if (kind === "seq"){
-        const t = (val - min) / (max - min);
-        // elegant cold gradient on dark
-        return mixHex("#0b1220", "#67e8f9", clamp01(t));
+        let t = (val - min) / (max - min);
+        t = curve(t);
+        // much more dramatic: violet -> aqua, with dark floor
+        const mid = mixHex("#7c3aed", "#22d3ee", t);
+        return mixHex("#0b1220", mid, 0.92);
       } else {
         const m = Math.max(Math.abs(min), Math.abs(max));
-        const t = clamp01((val + m) / (2*m));
-        if (t < 0.5) return mixHex("#ff4d6d", "#0b1220", t/0.5);
-        return mixHex("#0b1220", "#67e8f9", (t-0.5)/0.5);
+        let t = clamp01((val + m) / (2*m));
+        // non-linear to exaggerate tails
+        t = t < 0.5 ? 0.5 * curve(t/0.5) : 0.5 + 0.5 * curve((t-0.5)/0.5);
+
+        if (t < 0.5) {
+          // decrease: hot rose
+          const u = t/0.5;
+          const c = mixHex("#ff2d55", "#0b1220", u);
+          return mixHex("#0b1220", c, 0.96);
+        } else {
+          // increase: bright aqua
+          const u = (t-0.5)/0.5;
+          const c = mixHex("#0b1220", "#22d3ee", u);
+          return mixHex("#0b1220", c, 0.96);
+        }
       }
     }
 
@@ -882,12 +1069,32 @@
       const e = joined?.election;
       if (!e) return "rgba(255,255,255,.06)";
 
-      if (state.mode === "election_margin"){
-        const base = colorForParty(e.__winner);
-        const t = clamp01((e.__marginShare ?? 0) / 0.25);
-        return mixHex(base, "#070a10", 0.40 * t);
+      const base = colorForParty(e.__winner);
+      const m = e.__marginShare ?? 0;
+
+      if (state.mode === "election_winner"){
+        // EXTREME: intensity by margin.
+        // close races: muted towards dark; landslides: near pure base color.
+        let t = clamp01(m / 0.22);   // 22% lead ~ "maxed"
+        t = curve(t);
+
+        // near-neutral for close races
+        const muted = mixHex("#0b1220", base, 0.35);
+        // vivid for landslides
+        const vivid = mixHex("#0b1220", base, 0.98);
+
+        return mixHex(muted, vivid, t);
       }
-      return colorForParty(e.__winner);
+
+      // election_margin: even more aggressive contrast.
+      // close => pale (almost white-tinted), huge margins => deep saturated.
+      let t = clamp01(m / 0.25);
+      t = curve(t);
+
+      const pale = mixHex("#ffffff", base, 0.55);  // readable on dark
+      const deep = mixHex("#0b1220", base, 0.98);
+
+      return mixHex(pale, deep, t);
     }
 
     // Legend render
@@ -895,14 +1102,15 @@
       el.legend.innerHTML = "";
 
       const pill =
-        state.mode === "election_winner" ? "Election — winner" :
-        state.mode === "election_margin" ? "Election — margin" :
+        state.mode === "election_winner" ? "Election — winner (intensity)" :
+        state.mode === "election_margin" ? "Election — margin (aggressive)" :
         state.mode === "population_year" ? `Population — ${state.year}` :
         `Population — change ${state.yearA}→${state.yearB}`;
 
       el.legendPill.textContent = pill;
 
       if (state.mode === "election_winner" || state.mode === "election_margin"){
+        // Top parties by district count
         const wins = new Map();
         for (const j of state.districtData.values()){
           const w = j.election?.__winner;
@@ -933,13 +1141,15 @@
           el.legend.appendChild(item);
         }
 
-        if (state.mode === "election_margin"){
-          const note = document.createElement("div");
-          note.className = "muted2 small";
-          note.style.marginTop = "10px";
-          note.textContent = "Darker shade = larger winning margin.";
-          el.legend.appendChild(note);
-        }
+        const note = document.createElement("div");
+        note.className = "muted2 small";
+        note.style.marginTop = "10px";
+        note.textContent =
+          state.mode === "election_winner"
+            ? "Close races are muted; landslides become vivid."
+            : "Low margin is pale; high margin is deep/saturated.";
+        el.legend.appendChild(note);
+
         return;
       }
 
@@ -995,9 +1205,7 @@
       const e = joined?.election;
 
       let html = `
-        <div class="headline">
-          <div>${distName}</div>
-        </div>
+        <div class="headline"><div>${distName}</div></div>
         <div class="subline">${provName}</div>
         <div class="sep"></div>
       `;
@@ -1050,7 +1258,6 @@
           </div>
         `;
 
-        // Top party bars (up to 5)
         const top = (e.__partyVotes ?? []).slice(0, 5);
         if (top.length && valid){
           html += `<div class="sep"></div><div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Top parties</div>`;
@@ -1062,7 +1269,7 @@
               <div class="barRow">
                 <div class="barName">${party}</div>
                 <div class="barTrack">
-                  <div class="barFill" style="width:${(100*share).toFixed(1)}%; background: linear-gradient(90deg, ${c}, rgba(167,139,250,.72));"></div>
+                  <div class="barFill" style="width:${(100*share).toFixed(1)}%; background: linear-gradient(90deg, ${c}, rgba(255,255,255,.16));"></div>
                 </div>
                 <div class="barVal mono">${(100*share).toFixed(1)}%</div>
               </div>
@@ -1129,11 +1336,11 @@
         fetchCsv(FILES.POPCSV),
       ]);
 
-      // population index
+      // population index (KEY FIX: keyify)
       const pop = {};
       for (const row of popRows){
-        const prov = trFold(row.Province ?? row.province ?? row.PROVINCE);
-        const dist = trFold(row.District ?? row.district ?? row.DISTRICT);
+        const prov = keyify(row.Province ?? row.province ?? row.PROVINCE);
+        const dist = keyify(row.District ?? row.district ?? row.DISTRICT);
         if (!prov || !dist) continue;
         pop[prov] ??= {};
         pop[prov][dist] = {
@@ -1144,15 +1351,15 @@
       }
       state.pop = pop;
 
-      // features
+      // features (KEY FIX: keyify district names)
       const features = (geo.features || [])
         .filter(f => (f.properties?.admin_level === "6" || f.properties?.admin_level === 6))
         .map(f => {
           const plate = parsePlateFromNetwork(f.properties?.network);
           const provName = plateToProvince.get(plate) ?? "Unknown";
-          const provKey = trFold(provName);
+          const provKey = keyify(provName);
           const distName = f.properties?.name ?? "";
-          const distKey = trFold(distName);
+          const distKey = keyify(distName);
           const uk = uniqueKey(plate ?? 0, distKey);
           return {
             ...f,
@@ -1171,7 +1378,6 @@
       districtLayer.clearLayers();
       districtLayer.addData(features);
 
-      // join base
       rebuildDistrictDataIndex();
       districtLayer.setStyle(featureStyle);
 
@@ -1179,7 +1385,6 @@
 
       renderLegend();
 
-      // load elections
       el.loaderMsg.textContent = "Loading election files (missing files are OK)…";
       await loadAllElections();
 
@@ -1187,7 +1392,6 @@
       districtLayer.setStyle(featureStyle);
       renderLegend();
 
-      // done
       el.curtain.classList.add("hide");
     }
 
@@ -1201,7 +1405,6 @@
       }catch(err){
         console.error(err);
         el.loaderMsg.textContent = `Fatal: ${err.message}`;
-        // leave curtain up if something goes wrong
       }
     });
 
