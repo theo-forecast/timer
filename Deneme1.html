@@ -503,6 +503,8 @@
       backdrop-filter: blur(12px);
       display:none;
       max-width: 420px;
+    
+      pointer-events:none;
     }
     .drawHud b{font-weight:900}
     #map.drawMode .drawHud{display:block}
@@ -986,7 +988,7 @@ function parsePlateFromNetwork(network){
     let map, districtLayer, canvasRenderer, drawerLayer, drawerRenderer;
 
     function initMap(){
-      map = L.map("map", { zoomControl:true, preferCanvas:true }).setView([39.0, 35.0], 6);
+      map = L.map("map", { zoomControl:true, preferCanvas:false }).setView([39.0, 35.0], 6);
 
       // Light basemap (clean)
       L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
@@ -995,9 +997,11 @@ function parsePlateFromNetwork(network){
       }).addTo(map);
 
       canvasRenderer = L.canvas({ padding: 0.5 });
+      // Use SVG renderer for the *interactive* base district layer (Safari-friendly hit testing).
+      const svgRenderer = L.svg({ padding: 0.5 });
 
       districtLayer = L.geoJSON([], {
-        renderer: canvasRenderer,
+        renderer: svgRenderer,
         style: featureStyle,
         onEachFeature: onEachDistrict,
       }).addTo(map);
