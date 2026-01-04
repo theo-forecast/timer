@@ -3,893 +3,2206 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Turkey Redistricter & Election Viewer</title>
+  <title>Turkey Redistricter</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- d3 for CSV parsing and colors -->
+  <!-- d3 for CSV parsing -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
   <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --bg: #f8fafc;
-      --bg-panel: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --danger: #ef4444;
-      --success: #22c55e;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      --radius: 0.75rem;
+    :root{
+      --bg:#f6f7fb;
+      --bg2:#ffffff;
+      --ink:#0b1220;
+      --muted:#52627a;
+      --muted2:#7a8aa3;
+
+      --border:rgba(12,18,34,.12);
+      --border2:rgba(12,18,34,.18);
+
+      --shadow: 0 16px 60px rgba(12,18,34,.10);
+      --shadow2: 0 12px 30px rgba(12,18,34,.10);
+
+      --radius:16px;
+      --radius2:14px;
+
+      --greenL:#e6f6ea;
+      --greenD:#0f7a3b;
+
+      --redL:#fde8e8;
+      --redD:#b42318;
+
+      --brand:#2563eb;
+      --brand2:#06b6d4;
+
+      --focus:#0ea5e9;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+      background:
+        radial-gradient(1200px 800px at 12% 6%, rgba(37,99,235,.10), transparent 60%),
+        radial-gradient(1100px 900px at 88% 10%, rgba(6,182,212,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg) 0%, #eef2f7 100%);
+      color:var(--ink);
+      overflow:hidden;
     }
 
-    * { box-sizing: border-box; }
+    /* Topbar */
+    .topbar{
+      position:sticky; top:0; z-index:60;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      background: rgba(255,255,255,.82);
+      border-bottom:1px solid var(--border);
+      backdrop-filter: blur(14px);
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      min-width:260px;
+    }
+    .logo{
+      width:36px;height:36px;border-radius:14px;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      box-shadow: 0 14px 30px rgba(37,99,235,.18);
+      position:relative; overflow:hidden;
+    }
+    .logo:before{
+      content:"";
+      position:absolute; inset:-60%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.55), transparent 45%);
+      transform: rotate(18deg);
+    }
+    .brandText{display:flex; flex-direction:column; gap:2px}
+    .brandTitle{
+      font-weight:900; letter-spacing:.2px; font-size:14px;
+      display:flex; align-items:center; gap:10px;
+    }
+    .badge{
+      font-size:11px; font-weight:900;
+      padding:4px 10px; border-radius:999px;
+      background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(6,182,212,.12));
+      border:1px solid rgba(37,99,235,.16);
+      color:#1343c7;
+      white-space:nowrap;
+    }
+    .brandSub{font-size:12px;color:var(--muted2)}
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text-main);
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
+    .controls{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
     }
+    .ctl{display:flex; flex-direction:column; gap:6px; min-width:180px}
+    .ctl span{
+      font-size:11px; color:var(--muted2);
+      text-transform:uppercase; letter-spacing:.16px;
+    }
+    .selectWrap{position:relative}
+    select{
+      appearance:none;
+      width:100%;
+      padding:10px 38px 10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
+      color: var(--ink);
+      font-weight:700;
+      outline:none;
+      transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+    }
+    select:hover{border-color: var(--border2)}
+    select:focus{
+      border-color: rgba(14,165,233,.50);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.12), 0 10px 22px rgba(12,18,34,.06);
+    }
+    .selectWrap:after{
+      content:"";
+      position:absolute; right:12px; top:50%;
+      width:10px;height:10px;
+      border-right:2px solid rgba(15,23,42,.55);
+      border-bottom:2px solid rgba(15,23,42,.55);
+      transform: translateY(-65%) rotate(45deg);
+      pointer-events:none;
+    }
+    .btn{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
+      font-weight:900;
+      cursor:pointer;
+      display:inline-flex; align-items:center; gap:8px;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      border-color: var(--border2);
+      box-shadow: 0 14px 28px rgba(12,18,34,.08);
+    }
+    .btn:active{transform: translateY(0)}
+    .btn-ghost{background:transparent; box-shadow:none}
+    .btn-ghost:hover{background: rgba(15,23,42,.04); box-shadow:none}
+    .ico{width:16px;height:16px;display:inline-block}
 
-    /* --- Sidebar --- */
-    #sidebar {
-      width: 400px;
-      background: var(--bg-panel);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      z-index: 1000;
-      box-shadow: var(--shadow-md);
-      flex-shrink: 0;
+    /* Layout */
+    .wrap{
+      height: calc(100vh - 62px);
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap: 14px;
+      padding: 14px;
     }
-
-    .sidebar-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    h1 {
-      margin: 0 0 0.5rem 0;
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
-    }
-
-    .subtitle {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    /* Mode Switcher */
-    .mode-switcher {
-      display: flex;
-      background: var(--bg);
-      padding: 0.25rem;
-      border-radius: 0.5rem;
-      margin-top: 1rem;
-      border: 1px solid var(--border);
-    }
-
-    .mode-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 0.5rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      border-radius: 0.375rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .mode-btn.active {
-      background: var(--bg-panel);
-      color: var(--primary);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* Scrollable Content Area */
-    .scroll-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1.5rem;
-    }
-
-    /* --- Existing View Styles --- */
-    .control-group { margin-bottom: 1.5rem; }
-    .control-label {
-      display: block;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    select, input[type="text"], button.action-btn {
-      width: 100%;
-      padding: 0.625rem;
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      font-family: inherit;
-      font-size: 0.875rem;
-      background: var(--bg-panel);
-      color: var(--text-main);
-      transition: border-color 0.2s;
-    }
-
-    select:focus, input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .party-legend {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 0.75rem;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      background: var(--bg);
-      padding: 0.5rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border);
-    }
-    .color-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    /* --- Editor Styles --- */
-    .stats-card {
-      background: var(--bg);
-      padding: 1rem;
+    #map{
+      height:100%;
       border-radius: var(--radius);
+      overflow:hidden;
       border: 1px solid var(--border);
-      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+      background:#eef2f7;
+      position:relative;
     }
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.875rem;
-      margin-bottom: 0.25rem;
-    }
-    .stat-val { font-weight: 600; font-variant-numeric: tabular-nums; }
-
-    .tools-bar {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .tool-btn {
-      flex: 1;
-      padding: 0.5rem;
-      border: 1px solid var(--border);
-      background: var(--bg-panel);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-    .tool-btn:hover { background: var(--bg); }
-    .tool-btn.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
+    #map:before{
+      content:"";
+      position:absolute; inset:0;
+      border-radius: var(--radius);
+      pointer-events:none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.75), inset 0 40px 120px rgba(37,99,235,.05);
+      z-index:8;
     }
 
-    .district-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+    .sidebar{
+      height:100%;
+      overflow:auto;
+      padding-right:6px;
+      display:flex; flex-direction:column; gap:12px;
     }
-    .district-card {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem;
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
+    .card{
+      background: rgba(255,255,255,.92);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      backdrop-filter: blur(12px);
     }
-    .district-card:hover { border-color: var(--primary); }
-    .district-card.active {
-      border-color: var(--primary);
-      background: #eff6ff;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    .cardHeader{
+      padding:12px 14px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(12,18,34,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.86));
     }
-    .d-color {
-      width: 1.5rem;
-      height: 1.5rem;
-      border-radius: 0.375rem;
-      margin-right: 0.75rem;
-      border: 1px solid rgba(0,0,0,0.1);
+    .cardTitle{font-weight:900; letter-spacing:.2px}
+    .pill{
+      font-size:11px; font-weight:900;
+      padding:4px 10px; border-radius:999px;
+      background: rgba(15,23,42,.05);
+      border:1px solid rgba(12,18,34,.10);
+      color: rgba(15,23,42,.74);
+      white-space:nowrap;
     }
-    .d-info { flex: 1; }
-    .d-name { font-weight: 600; font-size: 0.875rem; display: block; }
-    .d-pop { font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-    .d-dev { font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
-    .d-dev.good { color: var(--success); }
-    .d-dev.bad { color: var(--danger); }
+    .cardBody{padding:12px 14px}
+    .muted{color:var(--muted)}
+    .muted2{color:var(--muted2)}
+    .small{font-size:12px}
+    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .sep{height:1px;background:rgba(12,18,34,.10); margin:12px 0}
 
-    /* --- Map Area --- */
-    #map-container {
-      flex: 1;
-      position: relative;
+    /* Legend */
+    .legend{display:flex; flex-direction:column; gap:10px}
+    .legendItem{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 10px;
+      border-radius: 14px;
+      background: rgba(15,23,42,.03);
+      border:1px solid rgba(12,18,34,.10);
+      transition: transform .12s ease, border-color .12s ease;
     }
-    #map { width: 100%; height: 100%; outline: none; background: #cddce8; }
+    .legendItem:hover{transform: translateY(-1px); border-color: rgba(12,18,34,.16)}
+    .swatch{
+      width:16px;height:16px;border-radius:6px;
+      border:1px solid rgba(12,18,34,.14);
+      box-shadow: 0 10px 18px rgba(12,18,34,.08);
+      flex:0 0 auto;
+    }
+    .legendLabel{
+      display:flex; width:100%;
+      align-items:baseline; justify-content:space-between; gap:10px;
+    }
+    .legendLabel b{font-weight:900}
+    .legendLabel span{font-size:12px;color:var(--muted2)}
 
-    /* --- Loading Curtain --- */
-    #curtain {
+    .gradWrap{
+      padding:12px;
+      border-radius: 14px;
+      background: rgba(15,23,42,.03);
+      border:1px solid rgba(12,18,34,.10);
+    }
+    .gradBar{
+      height:18px;border-radius:999px;
+      border:1px solid rgba(12,18,34,.14);
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.65), 0 10px 18px rgba(12,18,34,.08);
+      background: linear-gradient(90deg, var(--greenL), var(--greenD));
+    }
+    .gradBar.divAbs{
+      background: linear-gradient(90deg, var(--redD), var(--redL), #f3f4f6, var(--greenL), var(--greenD));
+    }
+    .gradBar.divPct{
+      background: linear-gradient(90deg, var(--redD), var(--redL), #f3f4f6, var(--greenL), var(--greenD));
+    }
+    .gradMeta{
+      display:flex; justify-content:space-between; gap:10px;
+      margin-top:10px;
+      color:var(--muted2);
+      font-size:12px;
+    }
+
+    /* District panel (hover + selection) */
+    .headline{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .hTitle{font-size:14px;font-weight:900;letter-spacing:.2px;line-height:1.2}
+    .hSub{margin-top:2px;color:var(--muted2);font-size:12px}
+    .kvs{display:grid;grid-template-columns:1fr auto;gap:8px 12px;margin-top:10px}
+    .k{color:var(--muted2);font-size:12px}
+    .v{font-weight:900}
+    .chipRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.03);
+      color: rgba(15,23,42,.76);
+      font-size:12px;
+      display:inline-flex;align-items:center;gap:8px;
+      font-weight:800;
+    }
+    .winnerDot{
+      width:10px;height:10px;border-radius:999px;
+      border:1px solid rgba(12,18,34,.18);
+      box-shadow: 0 10px 16px rgba(12,18,34,.08);
+    }
+
+    .bars{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+    .barRow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+    .barName{font-size:12px;font-weight:900}
+    .barTrack{
+      height:10px;border-radius:999px;
+      background: rgba(15,23,42,.06);
+      border:1px solid rgba(12,18,34,.12);
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.70);
+    }
+    .barFill{height:100%;width:0%;border-radius:999px}
+    .barVal{font-size:12px;color:var(--muted2);white-space:nowrap}
+
+    /* Map hover tooltip */
+    .hoverTip{
+      position:absolute;
+      z-index: 45;
+      pointer-events:none;
+      transform: translate(-50%, calc(-100% - 12px));
+      display:none;
+      min-width: 220px;
+      max-width: 340px;
+      padding: 10px 11px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.96);
+      border: 1px solid rgba(12,18,34,.14);
+      box-shadow: 0 18px 50px rgba(12,18,34,.12);
+      backdrop-filter: blur(12px);
+    }
+    .hoverTip:after{
+      content:"";
+      position:absolute;
+      left:50%; bottom:-8px;
+      width:16px; height:16px;
+      transform: translateX(-50%) rotate(45deg);
+      background: rgba(255,255,255,.96);
+      border-right: 1px solid rgba(12,18,34,.12);
+      border-bottom: 1px solid rgba(12,18,34,.12);
+    }
+    .hoverTip .t1{font-weight:900; font-size:13px}
+    .hoverTip .t2{margin-top:2px; color: var(--muted2); font-size:12px; display:flex; justify-content:space-between; gap:10px}
+    .hoverTip .mini{margin-top:8px; display:flex; gap:8px; flex-wrap:wrap}
+    .miniPill{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.03);
+      color: rgba(15,23,42,.76);
+      display:inline-flex; align-items:center; gap:8px;
+      font-weight:800;
+    }
+
+    /* Loading curtain */
+    .curtain{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(246,247,251,.90);
+      backdrop-filter: blur(10px);
+      z-index:999;
+      transition: opacity .25s ease, visibility .25s ease;
+    }
+    .curtain.hide{opacity:0;visibility:hidden;pointer-events:none}
+    .loaderCard{
+      width:min(560px, 92vw);
+      border-radius: 18px;
+      padding: 16px 16px 18px;
+      background: rgba(255,255,255,.96);
+      border:1px solid rgba(12,18,34,.14);
+      box-shadow: 0 22px 70px rgba(12,18,34,.14);
+    }
+    .loaderTop{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding-bottom:10px;border-bottom:1px solid rgba(12,18,34,.10);
+    }
+    .loaderTop .left{display:flex;align-items:center;gap:12px}
+    .spinner{
+      width:18px;height:18px;border-radius:999px;
+      border:2px solid rgba(12,18,34,.18);
+      border-top-color: rgba(37,99,235,.80);
+      animation: spin .85s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loaderTitle{font-weight:900}
+    .loaderBody{margin-top:10px;color:var(--muted)}
+    .loaderHint{margin-top:8px;color:var(--muted2);font-size:12px}
+
+    /* Dialog */
+    dialog{
+      width:min(760px, 92vw);
+      border:none;
+      border-radius: 18px;
+      padding:0;
+      background: rgba(255,255,255,.98);
+      color: var(--ink);
+      box-shadow: 0 26px 110px rgba(12,18,34,.18);
+      overflow:hidden;
+    }
+    dialog::backdrop{background: rgba(12,18,34,.45)}
+    .dlgHead{
+      padding:14px 16px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      border-bottom:1px solid rgba(12,18,34,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.92));
+      font-weight:900;
+    }
+    .dlgBody{padding:14px 16px}
+    code{
+      background: rgba(15,23,42,.04);
+      border:1px solid rgba(12,18,34,.10);
+      padding:2px 8px;
+      border-radius: 10px;
+    }
+
+
+    /* ===== Map Drawer additions ===== */
+    .btn-primary{
+      background: linear-gradient(135deg, rgba(37,99,235,.96), rgba(6,182,212,.86));
+      color:#fff;
+      border:1px solid rgba(37,99,235,.28);
+      box-shadow: 0 14px 30px rgba(37,99,235,.18);
+    }
+    .btn-primary:hover{filter: brightness(1.02)}
+    .btn-primary:active{transform: translateY(1px)}
+    .btn.is-on{
+      box-shadow: 0 0 0 4px rgba(14,165,233,.18), 0 14px 30px rgba(37,99,235,.16);
+      border-color: rgba(14,165,233,.35);
+    }
+
+    .input{
+      width:100%;
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
+      color: var(--ink);
+      font-weight:800;
+      outline:none;
+    }
+    .input:focus{
+      box-shadow: 0 0 0 4px rgba(14,165,233,.18), 0 10px 22px rgba(12,18,34,.06);
+      border-color: rgba(14,165,233,.38);
+    }
+    .drawerGrid{display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin:10px 0 6px}
+    .drawerRow{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .drawerRow .btn{flex:0 0 auto}
+    .drawerSummary{line-height:1.35}
+    .drawerList{display:flex; flex-direction:column; gap:10px; margin-top:10px}
+    .drawerItem{
+      padding:10px;
+      border-radius: 16px;
+      background: rgba(15,23,42,.03);
+      border:1px solid rgba(12,18,34,.10);
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    .drawerItem:hover{transform: translateY(-1px); border-color: rgba(12,18,34,.16)}
+    .drawerItem.active{
+      border-color: rgba(37,99,235,.32);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.10);
+      background: linear-gradient(180deg, rgba(37,99,235,.06), rgba(6,182,212,.03));
+    }
+    .drawerTop{display:flex; gap:10px; align-items:center}
+    .drawerName{
+      flex:1 1 auto;
+      min-width: 0;
+      padding:8px 10px;
+      border-radius: 12px;
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(255,255,255,.72);
+      font-weight:900;
+      outline:none;
+    }
+    .drawerName:focus{border-color: rgba(14,165,233,.45); box-shadow: 0 0 0 4px rgba(14,165,233,.14)}
+    .drawerColor{
+      width:34px; height:34px; padding:0; border:none; background: transparent;
+      border-radius: 10px; overflow:hidden; cursor:pointer;
+      box-shadow: 0 10px 18px rgba(12,18,34,.12);
+    }
+    .drawerMeta{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-top:8px;
+    }
+    .dev{font-weight:900}
+    .dev.pos{color: var(--greenD)}
+    .dev.neg{color: var(--redD)}
+    .drawerBtns{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
+    .btn.mini{padding:8px 10px; border-radius: 12px; font-size:12px}
+    .check{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius: 12px;
+      border:1px solid rgba(12,18,34,.10);
+      background: rgba(255,255,255,.62);
+      font-weight:800;
+      color: rgba(15,23,42,.82);
+      user-select:none;
+    }
+    .check input{accent-color: var(--brand)}
+
+    /* Draw HUD */
+    .drawHud{
+      position:absolute; left:14px; top:14px; z-index:12;
+      padding:10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.92);
+      border:1px solid rgba(12,18,34,.12);
+      box-shadow: 0 16px 40px rgba(12,18,34,.10);
+      backdrop-filter: blur(12px);
+      display:none;
+      max-width: 420px;
+    }
+    .drawHud b{font-weight:900}
+    #map.drawMode .drawHud{display:block}
+    #map.drawMode{cursor: crosshair}
+    .drawHud .kbd{
+      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      font-weight:900;
+      font-size:11px;
+      padding:3px 7px;
+      border-radius: 10px;
+      border:1px solid rgba(12,18,34,.14);
+      background: rgba(15,23,42,.04);
+      margin: 0 4px;
+      white-space:nowrap;
+    }
+
+    /* Toast */
+    .toast{
       position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--bg-panel);
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.5s;
+      left: 14px;
+      bottom: 14px;
+      z-index: 2000;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(15,23,42,.92);
+      color: rgba(255,255,255,.94);
+      box-shadow: 0 16px 60px rgba(12,18,34,.25);
+      border: 1px solid rgba(255,255,255,.12);
+      transform: translateY(20px);
+      opacity:0;
+      pointer-events:none;
+      transition: transform .16s ease, opacity .16s ease;
+      max-width: min(520px, calc(100vw - 28px));
+      font-weight:800;
+      font-size:12px;
     }
-    #curtain.hide { opacity: 0; pointer-events: none; }
-    .loader {
-      width: 40px; height: 40px;
-      border: 4px solid var(--border);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast.show{opacity:1; transform: translateY(0)}
 
-    /* Utilities */
-    .hidden { display: none !important; }
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
+    /* Leaflet control theming */
+    .leaflet-control-zoom, .leaflet-control-attribution{
+      border-radius: 12px !important;
+      border: 1px solid rgba(12,18,34,.14) !important;
+      overflow:hidden !important;
+      box-shadow: 0 12px 30px rgba(12,18,34,.10);
+      background: rgba(255,255,255,.92) !important;
     }
-    .btn-primary:hover { background: var(--primary-hover); }
+    .leaflet-control-zoom a{
+      background: transparent !important;
+      color: rgba(15,23,42,.82) !important;
+      border-bottom: 1px solid rgba(12,18,34,.10) !important;
+      font-weight:900;
+    }
+    .leaflet-control-zoom a:last-child{border-bottom:none !important}
+    .leaflet-control-zoom a:hover{background: rgba(15,23,42,.04) !important}
+    .leaflet-control-attribution{padding:6px 10px !important; color: rgba(82,98,122,.88) !important}
 
+    @media (max-width: 980px){
+      body{overflow:auto}
+      .wrap{grid-template-columns:1fr; height:auto; min-height: calc(100vh - 62px)}
+      #map{height: 62vh}
+      .sidebar{height:auto}
+    }
   </style>
 </head>
-<body>
 
-  <!-- Loading Screen -->
-  <div id="curtain">
-    <div class="loader"></div>
-    <div id="loader-msg">Initializing Application...</div>
+<body>
+  <div id="curtain" class="curtain">
+    <div class="loaderCard">
+      <div class="loaderTop">
+        <div class="left">
+          <div class="spinner"></div>
+          <div class="loaderTitle">Loading Turkey districts…</div>
+        </div>
+        <div class="badge">light UI</div>
+      </div>
+      <div id="loaderMsg" class="loaderBody">Fetching GeoJSON & population…</div>
+      <div class="loaderHint">Run via GitHub Pages (avoid <span class="mono">file://</span>) so fetch works.</div>
+    </div>
   </div>
 
-  <!-- Sidebar -->
-  <aside id="sidebar">
-    <div class="sidebar-header">
-      <h1>Turkey Redistricter</h1>
-      <p class="subtitle">Interactive Election Map & District Drawer</p>
-      
-      <div class="mode-switcher">
-        <button class="mode-btn active" data-mode="view" onclick="setMode('view')">Data View</button>
-        <button class="mode-btn" data-mode="edit" onclick="setMode('edit')">Map Drawer</button>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div class="brandText">
+        <div class="brandTitle">Turkey Redistricter <span class="badge">district view</span></div>
+        <div class="brandSub">hover + click select • elections • population • layers</div>
       </div>
     </div>
 
-    <!-- VIEW MODE UI -->
-    <div id="view-ui" class="scroll-content">
-      <div class="control-group">
-        <label class="control-label">Election</label>
-        <select id="election-select"></select>
+    <div class="controls">
+      <label class="ctl">
+        <span>Layer</span>
+        <div class="selectWrap">
+          <select id="modeSelect">
+            <option value="election_winner">Election: winner (margin → lighter)</option>
+            <option value="population_year">Population: total (green)</option>
+            <option value="population_change_abs">Population: change (red/green)</option>
+            <option value="population_change_pct">Population: change % (red/green)</option>
+          </select>
+        </div>
+      </label>
+
+      <label class="ctl" id="yearWrap">
+        <span>Year</span>
+        <div class="selectWrap">
+          <select id="yearSelect">
+            <option value="2014">2014</option>
+            <option value="2019">2019</option>
+            <option value="2024" selected>2024</option>
+          </select>
+        </div>
+      </label>
+
+      <label class="ctl" id="yearAWrap">
+        <span>From</span>
+        <div class="selectWrap">
+          <select id="yearASelect">
+            <option value="2014" selected>2014</option>
+            <option value="2019">2019</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+      </label>
+
+      <label class="ctl" id="yearBWrap">
+        <span>To</span>
+        <div class="selectWrap">
+          <select id="yearBSelect">
+            <option value="2014">2014</option>
+            <option value="2019">2019</option>
+            <option value="2024" selected>2024</option>
+          </select>
+        </div>
+      </label>
+
+      <button id="fitBtn" class="btn" title="Fit to Turkey">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M7 3H3v4M17 3h4v4M7 21H3v-4M21 21h-4v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Fit
+      </button>
+
+      <button id="clearBtn" class="btn btn-ghost" title="Clear selection (Esc)">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Clear
+      </button>
+
+      <button id="helpBtn" class="btn btn-ghost" title="Help">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M12 18h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M10.2 9a2 2 0 1 1 3.6 1.2c-.7.8-1.8 1.1-1.8 2.3v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10Z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Help
+      </button>
+
+      <button id="drawTopBtn" class="btn btn-primary" title="Map drawer (single-member districts)">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M3 21h6l12-12a2.1 2.1 0 0 0 0-3l-1-1a2.1 2.1 0 0 0-3 0L5 17l-2 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M14 6l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Draw
+      </button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div id="map">
+      <div id="hoverTip" class="hoverTip"></div>
+      <div id="drawHud" class="drawHud">
+        <div style="font-weight:900; margin-bottom:4px">DRAW MODE</div>
+        <div class="muted small">
+          Click a district to assign it to the active SMD. <span class="kbd">Alt</span> erases. <span class="kbd">Shift</span> inspects without assigning.
+        </div>
       </div>
 
-      <div class="control-group">
-        <label class="control-label">Province Filter</label>
-        <select id="province-select">
-          <option value="ALL">All Provinces</option>
-        </select>
-      </div>
-
-      <div class="control-group">
-        <label class="control-label">Legend</label>
-        <div id="legend-container" class="party-legend"></div>
-      </div>
     </div>
 
-    <!-- EDIT MODE UI -->
-    <div id="edit-ui" class="scroll-content hidden">
-      <div class="stats-card">
-        <div class="stat-row">
-          <span>Total Population (2024)</span>
-          <span class="stat-val" id="total-pop">0</span>
+    <aside class="sidebar">
+      <section class="card">
+        <div class="cardHeader">
+          <div class="cardTitle">Legend</div>
+          <div class="pill" id="legendPill">—</div>
         </div>
-        <div class="stat-row">
-          <span>Districts Created</span>
-          <span class="stat-val" id="district-count">0</span>
+        <div class="cardBody">
+          <div id="legend" class="legend"></div>
         </div>
-        <div class="stat-row">
-          <span>Ideal Pop / District</span>
-          <span class="stat-val" id="ideal-pop">-</span>
-        </div>
-        <div class="stat-row" style="margin-top:0.5rem; padding-top:0.5rem; border-top:1px solid var(--border);">
-          <span>Unassigned Pop</span>
-          <span class="stat-val" id="unassigned-pop">0</span>
-        </div>
-      </div>
+      </section>
 
-      <div class="control-group">
-        <label class="control-label">Tools</label>
-        <div class="tools-bar">
-          <button class="tool-btn" id="btn-add-district" onclick="Editor.addDistrict()">+ New District</button>
-          <button class="tool-btn" id="btn-eraser" onclick="Editor.setEraser()">Eraser</button>
+      <section class="card">
+        <div class="cardHeader">
+          <div class="cardTitle">District</div>
+          <div class="pill" id="selPill">none</div>
         </div>
-      </div>
+        <div class="cardBody">
+          <div id="districtBox" class="muted small">Hover a district or click to select.</div>
+        </div>
+      </section>
 
-      <div class="control-group">
-        <label class="control-label">Districts</label>
-        <div id="district-list" class="district-list">
-          <!-- JS populates this -->
+
+      <section class="card" id="drawerCard">
+        <div class="cardHeader">
+          <div class="cardTitle">Map Drawer</div>
+          <div class="pill" id="drawerStatusPill">off</div>
         </div>
+        <div class="cardBody">
+          <div class="drawerRow" style="margin-bottom:10px">
+            <button id="drawerToggleBtn" class="btn btn-primary" title="Toggle draw mode">Draw mode</button>
+            <button id="drawerUndoBtn" class="btn btn-ghost" title="Undo (Ctrl+Z)">Undo</button>
+          </div>
+
+          <div class="drawerGrid">
+            <label class="ctl" style="min-width:0">
+              <span>Target districts</span>
+              <input id="drawerSeatsInput" class="input" type="number" min="1" step="1" value="1" />
+            </label>
+
+            <label class="ctl" style="min-width:0">
+              <span>Active</span>
+              <div class="selectWrap">
+                <select id="drawerActiveSelect"></select>
+              </div>
+            </label>
+          </div>
+
+          <div class="drawerRow" style="margin-top:8px">
+            <button id="drawerNewBtn" class="btn" title="Create a new SMD">New district</button>
+            <button id="drawerClearActiveBtn" class="btn btn-ghost" title="Remove all members from the active district">Clear active</button>
+            <label class="check" title="Show overlay on the map">
+              <input type="checkbox" id="drawerOverlayChk" checked />
+              Overlay
+            </label>
+          </div>
+
+          <div class="sep"></div>
+          <div id="drawerSummary" class="drawerSummary muted small">
+            Create a district, toggle Draw mode, then click districts on the map to build single-member districts.
+          </div>
+
+          <div id="drawerList" class="drawerList"></div>
+
+          <div class="sep"></div>
+          <div class="drawerRow">
+            <button id="drawerExportBtn" class="btn" title="Download a JSON plan">Export</button>
+            <button id="drawerCopyBtn" class="btn btn-ghost" title="Copy plan JSON to clipboard">Copy</button>
+            <button id="drawerImportBtn" class="btn btn-ghost" title="Import a JSON plan">Import</button>
+            <input id="drawerImportFile" type="file" accept=".json,application/json" style="display:none" />
+            <button id="drawerResetBtn" class="btn btn-ghost" title="Remove all drawn districts">Reset</button>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+  </div>
+
+  <dialog id="helpDialog">
+    <div class="dlgHead">
+      <div>Help</div>
+      <button id="closeHelpBtn" class="btn btn-ghost">Close</button>
+    </div>
+    <div class="dlgBody">
+      <div class="muted">
+        <ul>
+          <li>Required files in the same folder:
+            <ul>
+              <li><code>turkey-admin-level-6.geojson</code></li>
+              <li><code>province_district_2014_2019_2024.csv</code></li>
+              <li>Election JSONs: <code>Edirne.json</code>, <code>Ankara.json</code>… (missing is OK)</li>
+            </ul>
+          </li>
+          <li>Hover shows info; click locks selection. Press <b>Esc</b> or Clear to reset.</li>
+          <li><b>Map Drawer:</b> toggle Draw mode to group districts into single-member districts (SMDs). Click assigns, <b>Alt</b> erases, <b>Shift</b> inspects.</li>
+          <li>Population total: light→dark green. Change maps: red (decrease) / green (increase).</li>
+          <li>Election winner: smaller margins become lighter shades of the winner’s color.</li>
+        </ul>
       </div>
     </div>
-  </aside>
+  </dialog>
 
-  <!-- Map -->
-  <main id="map-container">
-    <div id="map"></div>
-  </main>
+  <div id="toast" class="toast" aria-live="polite"></div>
 
   <script>
-    // --- Global State ---
-    const State = {
-      mode: 'view', // 'view' or 'edit'
-      geoData: null,
-      popData: [], // parsed CSV
-      elections: {}, // loaded election JSONs
-      features: [], // array of processed features
-      provinceList: [],
-      
-      // Lookups
-      plateToProvince: new Map(),
-      provinceToPlate: new Map(),
-      districtPopulations: new Map(), // key: __uk, val: 2024 pop
+  (function(){
+    "use strict";
+
+    const FILES = {
+      GEOJSON: "turkey-admin-level-6.geojson",
+      POPCSV: "province_district_2014_2019_2024.csv",
     };
 
-    // --- Editor State ---
-    const Editor = {
-      districts: [], // { id, name, color, pop, members: Set(__uk) }
-      assignments: new Map(), // __uk -> districtId
-      activeDistrictId: null,
-      isEraser: false,
-      isDrawing: false,
-      totalPop: 0,
-      
-      // Methods
-      init() {
-        // Calculate total population from 2024 data
-        let sum = 0;
-        State.features.forEach(f => {
-          const pop = f.properties.__pop || 0;
-          sum += pop;
-          State.districtPopulations.set(f.properties.__uk, pop);
-        });
-        this.totalPop = sum;
-        this.updateStats();
+    const PROVINCES = [
+      ["Adana", 1],["Adıyaman", 2],["Afyonkarahisar", 3],["Ağrı", 4],["Amasya", 5],["Ankara", 6],["Antalya", 7],["Artvin", 8],["Aydın", 9],["Balıkesir", 10],
+      ["Bilecik", 11],["Bingöl", 12],["Bitlis", 13],["Bolu", 14],["Burdur", 15],["Bursa", 16],["Çanakkale", 17],["Çankırı", 18],["Çorum", 19],["Denizli", 20],
+      ["Diyarbakır", 21],["Edirne", 22],["Elazığ", 23],["Erzincan", 24],["Erzurum", 25],["Eskişehir", 26],["Gaziantep", 27],["Giresun", 28],["Gümüşhane", 29],["Hakkâri", 30],
+      ["Hatay", 31],["Isparta", 32],["Mersin", 33],["İstanbul", 34],["İzmir", 35],["Kars", 36],["Kastamonu", 37],["Kayseri", 38],["Kırklareli", 39],["Kırşehir", 40],
+      ["Kocaeli", 41],["Konya", 42],["Kütahya", 43],["Malatya", 44],["Manisa", 45],["Kahramanmaraş", 46],["Mardin", 47],["Muğla", 48],["Muş", 49],["Nevşehir", 50],
+      ["Niğde", 51],["Ordu", 52],["Rize", 53],["Sakarya", 54],["Samsun", 55],["Siirt", 56],["Sinop", 57],["Sivas", 58],["Tekirdağ", 59],["Tokat", 60],
+      ["Trabzon", 61],["Tunceli", 62],["Şanlıurfa", 63],["Uşak", 64],["Van", 65],["Yozgat", 66],["Zonguldak", 67],["Aksaray", 68],["Bayburt", 69],["Karaman", 70],
+      ["Kırıkkale", 71],["Batman", 72],["Şırnak", 73],["Bartın", 74],["Ardahan", 75],["Iğdır", 76],["Yalova", 77],["Karabük", 78],["Kilis", 79],["Osmaniye", 80],
+      ["Düzce", 81],
+    ];
+    const plateToProvince = new Map(PROVINCES.map(([n,p]) => [p,n]));
+
+    // Party colors (extend as needed)
+    const PARTY_COLORS = new Map([
+      ["CHP", "#e11d48"],
+      ["AK PARTİ", "#f59e0b"],
+      ["MHP", "#b91c1c"],
+      ["İYİ PARTİ", "#facc15"],
+      ["YEŞİL SOL PARTİ", "#10b981"],
+      ["DEM PARTİ", "#10b981"],
+      ["TİP", "#ef4444"],
+      ["ZAFER PARTİSİ", "#2563eb"],
+      ["YENİDEN REFAH", "#16a34a"],
+      ["SAADET", "#22c55e"],
+      ["DEVA", "#06b6d4"],
+      ["GELECEK", "#7c3aed"],
+      ["MEMLEKET", "#fb7185"],
+    ]);
+
+    // --- Robust Turkish letter normalization (fixes İ + combining dot & friends) ---
+    const HAS_UNICODE_PROPS = (() => { try { new RegExp("\\p{L}", "u"); return true; } catch { return false; } })();
+
+    function stripDiacritics(s){
+      return String(s).normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+    }
+    function keyify(s){
+      if (s == null) return "";
+      let x = String(s).trim();
+      x = stripDiacritics(x);
+      x = x.replace(/ı/g, "i"); // dotless i
+      x = x.replace(/[’']/g, " ");
+      x = HAS_UNICODE_PROPS ? x.replace(/[^\p{L}\p{N}]+/gu, " ") : x.replace(/[^A-Za-z0-9]+/g, " ");
+      x = x.replace(/\s+/g, " ").trim().toUpperCase();
+      return x;
+    }
+    function asciiName(s){
+      if (s == null) return "";
+      let x = stripDiacritics(String(s));
+      x = x.replace(/ı/g, "i");
+      return x;
+    }
+
+    function parseIntTR(x){
+      if (x == null) return null;
+      const s = String(x).trim();
+      if (!s) return null;
+      if (s.includes("%")) return null;
+      const digits = s.replace(/[^\d]/g,"");
+      if (!digits) return null;
+      return Number(digits);
+    }
+    function formatInt(n){
+      if (n == null || Number.isNaN(n)) return "—";
+      return new Intl.NumberFormat("tr-TR").format(n);
+    }
+    function safe(v){ return (v==null || v==="") ? "—" : String(v); }
+    function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
+    function curve(t){ t=clamp01(t); return Math.pow(t, 0.65); } // punchy but not cartoon
+
+    // Color helpers
+    function lerp(a,b,t){ return a + (b-a)*t; }
+    function hexToRgb(hex){
+      const h = hex.replace("#","");
+      const full = h.length===3 ? h.split("").map(c=>c+c).join("") : h;
+      return [parseInt(full.slice(0,2),16), parseInt(full.slice(2,4),16), parseInt(full.slice(4,6),16)];
+    }
+    function rgbToHex(r,g,b){
+      const to = (x)=>x.toString(16).padStart(2,"0");
+      return `#${to(r)}${to(g)}${to(b)}`;
+    }
+    function mixHex(a,b,t){
+      const [ar,ag,ab]=hexToRgb(a), [br,bg,bb]=hexToRgb(b);
+      return rgbToHex(Math.round(lerp(ar,br,t)), Math.round(lerp(ag,bg,t)), Math.round(lerp(ab,bb,t)));
+    }
+    function hashColor(str){
+      let h=0;
+      for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i))>>>0;
+      const r = 80 + (h & 0x7f);
+      const g = 80 + ((h>>8) & 0x7f);
+      const b = 80 + ((h>>16) & 0x7f);
+      return rgbToHex(r,g,b);
+    }
+    function colorForParty(name){
+      if (!name) return "#cbd5e1";
+      const clean = String(name).trim();
+      return PARTY_COLORS.get(clean) ?? hashColor(clean);
+    }
+
+    // Robust URL resolution (prevents “expected pattern” issues)
+    function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
+    async function fetchText(rel){
+      const url = resolveUrl(rel);
+      const resp = await fetch(url, { cache:"no-store" });
+      if (!resp.ok) throw new Error(`${rel} -> HTTP ${resp.status}`);
+      return await resp.text();
+    }
+    async function fetchJson(rel){ return JSON.parse(await fetchText(rel)); }
+    async function fetchCsv(rel){ return d3.csvParse(await fetchText(rel)); }
+
+function parsePlateFromNetwork(network){
+  const m = String(network ?? "").match(/TR-?(\d{2})-(districts|counties)/i);
+  return m ? Number(m[1]) : null;
+}
+    function uniqueKey(plate, distKey){ return `${plate}|${distKey}`; }
+
+    // UI refs
+    const el = {};
+    function grabEls(){
+      el.modeSelect = document.getElementById("modeSelect");
+      el.yearSelect = document.getElementById("yearSelect");
+      el.yearASelect = document.getElementById("yearASelect");
+      el.yearBSelect = document.getElementById("yearBSelect");
+      el.yearWrap = document.getElementById("yearWrap");
+      el.yearAWrap = document.getElementById("yearAWrap");
+      el.yearBWrap = document.getElementById("yearBWrap");
+      el.legend = document.getElementById("legend");
+      el.legendPill = document.getElementById("legendPill");
+      el.districtBox = document.getElementById("districtBox");
+      el.selPill = document.getElementById("selPill");
+      el.fitBtn = document.getElementById("fitBtn");
+      el.clearBtn = document.getElementById("clearBtn");
+      el.helpBtn = document.getElementById("helpBtn");
+      el.helpDialog = document.getElementById("helpDialog");
+      el.closeHelpBtn = document.getElementById("closeHelpBtn");
+      el.curtain = document.getElementById("curtain");
+      el.loaderMsg = document.getElementById("loaderMsg");
+      el.hoverTip = document.getElementById("hoverTip");
+      el.mapDiv = document.getElementById("map");
+      // Drawer UI
+      el.drawTopBtn = document.getElementById("drawTopBtn");
+      el.drawHud = document.getElementById("drawHud");
+      el.toast = document.getElementById("toast");
+
+      el.drawerStatusPill = document.getElementById("drawerStatusPill");
+      el.drawerToggleBtn = document.getElementById("drawerToggleBtn");
+      el.drawerUndoBtn = document.getElementById("drawerUndoBtn");
+      el.drawerSeatsInput = document.getElementById("drawerSeatsInput");
+      el.drawerActiveSelect = document.getElementById("drawerActiveSelect");
+      el.drawerNewBtn = document.getElementById("drawerNewBtn");
+      el.drawerClearActiveBtn = document.getElementById("drawerClearActiveBtn");
+      el.drawerOverlayChk = document.getElementById("drawerOverlayChk");
+      el.drawerSummary = document.getElementById("drawerSummary");
+      el.drawerList = document.getElementById("drawerList");
+      el.drawerExportBtn = document.getElementById("drawerExportBtn");
+      el.drawerCopyBtn = document.getElementById("drawerCopyBtn");
+      el.drawerImportBtn = document.getElementById("drawerImportBtn");
+      el.drawerImportFile = document.getElementById("drawerImportFile");
+      el.drawerResetBtn = document.getElementById("drawerResetBtn");
+    }
+
+    // State
+    const state = {
+      pop: null,                 // {provKey: {distKey: {2014,2019,2024}}}
+      elections: new Map(),      // uk -> row
+      districtData: new Map(),   // uk -> joined
+      mode: "election_winner",
+      year: 2024,
+      yearA: 2014,
+      yearB: 2024,
+
+      hoverUk: null,
+      selectedUk: null,
+
+      // Map drawer (single-member district builder)
+      drawer: {
+        enabled: false,
+        overlay: true,
+        targetSeats: 1,
+        districts: [],           // [{id,name,color,members:Set<uk>}]
+        activeId: null,
+        assignment: new Map(),   // uk -> districtId
+        undo: [],                // stack of {uk, fromId, toId}
       },
-
-      addDistrict() {
-        const id = Date.now();
-        const num = this.districts.length + 1;
-        const color = this.generateColor(num);
-        
-        this.districts.push({
-          id: id,
-          name: `District ${num}`,
-          color: color,
-          pop: 0,
-          members: new Set()
-        });
-        
-        this.setActive(id);
-        this.renderList();
-        this.updateStats();
-      },
-
-      setEraser() {
-        this.isEraser = true;
-        this.activeDistrictId = null;
-        document.querySelectorAll('.district-card').forEach(el => el.classList.remove('active'));
-        document.getElementById('btn-eraser').classList.add('active');
-      },
-
-      setActive(id) {
-        this.isEraser = false;
-        this.activeDistrictId = id;
-        document.getElementById('btn-eraser').classList.remove('active');
-        this.renderList();
-      },
-
-      assign(featureKey) {
-        if (!featureKey) return;
-        const pop = State.districtPopulations.get(featureKey) || 0;
-        
-        // Remove from old
-        const oldId = this.assignments.get(featureKey);
-        if (oldId) {
-          const d = this.districts.find(d => d.id === oldId);
-          if (d) {
-            d.members.delete(featureKey);
-            d.pop -= pop;
-          }
-        }
-
-        // Add to new
-        if (this.isEraser) {
-          this.assignments.delete(featureKey);
-        } else if (this.activeDistrictId) {
-          const d = this.districts.find(d => d.id === this.activeDistrictId);
-          if (d) {
-            this.assignments.set(featureKey, this.activeDistrictId);
-            d.members.add(featureKey);
-            d.pop += pop;
-          }
-        }
-
-        this.updateStats();
-        this.renderList(); // Update numbers
-        
-        // Update map style for this feature specifically if possible, 
-        // but simple way is refresh all to be safe or use Leaflet style update
-        refreshFeatureStyles();
-      },
-
-      updateStats() {
-        const count = this.districts.length;
-        const ideal = count > 0 ? Math.round(this.totalPop / count) : 0;
-        
-        document.getElementById('total-pop').textContent = this.totalPop.toLocaleString();
-        document.getElementById('district-count').textContent = count;
-        document.getElementById('ideal-pop').textContent = ideal > 0 ? ideal.toLocaleString() : "-";
-        
-        let assignedPop = 0;
-        this.districts.forEach(d => assignedPop += d.pop);
-        document.getElementById('unassigned-pop').textContent = (this.totalPop - assignedPop).toLocaleString();
-      },
-
-      renderList() {
-        const list = document.getElementById('district-list');
-        list.innerHTML = '';
-        
-        const count = this.districts.length;
-        const ideal = count > 0 ? this.totalPop / count : 0;
-
-        this.districts.forEach(d => {
-          const el = document.createElement('div');
-          el.className = `district-card ${d.id === this.activeDistrictId ? 'active' : ''}`;
-          el.onclick = () => this.setActive(d.id);
-          
-          let devHtml = '';
-          if (ideal > 0) {
-            const dev = (d.pop - ideal) / ideal * 100;
-            const devClass = Math.abs(dev) < 5 ? 'good' : 'bad';
-            devHtml = `<span class="d-dev ${devClass}">${dev > 0 ? '+' : ''}${dev.toFixed(1)}%</span>`;
-          }
-
-          el.innerHTML = `
-            <div class="d-color" style="background:${d.color}"></div>
-            <div class="d-info">
-              <span class="d-name">${d.name}</span>
-              <span class="d-pop">${d.pop.toLocaleString()} pop ${devHtml}</span>
-            </div>
-          `;
-          list.appendChild(el);
-        });
-      },
-
-      generateColor(num) {
-        // High contrast distinct colors
-        const colors = [
-          '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', 
-          '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', 
-          '#f43f5e', '#64748b'
-        ];
-        return colors[(num - 1) % colors.length];
-      }
     };
 
-    // --- UI Logic ---
+    // Map
+    let map, districtLayer, canvasRenderer, drawerLayer, drawerRenderer;
 
-    function setMode(mode) {
-      State.mode = mode;
-      
-      // UI Toggles
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
-      
-      document.getElementById('view-ui').classList.toggle('hidden', mode !== 'view');
-      document.getElementById('edit-ui').classList.toggle('hidden', mode !== 'edit');
+    function initMap(){
+      map = L.map("map", { zoomControl:true, preferCanvas:true }).setView([39.0, 35.0], 6);
 
-      // Refresh Map
-      refreshFeatureStyles();
-      
-      // Init editor stats if first time
-      if (mode === 'edit' && Editor.totalPop === 0) {
-        Editor.init();
-      }
-    }
-
-    // --- Map Logic ---
-    let map;
-    let districtLayer;
-    let provinceLayer; // Outline for provinces
-
-    function initMap() {
-      map = L.map('map', { 
-        center: [39, 35], 
-        zoom: 6,
-        zoomControl: false,
-        attributionControl: false
-      });
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-      // Base layer
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19
+      // Light basemap (clean)
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
       }).addTo(map);
 
-      // Mouse events for painting
-      map.on('mousedown', () => { if(State.mode === 'edit') Editor.isDrawing = true; });
-      map.on('mouseup', () => { if(State.mode === 'edit') Editor.isDrawing = false; });
-      map.on('dragend', () => { Editor.isDrawing = false; }); // Safety
-    }
+      canvasRenderer = L.canvas({ padding: 0.5 });
 
-    // --- Data Loading ---
-
-    async function loadAll() {
-      const elLoaderMsg = document.getElementById('loader-msg');
-      
-      try {
-        // 1. Load CSV
-        elLoaderMsg.textContent = "Loading Population Data...";
-        const csvText = await fetch('province_district_2014_2019_2024.csv').then(r => r.text());
-        State.popData = d3.csvParse(csvText);
-
-        // 2. Load GeoJSON
-        elLoaderMsg.textContent = "Loading Map Data...";
-        const geoRes = await fetch('turkey-admin-level-6.geojson');
-        const rawGeo = await geoRes.json();
-        
-        processGeoJSON(rawGeo);
-
-        // 3. Load Elections (Start with Istanbul as default)
-        elLoaderMsg.textContent = "Loading Election Data...";
-        await loadElection('İstanbul.json', 'Istanbul Local 2024');
-
-        // Init UI
-        populateUI();
-        refreshFeatureStyles();
-        document.getElementById('curtain').classList.add('hide');
-
-      } catch (e) {
-        console.error(e);
-        elLoaderMsg.textContent = "Error loading data. Check console.";
-        elLoaderMsg.style.color = "var(--danger)";
-      }
-    }
-
-    function processGeoJSON(geo) {
-      // Create a lookup for pop data
-      // Key format: "ProvinceName|DistrictName" normalized
-      const popMap = new Map();
-      State.popData.forEach(row => {
-        const key = keyify(row.Province) + "|" + keyify(row.District);
-        const pop = parseInt(row['2024'] || "0", 10);
-        popMap.set(key, pop);
-      });
-
-      // Process features
-      // Note: The GeoJSON seems to use 'network' property for province sometimes, or relations.
-      // We will try to extract province and district names.
-      
-      State.features = geo.features.map(f => {
-        const props = f.properties || {};
-        
-        // Extract Name
-        let name = props.name || "Unknown";
-        
-        // Extract Province (Heuristic based on provided file snippet analysis)
-        // The network tag often looks like "TR31-districts" -> Plate 31 -> Hatay
-        let plate = "0";
-        if (props.network) {
-          const match = props.network.match(/TR(\d+)/);
-          if (match) plate = match[1];
-        }
-        
-        // If we have a plate, we can infer province name if we had a mapping.
-        // For now, let's rely on matching names to the CSV.
-        
-        const keyName = keyify(name);
-        
-        // Find matching population row (Brute force for safety if province unknown)
-        // Ideally we filter by province, but extraction is tricky without a mapping table.
-        // We will try to find a district name match in CSV.
-        // Note: This might collide for duplicate district names (e.g. Ereğli), but better than nothing.
-        // Let's refine: Use the plate if available.
-        
-        let pop = 0;
-        let provName = "Unknown";
-        let uniqueKey = props['@id'] || Math.random().toString();
-
-        // Simple lookup by district name in pop data
-        // Priority: Match Plate if possible (Need plate->province map, hardcoding a few or building dynamically?)
-        // Let's build a Plate->Province map from CSV since CSV doesn't have plates.
-        // Actually, standard Turkey plates: 01 Adana, 34 Istanbul etc.
-        // I will assume the CSV is the source of truth for names.
-        
-        const matchedRow = State.popData.find(r => keyify(r.District) === keyName);
-        if (matchedRow) {
-          pop = parseInt(matchedRow['2024'] || "0", 10);
-          provName = matchedRow.Province;
-        }
-
-        return {
-          type: "Feature",
-          geometry: f.geometry,
-          properties: {
-            ...props,
-            __name: name,
-            __prov: provName,
-            __pop: pop,
-            __uk: uniqueKey // Unique key for editor assignment
-          }
-        };
-      });
-
-      // Filter out non-polygons if any (Points exist in the provided snippet)
-      State.features = State.features.filter(f => f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon");
-
-      // Add to map
-      districtLayer = L.geoJSON({type:"FeatureCollection", features:State.features}, {
-        style: styleFeature,
-        onEachFeature: onEachFeature
+      districtLayer = L.geoJSON([], {
+        renderer: canvasRenderer,
+        style: featureStyle,
+        onEachFeature: onEachDistrict,
       }).addTo(map);
 
-      map.fitBounds(districtLayer.getBounds());
+      // Drawer overlay pane (non-interactive): shows user-drawn single-member districts on top of the current layer
+      map.createPane("drawerPane");
+      const dp = map.getPane("drawerPane");
+      dp.style.zIndex = 450;             // above overlayPane (400), below markerPane (600)
+      dp.style.pointerEvents = "none";   // never intercept clicks/hover
+
+      drawerRenderer = L.canvas({ padding: 0.5 });
+      drawerLayer = L.geoJSON([], {
+        pane: "drawerPane",
+        renderer: drawerRenderer,
+        interactive: false,
+        style: drawerFeatureStyle,
+      }).addTo(map);
     }
 
-    async function loadElection(filename, label) {
-      try {
-        const res = await fetch(filename);
-        const data = await res.json();
-        
-        // Process this election file
-        // The provided JSON structure is specific: Array of objects.
-        // First object seems to be header/metadata sometimes? Or flat list.
-        // Looking at snippet: It has "İlçe Adı" and party keys.
-        
-        const electionKey = filename;
-        State.elections[electionKey] = {
-          label: label,
-          data: data
-        };
-
-        // Update Select
-        const sel = document.getElementById('election-select');
-        const opt = document.createElement('option');
-        opt.value = electionKey;
-        opt.text = label;
-        sel.appendChild(opt);
-        
-        // Also add Provinces to filter
-        const provs = new Set(State.features.map(f => f.properties.__prov).filter(p => p !== "Unknown"));
-        const provSel = document.getElementById('province-select');
-        Array.from(provs).sort().forEach(p => {
-          if(!provSel.querySelector(`[value="${p}"]`)){
-             const o = document.createElement('option');
-             o.value = p;
-             o.text = p;
-             provSel.appendChild(o);
-          }
-        });
-
-      } catch (e) {
-        console.warn("Failed to load election", filename, e);
-      }
-    }
-
-    // --- Styling & Interaction ---
-
-    function styleFeature(feature) {
-      // Default Base Style
-      const style = {
-        weight: 1,
+    function styleBase(feature){
+      return {
+        color: "rgba(15,23,42,.28)",
+        weight: 0.9,
         opacity: 1,
-        color: '#cbd5e1', // border
-        fillOpacity: 0.8,
-        fillColor: '#f1f5f9'
+        fillColor: colorForFeature(feature),
+        fillOpacity: 0.92
       };
+    }
 
-      if (State.mode === 'edit') {
-        // Edit Mode Coloring
-        const distId = Editor.assignments.get(feature.properties.__uk);
-        if (distId) {
-          const dist = Editor.districts.find(d => d.id === distId);
-          if (dist) {
-            style.fillColor = dist.color;
-            style.fillOpacity = 0.9;
-            style.color = 'rgba(0,0,0,0.2)';
+    function styleHover(){
+      return {
+        weight: 2.6,
+        color: "rgba(14,165,233,.95)",
+        fillOpacity: 0.96
+      };
+    }
+
+    function styleSelected(){
+      return {
+        weight: 3.2,
+        color: "rgba(37,99,235,.98)",
+        fillOpacity: 0.98
+      };
+    }
+
+    function featureStyle(feature){
+      // base style; selection/hover adjustments happen via setStyle on events
+      return styleBase(feature);
+    }
+
+    function refreshFeatureStyles(){
+      districtLayer.eachLayer(layer => {
+        const uk = layer.feature?.properties?.__uk;
+        layer.setStyle(styleBase(layer.feature));
+        if (uk && state.selectedUk === uk) layer.setStyle(styleSelected());
+      });
+    }
+
+    // Elections
+    function parseElectionRows(rows){
+      const clean = [];
+      if (!Array.isArray(rows)) return clean;
+
+      for (const r of rows){
+        const idRaw = (r["İlçe Id"] ?? r["Ilçe Id"] ?? r["Ilce Id"] ?? r["İLÇE ID"]);
+        const idStr = String(idRaw ?? "").trim();
+        if (!/^\d+$/.test(idStr)) continue;
+
+        const row = { ...r };
+        row.__district = (r["İlçe Adı"] ?? r["Ilçe Adı"] ?? r["Ilce Adı"] ?? r["İlçe Adi"] ?? "").toString().trim();
+        row.__distKey = keyify(row.__district);
+
+        row.__registered = parseIntTR(r["Kayıtlı Seçmen Sayısı"]);
+        row.__cast = parseIntTR(r["Oy Kullanan Seçmen Sayısı"]);
+        row.__valid = parseIntTR(r["Geçerli Oy Toplamı"]);
+
+        const partyVotes = [];
+        for (const [k, v] of Object.entries(r)){
+          const kk = String(k).trim();
+          if (!kk) continue;
+          if (["İlçe Id","İlçe Adı","Belde Adı","Kayıtlı Seçmen Sayısı","Oy Kullanan Seçmen Sayısı","Geçerli Oy Toplamı"].includes(kk)) continue;
+          const votes = parseIntTR(v);
+          if (votes == null) continue;
+          partyVotes.push([kk.trim(), votes]);
+        }
+        partyVotes.sort((a,b)=>b[1]-a[1]);
+        row.__partyVotes = partyVotes;
+
+        const winner = partyVotes[0]?.[0] ?? null;
+        const winnerVotes = partyVotes[0]?.[1] ?? null;
+        const runnerVotes = partyVotes[1]?.[1] ?? null;
+
+        row.__winner = winner;
+        row.__winnerVotes = winnerVotes;
+        row.__runner = partyVotes[1]?.[0] ?? null;
+        row.__marginVotes = (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes - runnerVotes) : null;
+        row.__marginShare = (row.__valid && row.__marginVotes!=null) ? (row.__marginVotes / row.__valid) : null;
+
+        clean.push(row);
+      }
+      return clean;
+    }
+
+    async function tryFetchElectionJson(provName, plate){
+      const candidates = [
+        `${provName}.json`,
+        `${asciiName(provName)}.json`,
+        `${plate}.json`,
+      ];
+      for (const rel of candidates){
+        try{
+          const url = resolveUrl(rel);
+          const resp = await fetch(url, { cache:"no-store" });
+          if (!resp.ok) continue;
+          return await resp.json();
+        }catch(_){}
+      }
+      return null;
+    }
+
+    async function loadAllElections(){
+      const queue = PROVINCES.map(([name, plate]) => ({name, plate}));
+      const concurrency = 8;
+
+      async function worker(){
+        while (queue.length){
+          const job = queue.shift();
+          const raw = await tryFetchElectionJson(job.name, job.plate);
+          if (raw){
+            const parsed = parseElectionRows(raw);
+            for (const row of parsed){
+              const uk = uniqueKey(job.plate, row.__distKey);
+              state.elections.set(uk, row);
+            }
           }
+        }
+      }
+      await Promise.all(Array.from({length: concurrency}, worker));
+    }
+
+    function rebuildDistrictDataIndex(){
+      state.districtData.clear();
+      districtLayer.eachLayer(layer => {
+        const f = layer.feature;
+        const p = f.properties || {};
+        const uk = p.__uk;
+
+        const pop = state.pop?.[p.__provKey]?.[p.__distKey] ?? null;
+        const election = state.elections.get(uk) ?? null;
+
+        state.districtData.set(uk, {
+          feature: f,
+          pop,
+          election,
+          provName: p.__provName,
+          distName: p.__distName,
+        });
+      });
+    }
+
+    // Scaling helper: get ranges for current layer
+    function getLayerStats(){
+      const values = [];
+      const pctValues = [];
+      for (const j of state.districtData.values()){
+        const pop = j.pop;
+        if (!pop) continue;
+        const a = pop[state.yearA], b = pop[state.yearB];
+        if (state.mode === "population_year"){
+          const v = pop[state.year];
+          if (v!=null) values.push(v);
+        } else if (state.mode === "population_change_abs"){
+          if (a!=null && b!=null) values.push(b-a);
+        } else if (state.mode === "population_change_pct"){
+          if (a!=null && b!=null && a !== 0) pctValues.push((b-a)/a);
+        }
+      }
+      values.sort((x,y)=>x-y);
+      pctValues.sort((x,y)=>x-y);
+
+      return {
+        popMin: values.length ? values[0] : null,
+        popMax: values.length ? values[values.length-1] : null,
+        changeAbsMax: values.length ? Math.max(Math.abs(values[0]), Math.abs(values[values.length-1])) : null,
+        pctMin: pctValues.length ? pctValues[0] : null,
+        pctMax: pctValues.length ? pctValues[pctValues.length-1] : null,
+        changePctMax: pctValues.length ? Math.max(Math.abs(pctValues[0]), Math.abs(pctValues[pctValues.length-1])) : null,
+      };
+    }
+
+    // Color for features per layer
+    function colorForFeature(feature){
+      const uk = feature.properties.__uk;
+      const joined = state.districtData.get(uk);
+
+      // Missing data fallback
+      if (!joined) return "#e5e7eb";
+
+      // Population total (green, light->dark)
+      if (state.mode === "population_year"){
+        const v = joined.pop?.[state.year];
+        if (v==null) return "#eef2f7";
+        const {popMin, popMax} = getLayerStats();
+        if (popMin==null || popMax==null || popMin===popMax) return "#34a853";
+        let t = (v - popMin) / (popMax - popMin);
+        t = curve(t);
+        return mixHex(getCss("--greenL"), getCss("--greenD"), t);
+      }
+
+      // Population change (absolute)
+      if (state.mode === "population_change_abs"){
+        const pop = joined.pop;
+        const a = pop?.[state.yearA], b = pop?.[state.yearB];
+        if (a==null || b==null) return "#eef2f7";
+        const delta = b - a;
+        const {changeAbsMax} = getLayerStats();
+        if (!changeAbsMax) return "#eef2f7";
+        if (delta === 0) return "#f3f4f6";
+        const t = curve(Math.min(1, Math.abs(delta) / changeAbsMax));
+        return delta < 0
+          ? mixHex(getCss("--redL"), getCss("--redD"), t)
+          : mixHex(getCss("--greenL"), getCss("--greenD"), t);
+      }
+
+      // Population change (percentage)
+      if (state.mode === "population_change_pct"){
+        const pop = joined.pop;
+        const a = pop?.[state.yearA], b = pop?.[state.yearB];
+        if (a==null || b==null || a===0) return "#eef2f7";
+        const pct = (b - a) / a;
+        const {changePctMax} = getLayerStats();
+        if (!changePctMax) return "#eef2f7";
+        if (pct === 0) return "#f3f4f6";
+        const t = curve(Math.min(1, Math.abs(pct) / changePctMax));
+        return pct < 0
+          ? mixHex(getCss("--redL"), getCss("--redD"), t)
+          : mixHex(getCss("--greenL"), getCss("--greenD"), t);
+      }
+
+      // Election winner (margin smaller => lighter shade of party color)
+      const e = joined.election;
+      if (!e) return "#eef2f7";
+
+      const base = colorForParty(e.__winner);
+      const m = e.__marginShare ?? 0;
+
+      // Scale: 0% margin = very light tint; 25%+ margin ≈ near full color
+      let t = clamp01(m / 0.25);
+      t = curve(t);
+
+      // Keep readable on light map: never pure white
+      const lightTint = mixHex("#ffffff", base, 0.30);   // very light party tint
+      const strong    = mixHex("#ffffff", base, 0.92);   // strong party color
+      return mixHex(lightTint, strong, t);
+    }
+
+    function getCss(name){
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // Hover tooltip
+    function showHoverTip(feature, ev){
+      const uk = feature.properties.__uk;
+      const j = state.districtData.get(uk);
+      if (!j) return;
+
+      const prov = j.provName ?? "";
+      const dist = j.distName ?? "";
+
+      const popSel = j.pop?.[state.year] ?? null;
+
+      const e = j.election;
+      const winner = e?.__winner ?? null;
+      const mShare = e?.__marginShare ?? null;
+
+      const dot = winner ? `<span class="winnerDot" style="background:${colorForParty(winner)}"></span>` : "";
+
+      el.hoverTip.innerHTML = `
+        <div class="t1">${dist}</div>
+        <div class="t2"><span>${prov}</span><span class="mono">${popSel==null?"—":formatInt(popSel)}</span></div>
+        <div class="mini">
+          ${winner ? `<span class="miniPill">${dot}<b>${winner}</b></span>` : `<span class="miniPill">No election</span>`}
+          ${mShare!=null ? `<span class="miniPill"><span class="mono">±</span>${(100*mShare).toFixed(1)}%</span>` : ``}
+        </div>
+      `;
+
+      const rect = el.mapDiv.getBoundingClientRect();
+      const x = ev.originalEvent.clientX - rect.left;
+      const y = ev.originalEvent.clientY - rect.top;
+
+      el.hoverTip.style.left = `${x}px`;
+      el.hoverTip.style.top  = `${y}px`;
+      el.hoverTip.style.display = "block";
+    }
+
+    function moveHoverTip(ev){
+      const rect = el.mapDiv.getBoundingClientRect();
+      const x = ev.originalEvent.clientX - rect.left;
+      const y = ev.originalEvent.clientY - rect.top;
+      el.hoverTip.style.left = `${x}px`;
+      el.hoverTip.style.top  = `${y}px`;
+    }
+    function hideHoverTip(){ el.hoverTip.style.display = "none"; }
+
+    // District panel render (works for hover or selection)
+    function renderDistrictPanel(uk, modeLabel){
+      const j = state.districtData.get(uk);
+      if (!j){
+        el.districtBox.innerHTML = `<div class="muted small">No data.</div>`;
+        return;
+      }
+
+      const provName = j.provName ?? "—";
+      const distName = j.distName ?? "—";
+      const pop = j.pop;
+      const e = j.election;
+
+      el.selPill.textContent = modeLabel;
+
+      let html = `
+        <div class="headline">
+          <div>
+            <div class="hTitle">${distName}</div>
+            <div class="hSub">${provName}</div>
+          </div>
+        </div>
+        <div class="sep"></div>
+      `;
+
+      // Population section
+      html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Population</div>`;
+      if (pop){
+        const a = pop[state.yearA], b = pop[state.yearB];
+        const delta = (a!=null && b!=null) ? (b-a) : null;
+        const pct = (a!=null && b!=null && a!==0) ? ((b-a)/a) : null;
+
+        html += `
+          <div class="kvs">
+            <div class="k">2014</div><div class="v mono">${formatInt(pop[2014])}</div>
+            <div class="k">2019</div><div class="v mono">${formatInt(pop[2019])}</div>
+            <div class="k">2024</div><div class="v mono">${formatInt(pop[2024])}</div>
+          </div>
+          <div class="chipRow">
+            <span class="chip">Selected <span class="mono">${state.year}</span>: <b>${formatInt(pop[state.year])}</b></span>
+            ${delta!=null ? `<span class="chip"><span class="mono">Δ</span>${state.yearA}→${state.yearB}: <b>${formatInt(delta)}</b></span>` : ``}
+            ${pct!=null ? `<span class="chip"><span class="mono">%</span>${state.yearA}→${state.yearB}: <b>${(pct*100).toFixed(1)}%</b></span>` : ``}
+          </div>
+        `;
+      } else {
+        html += `<div class="muted small" style="margin-top:8px">—</div>`;
+      }
+
+      // Election section
+      html += `<div class="sep"></div>`;
+      html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Election</div>`;
+
+      if (e){
+        const winnerColor = colorForParty(e.__winner);
+        const valid = e.__valid ?? null;
+
+        html += `
+          <div class="chipRow" style="margin-top:10px">
+            <span class="chip">
+              <span class="winnerDot" style="background:${winnerColor}"></span>
+              Winner: <b>${safe(e.__winner)}</b>
+              <span class="mono">(${formatInt(e.__winnerVotes)})</span>
+            </span>
+            ${e.__marginVotes!=null ? `<span class="chip">Margin: <b>${formatInt(e.__marginVotes)}</b> <span class="mono">${(100*(e.__marginShare??0)).toFixed(1)}%</span></span>` : ``}
+          </div>
+
+          <div class="kvs" style="margin-top:10px">
+            <div class="k">Registered</div><div class="v mono">${formatInt(e.__registered)}</div>
+            <div class="k">Cast</div><div class="v mono">${formatInt(e.__cast)}</div>
+            <div class="k">Valid</div><div class="v mono">${formatInt(e.__valid)}</div>
+          </div>
+        `;
+
+        const top = (e.__partyVotes ?? []).slice(0, 5);
+        if (top.length && valid){
+          html += `<div class="sep"></div><div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Top parties</div>`;
+          html += `<div class="bars">`;
+          for (const [party, votes] of top){
+            const share = valid ? (votes/valid) : 0;
+            const c = colorForParty(party);
+            html += `
+              <div class="barRow">
+                <div class="barName">${party}</div>
+                <div class="barTrack">
+                  <div class="barFill" style="width:${(100*share).toFixed(1)}%; background: linear-gradient(90deg, ${mixHex("#ffffff", c, 0.85)}, ${mixHex("#ffffff", c, 0.55)});"></div>
+                </div>
+                <div class="barVal mono">${(100*share).toFixed(1)}%</div>
+              </div>
+            `;
+          }
+          html += `</div>`;
         }
       } else {
-        // View Mode Coloring (Election Results)
-        // Simplified Logic: Color by winner of currently selected election
-        // Since we don't have the full logic of the previous app, I'll implement a basic winner-take-all tint
-        
-        // For demonstration, let's keep it gray or use a random consistent color based on name
-        // Real implementation would look up results in State.elections[current]
-        
-        const selVal = document.getElementById('election-select').value;
-        if (selVal && State.elections[selVal]) {
-          const electionData = State.elections[selVal].data;
-          // Find data for this district
-          const distName = feature.properties.__name;
-          // Clean name
-          const row = electionData.find(d => {
-             return d["İlçe Adı"] && keyify(d["İlçe Adı"]) === keyify(distName);
-          });
-
-          if (row) {
-             // Find winner
-             let winner = null;
-             let maxVotes = -1;
-             
-             // Iterate keys to find parties (Hack: exclude metadata keys)
-             Object.keys(row).forEach(k => {
-               if (k !== "İlçe Adı" && k !== "İlçe Id") {
-                  const val = parseInt((row[k] || "0").replace(/\./g,''));
-                  if (!isNaN(val) && val > maxVotes) {
-                    maxVotes = val;
-                    winner = k.trim();
-                  }
-               }
-             });
-             
-             if (winner) {
-               style.fillColor = getPartyColor(winner);
-               style.fillOpacity = 0.8;
-             }
-          }
-        }
+        html += `<div class="muted small" style="margin-top:10px">No election match for this district.</div>`;
       }
-      return style;
+
+      el.districtBox.innerHTML = html;
     }
 
-    function onEachFeature(feature, layer) {
-      // Tooltip
-      layer.bindTooltip(() => {
-        const p = feature.properties;
-        let content = `<b>${p.__name}</b><br/>${p.__prov}<br/>Pop: ${p.__pop.toLocaleString()}`;
-        
-        if (State.mode === 'edit') {
-          const distId = Editor.assignments.get(p.__uk);
-          if (distId) {
-            const d = Editor.districts.find(x => x.id === distId);
-            content += `<br/><b style="color:${d.color}">${d.name}</b>`;
-          }
-        }
-        return content;
-      }, { sticky: true });
+    function clearSelection(){
+      state.selectedUk = null;
+      el.selPill.textContent = "none";
+      el.districtBox.innerHTML = `<div class="muted small">Hover a district or click to select.</div>`;
+      refreshFeatureStyles();
+    }
 
-      // Events
+
+    // ===== Map Drawer (single-member district builder) =====
+    const DRAW_PALETTE = ["#2563eb","#06b6d4","#16a34a","#f97316","#db2777","#7c3aed","#0f766e","#dc2626","#0ea5e9","#9333ea","#65a30d","#f59e0b"];
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#39;");
+    }
+
+    function toast(msg){
+      if (!el.toast) return;
+      el.toast.textContent = msg;
+      el.toast.classList.add("show");
+      clearTimeout(state.drawer._toastT);
+      state.drawer._toastT = setTimeout(() => el.toast.classList.remove("show"), 2200);
+    }
+
+    function randId(){
+      return Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+    }
+
+    function ensureDrawerHasDistrict(){
+      const d = state.drawer;
+      if (d.districts.length) return;
+      const id = randId();
+      d.districts.push({
+        id,
+        name: "District 1",
+        color: DRAW_PALETTE[0],
+        members: new Set(),
+      });
+      d.activeId = id;
+    }
+
+    function setDrawMode(on){
+      state.drawer.enabled = !!on;
+      el.mapDiv?.classList.toggle("drawMode", state.drawer.enabled);
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+      toast(state.drawer.enabled ? "Draw mode: ON" : "Draw mode: OFF");
+    }
+
+    function drawerFeatureStyle(feature){
+      const d = state.drawer;
+      if (!d.overlay) return {opacity:0, fillOpacity:0, weight:0};
+      const uk = feature?.properties?.__uk;
+      const id = uk ? d.assignment.get(uk) : null;
+      if (!id) return {opacity:0, fillOpacity:0, weight:0};
+      const dist = d.districts.find(x => x.id === id);
+      const c = dist?.color ?? "#111827";
+      const isActive = (id === d.activeId);
+
+      return {
+        color: mixHex("#ffffff", c, 0.92),
+        weight: isActive ? 2.8 : 2.0,
+        opacity: 0.95,
+        fillColor: c,
+        fillOpacity: 0.22,
+      };
+    }
+
+    function refreshDrawerOverlayStyles(){
+      if (!drawerLayer) return;
+      const pane = map?.getPane?.("drawerPane");
+      if (pane) pane.style.display = state.drawer.overlay ? "block" : "none";
+      drawerLayer.eachLayer(layer => {
+        layer.setStyle(drawerFeatureStyle(layer.feature));
+      });
+    }
+
+    function getPopForUk(uk, year){
+      const j = state.districtData.get(uk);
+      const v = j?.pop?.[year];
+      return Number.isFinite(v) ? v : 0;
+    }
+
+    function computeDrawerStats(){
+      const d = state.drawer;
+      const year = state.year;
+      let totalPop = 0;
+
+      // Total population across *all* units (for ideal pop target)
+      for (const j of state.districtData.values()){
+        const v = j?.pop?.[year];
+        totalPop += Number.isFinite(v) ? v : 0;
+      }
+
+      const byId = new Map();
+      for (const dist of d.districts){
+        let pop = 0;
+        for (const uk of dist.members) pop += getPopForUk(uk, year);
+        byId.set(dist.id, { pop, n: dist.members.size });
+      }
+
+      const seats = Math.max(1, Math.floor(Number(d.targetSeats || 1)));
+      const ideal = totalPop ? (totalPop / seats) : null;
+
+      return { totalPop, ideal, byId, seats, year };
+    }
+
+    function renderDrawerUI(){
+      const d = state.drawer;
+      ensureDrawerHasDistrict();
+
+      if (el.drawerStatusPill) el.drawerStatusPill.textContent = d.enabled ? "draw" : "off";
+
+      // Sync toggles
+      if (el.drawTopBtn){
+        el.drawTopBtn.classList.toggle("is-on", d.enabled);
+      }
+      if (el.drawerToggleBtn){
+        el.drawerToggleBtn.classList.toggle("is-on", d.enabled);
+      }
+      if (el.drawerOverlayChk) el.drawerOverlayChk.checked = !!d.overlay;
+
+      // Active select options
+      if (el.drawerActiveSelect){
+        const cur = d.activeId;
+        el.drawerActiveSelect.innerHTML = d.districts.map(x =>
+          `<option value="${escapeHtml(x.id)}">${escapeHtml(x.name)}</option>`
+        ).join("");
+        el.drawerActiveSelect.value = cur ?? d.districts[0]?.id ?? "";
+      }
+
+      const stats = computeDrawerStats();
+      if (el.drawerSeatsInput) el.drawerSeatsInput.value = String(d.targetSeats ?? 1);
+
+      if (el.drawerSummary){
+        const idealTxt = stats.ideal ? formatInt(Math.round(stats.ideal)) : "—";
+        el.drawerSummary.innerHTML =
+          `Year: <b>${stats.year}</b> • Target: <b>${stats.seats}</b> districts • Ideal pop: <b class="mono">${idealTxt}</b><br/>
+           <span class="muted2">Draw mode overlays your SMD plan on top of the current layer — nothing is removed.</span>`;
+      }
+
+      // List
+      if (el.drawerList){
+        el.drawerList.innerHTML = d.districts.map((dist, idx) => {
+          const m = stats.byId.get(dist.id) ?? {pop:0,n:0};
+          const dev = (stats.ideal && stats.ideal !== 0) ? (m.pop / stats.ideal - 1) : null;
+          const devPct = (dev == null) ? "—" : `${dev >= 0 ? "+" : ""}${(dev*100).toFixed(1)}%`;
+          const devCls = dev == null ? "" : (dev > 0.005 ? "pos" : (dev < -0.005 ? "neg" : ""));
+          const isActive = dist.id === d.activeId;
+
+          return `
+            <div class="drawerItem ${isActive ? "active" : ""}" data-id="${escapeHtml(dist.id)}">
+              <div class="drawerTop">
+                <input class="drawerColor" data-act="color" type="color" value="${escapeHtml(dist.color)}" title="Color"/>
+                <input class="drawerName" data-act="name" value="${escapeHtml(dist.name)}" title="Name"/>
+              </div>
+              <div class="drawerMeta">
+                <div class="mono">${formatInt(m.pop)}</div>
+                <div class="muted2 small">${m.n} units</div>
+                <div class="dev ${devCls}">${devPct}</div>
+              </div>
+              <div class="drawerBtns">
+                <button class="btn btn-ghost mini" data-act="active" title="Set active">Active</button>
+                <button class="btn btn-ghost mini" data-act="zoom" title="Zoom to this district">Zoom</button>
+                <button class="btn btn-ghost mini" data-act="clear" title="Clear members">Clear</button>
+                <button class="btn btn-ghost mini" data-act="del" title="Delete district">Delete</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // HUD content
+      if (el.drawHud){
+        const active = d.districts.find(x => x.id === d.activeId);
+        el.drawHud.querySelector("div")?.replaceChildren?.(); // no-op in most browsers; keep safe
+        // Keep the HUD template but update the first line via innerHTML (simple, safe enough here).
+        el.drawHud.innerHTML = `
+          <div style="font-weight:900; margin-bottom:4px">DRAW MODE — ${escapeHtml(active?.name ?? "Active")}</div>
+          <div class="muted small">
+            Click to assign to the active SMD. <span class="kbd">Alt</span> erases. <span class="kbd">Shift</span> inspects. <span class="kbd">Ctrl</span>+<span class="kbd">Z</span> undo.
+          </div>
+        `;
+      }
+    }
+
+    function drawerSetActive(id){
+      const d = state.drawer;
+      if (!d.districts.some(x => x.id === id)) return;
+      d.activeId = id;
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+    }
+
+    function drawerAddDistrict(){
+      const d = state.drawer;
+      const id = randId();
+      const color = DRAW_PALETTE[d.districts.length % DRAW_PALETTE.length];
+      d.districts.push({ id, name: `District ${d.districts.length + 1}`, color, members: new Set() });
+      d.activeId = id;
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+      toast("Created a new district.");
+    }
+
+    function drawerDeleteDistrict(id){
+      const d = state.drawer;
+      if (d.districts.length <= 1){
+        toast("Can't delete the last district.");
+        return;
+      }
+
+      // Unassign its members
+      const dist = d.districts.find(x => x.id === id);
+      if (dist){
+        for (const uk of dist.members) d.assignment.delete(uk);
+      }
+
+      d.districts = d.districts.filter(x => x.id !== id);
+      if (d.activeId === id) d.activeId = d.districts[0]?.id ?? null;
+
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+    }
+
+    function drawerClearDistrict(id){
+      const d = state.drawer;
+      const dist = d.districts.find(x => x.id === id);
+      if (!dist) return;
+      for (const uk of dist.members) d.assignment.delete(uk);
+      dist.members.clear();
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+    }
+
+    function drawerClearActive(){
+      drawerClearDistrict(state.drawer.activeId);
+      toast("Cleared active district.");
+    }
+
+    function drawerAssignUk(uk, toId, {recordUndo=true} = {}){
+      const d = state.drawer;
+      ensureDrawerHasDistrict();
+
+      const fromId = d.assignment.get(uk) ?? null;
+      if (fromId === toId) return;
+
+      // Remove from previous
+      if (fromId){
+        const prev = d.districts.find(x => x.id === fromId);
+        prev?.members?.delete?.(uk);
+      }
+
+      // Add to new
+      if (toId){
+        const next = d.districts.find(x => x.id === toId);
+        next?.members?.add?.(uk);
+        d.assignment.set(uk, toId);
+      } else {
+        d.assignment.delete(uk);
+      }
+
+      if (recordUndo){
+        d.undo.push({ uk, fromId, toId });
+        if (d.undo.length > 5000) d.undo.shift();
+      }
+    }
+
+    function drawerHandleMapClick(uk, ev){
+      const d = state.drawer;
+      ensureDrawerHasDistrict();
+
+      // Shift-click = inspect only (preserve existing selection behavior)
+      if (ev?.originalEvent?.shiftKey) return false;
+
+      const erase = !!ev?.originalEvent?.altKey;
+      const cur = d.assignment.get(uk) ?? null;
+
+      // Alt = erase
+      if (erase){
+        if (cur){
+          drawerAssignUk(uk, null);
+          renderDrawerUI();
+          refreshDrawerOverlayStyles();
+        }
+        return true;
+      }
+
+      // Toggle: if already in active, remove. Otherwise move into active.
+      const toId = (cur === d.activeId) ? null : d.activeId;
+      drawerAssignUk(uk, toId);
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+      return true;
+    }
+
+    function drawerUndo(){
+      const d = state.drawer;
+      const last = d.undo.pop();
+      if (!last) { toast("Nothing to undo."); return; }
+      drawerAssignUk(last.uk, last.fromId, {recordUndo:false});
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+    }
+
+    function drawerZoomTo(id){
+      const dist = state.drawer.districts.find(x => x.id === id);
+      if (!dist || dist.members.size === 0) { toast("Nothing to zoom to."); return; }
+
+      const b = L.latLngBounds();
+      districtLayer.eachLayer(layer => {
+        const uk = layer.feature?.properties?.__uk;
+        if (uk && dist.members.has(uk)){
+          try{ b.extend(layer.getBounds()); }catch(_){}
+        }
+      });
+      try{ map.fitBounds(b, { padding:[18,18] }); }catch(_){}
+    }
+
+    function serializeDrawerPlan(){
+      const d = state.drawer;
+      const payload = {
+        version: 1,
+        createdAt: new Date().toISOString(),
+        year: state.year,
+        targetSeats: d.targetSeats,
+        districts: d.districts.map(x => ({
+          id: x.id,
+          name: x.name,
+          color: x.color,
+          members: [...x.members],
+        })),
+      };
+      return JSON.stringify(payload, null, 2);
+    }
+
+    function downloadJson(filename, jsonStr){
+      const blob = new Blob([jsonStr], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+    }
+
+    function applyDrawerPlan(obj){
+      if (!obj || typeof obj !== "object" || !Array.isArray(obj.districts)){
+        throw new Error("Invalid plan JSON.");
+      }
+
+      const d = state.drawer;
+      d.targetSeats = Math.max(1, Math.floor(Number(obj.targetSeats || 1)));
+
+      // Reset
+      d.districts = [];
+      d.assignment = new Map();
+      d.undo = [];
+
+      for (const x of obj.districts){
+        const id = String(x.id ?? randId());
+        const name = String(x.name ?? "District");
+        const color = String(x.color ?? DRAW_PALETTE[d.districts.length % DRAW_PALETTE.length]);
+        const membersArr = Array.isArray(x.members) ? x.members : [];
+        const members = new Set(membersArr.map(String));
+
+        d.districts.push({ id, name, color, members });
+        for (const uk of members) d.assignment.set(String(uk), id);
+      }
+
+      d.activeId = d.districts[0]?.id ?? null;
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+      toast("Plan imported.");
+    }
+
+
+    // Feature interaction
+    function onEachDistrict(feature, layer){
+      const uk = feature.properties.__uk;
+
       layer.on({
-        mouseover: (e) => {
-          const layer = e.target;
-          layer.setStyle({ weight: 2, color: '#666' });
-          layer.bringToFront();
-          
-          if (State.mode === 'edit' && Editor.isDrawing) {
-            Editor.assign(feature.properties.__uk);
-            layer.setStyle(styleFeature(feature)); // Re-apply style immediately
+        mouseover: (ev) => {
+          state.hoverUk = uk;
+
+          // hover styling only if not selected
+          if (state.selectedUk !== uk){
+            layer.setStyle(styleHover());
+          }
+
+          // tooltip + hover panel (unless selection exists)
+          showHoverTip(feature, ev);
+
+          if (!state.selectedUk){
+            renderDistrictPanel(uk, "hover");
           }
         },
-        mouseout: (e) => {
-          districtLayer.resetStyle(e.target);
-          // Manually re-apply because resetStyle reverts to initial, not current dynamic style
-          e.target.setStyle(styleFeature(feature));
+        mousemove: (ev) => {
+          moveHoverTip(ev);
         },
-        click: (e) => {
-          if (State.mode === 'edit') {
-            Editor.assign(feature.properties.__uk);
-            e.target.setStyle(styleFeature(feature));
-          } else {
-             // View mode click - maybe zoom or show details?
-             map.fitBounds(e.target.getBounds());
+        mouseout: () => {
+          state.hoverUk = null;
+          hideHoverTip();
+
+          // revert hover styling unless selected
+          if (state.selectedUk !== uk){
+            layer.setStyle(styleBase(feature));
           }
+
+          // if no selection, reset panel
+          if (!state.selectedUk){
+            el.selPill.textContent = "none";
+            el.districtBox.innerHTML = `<div class="muted small">Hover a district or click to select.</div>`;
+          }
+        },
+        click: (ev) => {
+          // In draw mode, clicks assign units to the active SMD.
+          if (state.drawer.enabled){
+            const handled = drawerHandleMapClick(uk, ev);
+            if (handled) return;
+          }
+
+          // toggle select
+          if (state.selectedUk === uk){
+            clearSelection();
+            return;
+          }
+          state.selectedUk = uk;
+          refreshFeatureStyles();
+          renderDistrictPanel(uk, "selected");
         }
       });
     }
 
-    function refreshFeatureStyles() {
-      if (districtLayer) {
-        districtLayer.eachLayer(layer => {
-          layer.setStyle(styleFeature(layer.feature));
+    // Legend
+    function renderLegend(){
+      el.legend.innerHTML = "";
+
+      const pill =
+        state.mode === "election_winner" ? "Election — winner" :
+        state.mode === "population_year" ? `Population — ${state.year}` :
+        state.mode === "population_change_abs" ? `Population Δ — ${state.yearA}→${state.yearB}` :
+        `Population % — ${state.yearA}→${state.yearB}`;
+
+      el.legendPill.textContent = pill;
+
+      if (state.mode === "election_winner"){
+        const wins = new Map();
+        for (const j of state.districtData.values()){
+          const w = j.election?.__winner;
+          if (!w) continue;
+          wins.set(w, (wins.get(w) ?? 0) + 1);
+        }
+
+        const top = [...wins.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 12);
+        if (!top.length){
+          el.legend.innerHTML = `<div class="muted small">No election files loaded (or missing / misnamed).</div>`;
+          return;
+        }
+
+        for (const [party, n] of top){
+          const item = document.createElement("div");
+          item.className = "legendItem";
+
+          const sw = document.createElement("div");
+          sw.className = "swatch";
+          sw.style.background = colorForParty(party);
+
+          const label = document.createElement("div");
+          label.className = "legendLabel";
+          label.innerHTML = `<b>${party}</b><span>${n} districts</span>`;
+
+          item.appendChild(sw);
+          item.appendChild(label);
+          el.legend.appendChild(item);
+        }
+
+        const note = document.createElement("div");
+        note.className = "muted2 small";
+        note.style.marginTop = "10px";
+        note.textContent = "Smaller margin → lighter shade of the winner’s color.";
+        el.legend.appendChild(note);
+        return;
+      }
+
+      const stats = getLayerStats();
+
+      const wrap = document.createElement("div");
+      wrap.className = "gradWrap";
+
+      const bar = document.createElement("div");
+      bar.className = "gradBar";
+      if (state.mode === "population_change_abs") bar.className = "gradBar divAbs";
+      if (state.mode === "population_change_pct") bar.className = "gradBar divPct";
+      wrap.appendChild(bar);
+
+      const meta = document.createElement("div");
+      meta.className = "gradMeta mono";
+
+      if (state.mode === "population_year"){
+        meta.innerHTML = `<div>${formatInt(stats.popMin)}</div><div>${formatInt(stats.popMax)}</div>`;
+      } else if (state.mode === "population_change_abs"){
+        const m = stats.changeAbsMax ?? 0;
+        meta.innerHTML = `<div>-${formatInt(m)}</div><div>0</div><div>+${formatInt(m)}</div>`;
+        meta.style.justifyContent = "space-between";
+      } else {
+        const m = stats.changePctMax ?? 0;
+        meta.innerHTML = `<div>${(-m*100).toFixed(1)}%</div><div>0%</div><div>${(m*100).toFixed(1)}%</div>`;
+        meta.style.justifyContent = "space-between";
+      }
+      wrap.appendChild(meta);
+
+      el.legend.appendChild(wrap);
+
+      const note = document.createElement("div");
+      note.className = "muted2 small";
+      note.style.marginTop = "10px";
+      note.textContent =
+        state.mode === "population_year" ? "Light green = smaller, dark green = larger." :
+        state.mode === "population_change_abs" ? "Red = decrease, green = increase." :
+        "Red = % decrease, green = % increase.";
+      el.legend.appendChild(note);
+    }
+
+    // UI logic
+    function renderModeYearVisibility(){
+      const isYear = (state.mode === "population_year");
+      const isChange = (state.mode === "population_change_abs" || state.mode === "population_change_pct");
+
+      el.yearWrap.style.display = isYear ? "flex" : "none";
+      el.yearAWrap.style.display = isChange ? "flex" : "none";
+      el.yearBWrap.style.display = isChange ? "flex" : "none";
+    }
+
+    function wireUI(){
+      el.modeSelect.addEventListener("change", () => {
+        state.mode = el.modeSelect.value;
+        renderModeYearVisibility();
+        refreshFeatureStyles();
+        renderLegend();
+
+        // if a selection exists, refresh its panel label content (still selected)
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+      });
+
+      el.yearSelect.addEventListener("change", () => {
+        state.year = Number(el.yearSelect.value);
+        refreshFeatureStyles();
+        renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+      });
+        renderDrawerUI();
+
+      el.yearASelect.addEventListener("change", () => {
+        state.yearA = Number(el.yearASelect.value);
+        refreshFeatureStyles();
+        renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+      });
+        renderDrawerUI();
+
+      el.yearBSelect.addEventListener("change", () => {
+        state.yearB = Number(el.yearBSelect.value);
+        refreshFeatureStyles();
+        renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+      });
+        renderDrawerUI();
+
+      el.fitBtn.addEventListener("click", () => {
+        try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
+      });
+
+      el.clearBtn.addEventListener("click", clearSelection);
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") clearSelection();
+      });
+
+      el.helpBtn.addEventListener("click", () => el.helpDialog.showModal());
+      el.closeHelpBtn.addEventListener("click", () => el.helpDialog.close());
+
+      // Drawer wiring
+      if (el.drawTopBtn) el.drawTopBtn.addEventListener("click", () => setDrawMode(!state.drawer.enabled));
+      if (el.drawerToggleBtn) el.drawerToggleBtn.addEventListener("click", () => setDrawMode(!state.drawer.enabled));
+      if (el.drawerOverlayChk) el.drawerOverlayChk.addEventListener("change", () => {
+        state.drawer.overlay = !!el.drawerOverlayChk.checked;
+        refreshDrawerOverlayStyles();
+      });
+
+      if (el.drawerSeatsInput) el.drawerSeatsInput.addEventListener("change", () => {
+        state.drawer.targetSeats = Math.max(1, Math.floor(Number(el.drawerSeatsInput.value || 1)));
+        renderDrawerUI();
+      });
+
+      if (el.drawerActiveSelect) el.drawerActiveSelect.addEventListener("change", () => {
+        drawerSetActive(el.drawerActiveSelect.value);
+      });
+
+      if (el.drawerNewBtn) el.drawerNewBtn.addEventListener("click", drawerAddDistrict);
+      if (el.drawerClearActiveBtn) el.drawerClearActiveBtn.addEventListener("click", drawerClearActive);
+
+      if (el.drawerUndoBtn) el.drawerUndoBtn.addEventListener("click", drawerUndo);
+
+      if (el.drawerExportBtn) el.drawerExportBtn.addEventListener("click", () => {
+        const json = serializeDrawerPlan();
+        downloadJson("district-plan.json", json);
+        toast("Exported JSON.");
+      });
+
+      if (el.drawerCopyBtn) el.drawerCopyBtn.addEventListener("click", async () => {
+        const json = serializeDrawerPlan();
+        try{
+          await navigator.clipboard.writeText(json);
+          toast("Copied plan JSON.");
+        }catch(_){
+          toast("Clipboard blocked by browser.");
+        }
+      });
+
+      if (el.drawerImportBtn && el.drawerImportFile){
+        el.drawerImportBtn.addEventListener("click", () => el.drawerImportFile.click());
+        el.drawerImportFile.addEventListener("change", async () => {
+          const f = el.drawerImportFile.files?.[0];
+          if (!f) return;
+          const txt = await f.text();
+          try{
+            applyDrawerPlan(JSON.parse(txt));
+          }catch(err){
+            console.error(err);
+            toast("Import failed: invalid JSON.");
+          } finally {
+            el.drawerImportFile.value = "";
+          }
         });
       }
-    }
 
-    // --- Utilities ---
+      if (el.drawerResetBtn) el.drawerResetBtn.addEventListener("click", () => {
+        // Reset to a single empty district
+        state.drawer.districts = [];
+        state.drawer.assignment = new Map();
+        state.drawer.undo = [];
+        state.drawer.activeId = null;
+        ensureDrawerHasDistrict();
+        renderDrawerUI();
+        refreshDrawerOverlayStyles();
+        toast("Reset plan.");
+      });
 
-    function keyify(str) {
-      if (!str) return "";
-      return str.toString().toLowerCase()
-        .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
-        .replace(/ı/g, 'i').replace(/İ/g, 'i').replace(/ö/g, 'o')
-        .replace(/ç/g, 'c').replace(/[^a-z0-9]/g, '');
-    }
+      // List delegation (set active / zoom / clear / delete, rename/color)
+      if (el.drawerList){
+        el.drawerList.addEventListener("click", (e) => {
+          const item = e.target.closest(".drawerItem");
+          if (!item) return;
+          const id = item.dataset.id;
+          const act = e.target?.dataset?.act;
 
-    function getPartyColor(party) {
-      const map = {
-        'AK PARTİ': '#ff9d1e',
-        'CHP': '#d40000',
-        'MHP': '#5a0000',
-        'İYİ PARTİ': '#0095d9',
-        'DEM PARTİ': '#8b00ff', // Or Green
-        'YEŞİL SOL PARTİ': '#8b00ff',
-        'TİP': '#bb0000',
-        'YENİDEN REFAH': '#da291c',
-        'ZAFER PARTİSİ': '#a32828',
-        'MEMLEKET': '#006aa7'
-      };
-      return map[party] || '#94a3b8';
-    }
-
-    function populateUI() {
-      // Setup UI listeners
-      document.getElementById('election-select').addEventListener('change', refreshFeatureStyles);
-      
-      document.getElementById('province-select').addEventListener('change', (e) => {
-        const val = e.target.value;
-        if (val === "ALL") {
-          map.fitBounds(districtLayer.getBounds());
-        } else {
-          // Filter bounds
-          const feats = State.features.filter(f => f.properties.__prov === val);
-          if (feats.length > 0) {
-             const group = L.featureGroup(feats.map(f => L.geoJSON(f)));
-             map.fitBounds(group.getBounds());
+          if (!act){
+            drawerSetActive(id);
+            return;
           }
+          if (act === "active") drawerSetActive(id);
+          if (act === "zoom") drawerZoomTo(id);
+          if (act === "clear") drawerClearDistrict(id);
+          if (act === "del") drawerDeleteDistrict(id);
+        });
+
+        el.drawerList.addEventListener("input", (e) => {
+          const item = e.target.closest(".drawerItem");
+          if (!item) return;
+          const id = item.dataset.id;
+          const dist = state.drawer.districts.find(x => x.id === id);
+          if (!dist) return;
+
+          if (e.target?.dataset?.act === "name"){
+            dist.name = String(e.target.value || "").slice(0, 48);
+            renderDrawerUI();
+            return;
+          }
+          if (e.target?.dataset?.act === "color"){
+            dist.color = String(e.target.value || "#2563eb");
+            renderDrawerUI();
+            refreshDrawerOverlayStyles();
+            return;
+          }
+        });
+      }
+
+      window.addEventListener("keydown", (e) => {
+        const z = (e.key === "z" || e.key === "Z");
+        if ((e.ctrlKey || e.metaKey) && z){
+          e.preventDefault();
+          drawerUndo();
         }
       });
+
+      renderModeYearVisibility();
     }
 
-    // Start
-    window.addEventListener('DOMContentLoaded', loadAll);
+    // Load everything
+    async function loadAll(){
+      el.loaderMsg.textContent = "Fetching GeoJSON & population…";
+      const [geo, popRows] = await Promise.all([
+        fetchJson(FILES.GEOJSON),
+        fetchCsv(FILES.POPCSV),
+      ]);
 
+      // population index (keyify)
+      const pop = {};
+      for (const row of popRows){
+        const prov = keyify(row.Province ?? row.province ?? row.PROVINCE);
+        const dist = keyify(row.District ?? row.district ?? row.DISTRICT);
+        if (!prov || !dist) continue;
+        pop[prov] ??= {};
+        pop[prov][dist] = {
+          2014: parseIntTR(row["2014"]),
+          2019: parseIntTR(row["2019"]),
+          2024: parseIntTR(row["2024"]),
+        };
+      }
+      state.pop = pop;
+
+      // prepare features
+const features = (geo.features || [])
+  .filter(f => f.geometry && f.properties && (
+    /TR-?\d{2}-(districts|counties)/i.test(String(f.properties.network ?? "")) ||
+    f.properties.admin_level === "6" || f.properties.admin_level === 6
+  ))
+  .map(f => {
+    const plate = parsePlateFromNetwork(f.properties?.network);
+    const provName = plateToProvince.get(plate) ?? "Unknown";
+    const provKey = keyify(provName);
+    const distName = f.properties?.name ?? "";
+    const distKey = keyify(distName);
+    const uk = `${plate ?? 0}|${distKey}`;
+
+    return {
+      ...f,
+      properties: {
+        ...f.properties,
+        __plate: plate,
+        __provName: provName,
+        __provKey: provKey,
+        __distName: distName,
+        __distKey: distKey,
+        __uk: uk
+      }
+    };
+  });
+
+
+      districtLayer.clearLayers();
+      districtLayer.addData(features);
+
+      // Mirror the same geometry into the (non-interactive) drawer overlay
+      drawerLayer?.clearLayers?.();
+      drawerLayer?.addData?.(features);
+
+      rebuildDistrictDataIndex();
+      refreshFeatureStyles();
+
+      try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
+
+      renderLegend();
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+
+      // elections
+      el.loaderMsg.textContent = "Loading election files (missing files are OK)…";
+      await loadAllElections();
+
+      rebuildDistrictDataIndex();
+      refreshFeatureStyles();
+      renderLegend();
+
+      el.curtain.classList.add("hide");
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      grabEls();
+      initMap();
+      wireUI();
+
+      // Drawer initial render
+      renderDrawerUI();
+      refreshDrawerOverlayStyles();
+
+      try{
+        await loadAll();
+      }catch(err){
+        console.error(err);
+        el.loaderMsg.textContent = `Fatal: ${err.message}`;
+      }
+    });
+
+  })();
   </script>
 </body>
 </html>
