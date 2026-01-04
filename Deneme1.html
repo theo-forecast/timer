@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Turkey SMD Redistricter</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --brand: #2563eb;
+      --brand-hov: #1d4ed8;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;padding:0;overflow:hidden}
+    body{
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* --- Navbar --- */
+    .navbar{
+      height: 60px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+      z-index: 500;
+      flex: 0 0 auto;
+    }
+    .brand{
+      font-weight: 800; font-size: 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .brand span {
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-center{
+      display:flex; gap:4px;
+      background: #f1f5f9;
+      padding:4px; border-radius: 8px;
+    }
+    .mode-btn{
+      border:none; background:transparent;
+      padding: 6px 16px; border-radius: 6px;
+      font-size:13px; font-weight:600; color: var(--muted);
+      cursor:pointer; transition:all 0.2s;
+    }
+    .mode-btn.active{
+      background: white; color: var(--brand);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .actions{
+      display:flex; gap:10px;
+    }
+
+    /* --- Layout --- */
+    .viewport{
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+    #map{
+      flex: 1;
+      background: #eef2f6;
+      z-index: 1;
+      outline: none;
+    }
+
+    /* --- Sidebar --- */
+    .sidebar{
+      width: 400px;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      z-index: 10;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.02);
+    }
+    .sb-header{
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .sb-title{font-weight:700; font-size:15px;}
+    .sb-scroll{
+      flex:1; overflow-y:auto;
+      padding: 16px;
+      display:flex; flex-direction:column; gap:16px;
+    }
+
+    /* --- Controls & Inputs --- */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding: 8px 14px;
+      background: white; border:1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .btn:hover{ background: #f8fafc; border-color: #cbd5e1; }
+    .btn:active{ transform: translateY(1px); }
+    .btn-primary{
+      background: var(--brand); border-color: var(--brand); color: white;
+    }
+    .btn-primary:hover{ background: var(--brand-hov); }
+    .btn-sm{ padding: 4px 10px; font-size: 12px; }
+
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px; border: 1px solid var(--border);
+      font-size: 13px; font-weight: 500;
+      background-color: white;
+      outline: none;
+    }
+    select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+    /* --- Builder UI --- */
+    .seat-list{ display:flex; flex-direction:column; gap:8px; }
+    .seat-card{
+      display: grid;
+      grid-template-columns: 24px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .seat-card:hover{ border-color: #cbd5e1; }
+    .seat-card.active{
+      border-color: var(--brand);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+      background: #f0f7ff;
+    }
+    .color-dot{
+      width: 24px; height: 24px; border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .seat-info{ display:flex; flex-direction:column; gap:2px; }
+    .seat-name{ font-weight: 700; font-size: 13px; }
+    .seat-meta{ font-size: 11px; color: var(--muted); display:flex; gap:8px;}
+    .seat-win{ font-weight:700; font-size:11px; padding:2px 6px; border-radius:4px; background:rgba(0,0,0,0.05); }
+
+    .stats-grid{
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-top: 10px;
+    }
+    .stat-box{
+      background: #f8fafc; border: 1px solid var(--border);
+      padding: 10px; border-radius: 8px;
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .stat-label{ font-size: 11px; text-transform:uppercase; color: var(--muted); font-weight:600; }
+    .stat-val{ font-size: 16px; font-weight: 800; }
+    .party-bar{
+      height: 6px; border-radius: 99px; background: #e2e8f0; overflow:hidden; margin-top:6px;
+    }
+    .party-fill{ height:100%; transition: width 0.3s; }
+
+    /* --- Tooltip --- */
+    .tooltip{
+      position: absolute;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-lg);
+      pointer-events: none;
+      font-size: 12px;
+      z-index: 1000;
+      display: none;
+      min-width: 200px;
+    }
+    .tt-header{ font-weight: 800; font-size: 14px; margin-bottom: 4px; }
+    .tt-row{ display:flex; justify-content:space-between; margin-top:4px; }
+    .tt-mute{ color: var(--muted); }
+    .tt-mono{ font-family: ui-monospace, monospace; font-weight: 600; }
+
+    /* --- Loading --- */
+    .loader{
+      position: fixed; inset: 0;
+      background: rgba(255,255,255,0.9);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2000;
+      transition: opacity 0.3s;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #e2e8f0; border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin{to{transform: rotate(360deg)}}
+    .hidden{ opacity: 0; pointer-events: none; }
+
+    /* --- Floating Toolbar --- */
+    .toolbar{
+      position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+      background: white; padding: 6px;
+      border-radius: 12px;
+      display: flex; gap: 6px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      z-index: 400;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loader" class="loader">
+    <div style="text-align:center">
+      <div class="spinner" style="margin:0 auto 16px"></div>
+      <div style="font-weight:700">Loading Turkey Data...</div>
+      <div style="font-size:12px; color:#64748b; margin-top:4px">Fetching GeoJSON & Elections</div>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3V7z" stroke-linejoin="round"/>
+      </svg>
+      <span>Turkey Redistricter</span>
+    </div>
+
+    <div class="nav-center">
+      <button class="mode-btn active" id="modeViewBtn">Data Viewer</button>
+      <button class="mode-btn" id="modeDrawBtn">Map Drawer</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-sm" id="exportBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export JSON
+      </button>
+      <button class="btn btn-sm" id="resetBtn">Reset</button>
+    </div>
+  </nav>
+
+  <div class="viewport">
+    <div id="map">
+      <div id="drawToolbar" class="toolbar hidden">
+        <button class="btn btn-sm" id="toolPaint" style="background:#eff6ff; color:var(--brand); border-color:var(--brand)">
+          🖌 Paint
+        </button>
+        <button class="btn btn-sm" id="toolErase">
+          Eraser
+        </button>
+      </div>
+      <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <aside class="sidebar">
+      
+      <div id="panelView" style="display:flex; flex-direction:column; height:100%">
+        <div class="sb-header">
+          <div class="sb-title">District Data</div>
+        </div>
+        <div class="sb-scroll">
+          <label style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:4px">Display Metric</label>
+          <select id="metricSelect">
+            <option value="election">Election Winner (2024)</option>
+            <option value="pop24">Population Total (2024)</option>
+            <option value="popChange">Population Change (2014-24)</option>
+          </select>
+
+          <div id="viewStats" style="margin-top:20px; display:none;">
+            <div style="font-weight:800; font-size:18px; line-height:1.2" id="vsName">District Name</div>
+            <div style="font-size:13px; color:var(--muted)" id="vsProv">Province</div>
+            
+            <hr style="border:0; border-top:1px solid var(--border); margin:12px 0"/>
+            
+            <div class="stat-box">
+              <span class="stat-label">Population 2024</span>
+              <span class="stat-val" id="vsPop">—</span>
+            </div>
+            
+            <div class="stat-box" style="margin-top:8px">
+              <span class="stat-label">2024 Result</span>
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <span style="font-weight:700" id="vsWinner">—</span>
+                <span class="tt-mono" id="vsMargin">—</span>
+              </div>
+              <div class="party-bar" style="height:8px; margin-top:8px">
+                <div id="vsBar" class="party-fill" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div id="viewHint" style="margin-top:20px; text-align:center; color:var(--muted); font-size:13px;">
+            Hover over a district to see details.
+          </div>
+        </div>
+      </div>
+
+      <div id="panelDraw" style="display:none; flex-direction:column; height:100%">
+        <div class="sb-header">
+          <div class="sb-title">Congressional Seats</div>
+          <button class="btn btn-sm btn-primary" id="addSeatBtn">+ New Seat</button>
+        </div>
+        
+        <div class="sb-scroll">
+          <div id="activeSeatStats" style="display:none; margin-bottom:16px;">
+            <div class="stat-box" style="background:white; border-color:var(--brand); box-shadow: 0 4px 12px rgba(37,99,235,0.08);">
+              <div style="display:flex; justify-content:space-between;">
+                <span class="stat-label" style="color:var(--brand)">Active: <span id="asName">Seat 1</span></span>
+              </div>
+              <div class="stats-grid">
+                <div>
+                  <span class="stat-label">Population</span>
+                  <div class="stat-val" style="font-size:14px" id="asPop">0</div>
+                </div>
+                <div>
+                  <span class="stat-label">Proj. Winner</span>
+                  <div class="stat-val" style="font-size:14px" id="asWinner">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:8px">
+            All Seats
+          </div>
+          <div class="seat-list" id="seatListContainer">
+            </div>
+        </div>
+
+        <div style="padding:16px; border-top:1px solid var(--border); background:#f8fafc; font-size:12px; color:var(--muted)">
+          <p style="margin:0">
+            <strong>Controls:</strong> Select a seat above, then click districts on the map to assign them.
+          </p>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <script>
+    // --- Configuration ---
+    const CONFIG = {
+      geoUrl: 'turkey-admin-level-6.geojson', // Assuming this exists locally or relative
+      csvUrl: 'province_district_2014_2019_2024.csv',
+      partyColors: {
+        "AK PARTİ": "#ffbf00", "CHP": "#e30000", "MHP": "#8b0000", 
+        "İYİ PARTİ": "#3db5e6", "DEM PARTİ": "#b400ff", "YEŞİL SOL": "#b400ff",
+        "TİP": "#c70000", "ZAFER": "#2c2c2c", "YENİDEN REFAH": "#008000"
+      },
+      palette: [
+        "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", 
+        "#ec4899", "#06b6d4", "#84cc16", "#6366f1", "#d946ef"
+      ]
+    };
+
+    // --- State ---
+    let map, geoLayer;
+    let rawGeo, rawCsv, rawElections = new Map();
+    let dataIndex = new Map(); // Key: UK -> { pop24, votes, name, prov }
+    
+    // Drawer State
+    let mode = 'view'; // 'view' | 'draw'
+    let seats = []; // Array of { id, name, color, districtKeys: Set() }
+    let activeSeatId = null;
+    let assignmentMap = new Map(); // UK -> SeatID
+    let isDrawing = false;
+    let drawTool = 'paint'; // 'paint' | 'erase'
+
+    // --- Helpers ---
+    const keyify = (s) => String(s).toUpperCase().replace(/İ/g,"I").replace(/[^A-Z0-9]/g,"").trim();
+    const fmtNum = (n) => new Intl.NumberFormat('en-US').format(n);
+    const getPartyColor = (p) => {
+      const k = Object.keys(CONFIG.partyColors).find(key => p.includes(key));
+      return k ? CONFIG.partyColors[k] : "#94a3b8";
+    };
+
+    // --- Initialization ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      initMap();
+      setupUI();
+      try {
+        await loadData();
+        document.getElementById('loader').classList.add('hidden');
+      } catch (e) {
+        document.getElementById('loader').innerHTML = `<div style="color:red; font-weight:bold">Error loading data.<br>${e.message}</div>`;
+      }
+    });
+
+    function initMap() {
+      map = L.map('map', { 
+        zoomControl: false, 
+        attributionControl: false,
+        preferCanvas: true 
+      }).setView([39.0, 35.0], 6);
+      
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19, opacity: 0.8
+      }).addTo(map);
+    }
+
+    async function loadData() {
+      // 1. Fetch GeoJSON and Population CSV
+      const [geo, csv] = await Promise.all([
+        fetch(CONFIG.geoUrl).then(r => r.json()),
+        d3.csv(CONFIG.csvUrl)
+      ]);
+      rawGeo = geo;
+      rawCsv = csv;
+
+      // 2. Build Data Index
+      // First, parse CSV into a lookup
+      const popLookup = {};
+      csv.forEach(row => {
+        const prov = keyify(row.Province || row.province);
+        const dist = keyify(row.District || row.district);
+        popLookup[`${prov}|${dist}`] = {
+          p14: +row['2014'] || 0,
+          p24: +row['2024'] || 0
+        };
+      });
+
+      // 3. Process Features & Attempt to load Elections lazily or all at once?
+      // For this demo, we assume election data might be loaded, but we'll try to fetch a few sample files
+      // In a real scenario, you'd fetch a big 'all_elections.json' or individual ones.
+      // We will attempt to fetch based on province names found in GeoJSON.
+      
+      const provinces = new Set();
+      geo.features.forEach(f => {
+        const p = parseProps(f.properties);
+        if(p.prov) provinces.add(p.prov);
+      });
+
+      // Simple fetcher for election JSONs (as per original code structure)
+      const fetchElection = async (prov) => {
+        try {
+          const res = await fetch(`${prov}.json`);
+          if(!res.ok) return;
+          const json = await res.json();
+          // Parse Election JSON
+          json.forEach(row => {
+             const distName = keyify(row["İlçe Adı"] || row["Ilçe Adı"]);
+             const provName = keyify(prov);
+             const uk = `${provName}|${distName}`;
+             
+             // Extract votes
+             const votes = {};
+             let total = 0;
+             Object.keys(row).forEach(k => {
+               if(!['İlçe Id','İlçe Adı', 'Belde Adı', 'Kayıtlı Seçmen Sayısı', 'Oy Kullanan Seçmen Sayısı', 'Geçerli Oy Toplamı'].includes(k)){
+                 const val = parseInt(row[k]);
+                 if(!isNaN(val)) {
+                   votes[k] = val;
+                   total += val;
+                 }
+               }
+             });
+             rawElections.set(uk, { votes, total });
+          });
+        } catch(e) {} // Ignore missing
+      };
+
+      // Limit concurrency or fetch all. For demo speed, we'll try fetching known ones
+      // In production, merge this into one file.
+      // We will proceed without waiting for ALL elections, but try fetching.
+      const provList = Array.from(provinces);
+      await Promise.all(provList.map(p => fetchElection(p)));
+
+      // 4. Finalize Index
+      geo.features.forEach(f => {
+        const p = parseProps(f.properties);
+        const uk = `${keyify(p.prov)}|${keyify(p.dist)}`;
+        f.properties._uk = uk; // Store key in feature
+
+        const pop = popLookup[uk] || { p14: 0, p24: 0 };
+        const elec = rawElections.get(uk) || { votes: {}, total: 0 };
+        
+        // Find winner
+        let winner = "N/A";
+        let winnerVotes = 0;
+        Object.entries(elec.votes).forEach(([pty, v]) => {
+          if(v > winnerVotes) { winnerVotes = v; winner = pty; }
+        });
+
+        dataIndex.set(uk, {
+          name: p.dist,
+          prov: p.prov,
+          pop14: pop.p14,
+          pop24: pop.p24,
+          votes: elec.votes,
+          voteTotal: elec.total,
+          winner: winner,
+          winnerVotes: winnerVotes
+        });
+      });
+
+      // 5. Render Layer
+      geoLayer = L.geoJSON(rawGeo, {
+        style: styleFeature,
+        onEachFeature: onEachFeature
+      }).addTo(map);
+      
+      map.fitBounds(geoLayer.getBounds());
+    }
+
+    function parseProps(p) {
+      // Try to parse province/district from messy properties
+      let prov = p.province || p.admin_level_4 || "Unknown";
+      let dist = p.name || p.district || "Unknown";
+      
+      // Handle the Network string if present: TR-34-districts
+      if(p.network) {
+        // Map 34 -> Istanbul, etc. (Simplified)
+        // ideally rely on a map. For now relying on standard props
+      }
+      return { prov, dist };
+    }
+
+    // --- Styling Logic ---
+    function styleFeature(feature) {
+      const uk = feature.properties._uk;
+      
+      // DRAW MODE
+      if (mode === 'draw') {
+        const seatId = assignmentMap.get(uk);
+        if (seatId) {
+          const seat = seats.find(s => s.id === seatId);
+          return {
+            fillColor: seat ? seat.color : '#ccc',
+            fillOpacity: 0.8,
+            color: 'white',
+            weight: 1
+          };
+        } else {
+          return {
+            fillColor: '#f1f5f9',
+            fillOpacity: 0.5,
+            color: '#cbd5e1',
+            weight: 1
+          };
+        }
+      } 
+      
+      // VIEW MODE
+      else {
+        const data = dataIndex.get(uk);
+        const metric = document.getElementById('metricSelect').value;
+        
+        if (!data) return { fillColor:'#eee', color:'#ddd', weight:1 };
+
+        if (metric === 'election') {
+          return {
+            fillColor: getPartyColor(data.winner),
+            fillOpacity: 0.8,
+            color: 'white', weight: 0.5
+          };
+        } else if (metric === 'pop24') {
+          // simple chloropleth
+          const d = data.pop24;
+          const c = d > 300000 ? '#064e3b' : d > 100000 ? '#10b981' : d > 50000 ? '#6ee7b7' : '#d1fae5';
+          return { fillColor: c, fillOpacity: 0.8, color: 'white', weight: 0.5 };
+        } else {
+          // Change
+          const delta = data.pop24 - data.pop14;
+          const c = delta > 0 ? '#10b981' : '#ef4444';
+          return { fillColor: c, fillOpacity: 0.7, color: 'white', weight: 0.5 };
+        }
+      }
+    }
+
+    function refreshMap() {
+      geoLayer.setStyle(styleFeature);
+    }
+
+    // --- Interaction ---
+    function onEachFeature(feature, layer) {
+      const uk = feature.properties._uk;
+
+      layer.on('mouseover', (e) => {
+        const d = dataIndex.get(uk);
+        if(!d) return;
+
+        // Tooltip
+        const tt = document.getElementById('tooltip');
+        tt.innerHTML = `
+          <div class="tt-header">${d.name}</div>
+          <div class="tt-mute">${d.prov}</div>
+          <div class="tt-row"><span>Pop '24:</span> <span class="tt-mono">${fmtNum(d.pop24)}</span></div>
+          <div class="tt-row"><span>Winner:</span> <span class="tt-mono" style="color:${getPartyColor(d.winner)}">${d.winner}</span></div>
+        `;
+        tt.style.display = 'block';
+        moveTooltip(e);
+
+        // Sidebar Detail (View Mode)
+        if(mode === 'view') updateViewStats(d);
+      });
+
+      layer.on('mousemove', moveTooltip);
+      
+      layer.on('mouseout', () => {
+        document.getElementById('tooltip').style.display = 'none';
+      });
+
+      layer.on('click', () => {
+        if(mode === 'draw') {
+          handleDrawClick(uk);
+        }
+      });
+    }
+
+    function moveTooltip(e) {
+      const tt = document.getElementById('tooltip');
+      const w = 220;
+      let x = e.originalEvent.pageX + 15;
+      let y = e.originalEvent.pageY + 15;
+      
+      if(x + w > window.innerWidth) x = e.originalEvent.pageX - w - 15;
+      
+      tt.style.left = x + 'px';
+      tt.style.top = y + 'px';
+    }
+
+    function updateViewStats(d) {
+      document.getElementById('vsName').textContent = d.name;
+      document.getElementById('vsProv').textContent = d.prov;
+      document.getElementById('vsPop').textContent = fmtNum(d.pop24);
+      document.getElementById('vsWinner').textContent = d.winner;
+      document.getElementById('vsWinner').style.color = getPartyColor(d.winner);
+      
+      const share = d.voteTotal ? (d.winnerVotes / d.voteTotal) : 0;
+      document.getElementById('vsMargin').textContent = (share*100).toFixed(1) + '%';
+      
+      const bar = document.getElementById('vsBar');
+      bar.style.width = (share*100) + '%';
+      bar.style.backgroundColor = getPartyColor(d.winner);
+      
+      document.getElementById('viewStats').style.display = 'block';
+      document.getElementById('viewHint').style.display = 'none';
+    }
+
+    // --- Drawing Logic ---
+    function handleDrawClick(uk) {
+      if (!activeSeatId && drawTool !== 'erase') {
+        alert("Select or create a seat first!");
+        return;
+      }
+
+      if (drawTool === 'erase') {
+        if (assignmentMap.has(uk)) {
+          const oldSeatId = assignmentMap.get(uk);
+          assignmentMap.delete(uk);
+          // Remove from seat Set
+          const s = seats.find(x => x.id === oldSeatId);
+          if(s) s.districtKeys.delete(uk);
+          recalcSeat(oldSeatId);
+        }
+      } else {
+        // Painting
+        const currentAssignment = assignmentMap.get(uk);
+        if (currentAssignment === activeSeatId) return; // Already painted
+
+        // If owned by another, remove first
+        if (currentAssignment) {
+          const oldS = seats.find(x => x.id === currentAssignment);
+          if(oldS) {
+            oldS.districtKeys.delete(uk);
+            recalcSeat(currentAssignment);
+          }
+        }
+
+        // Assign to new
+        assignmentMap.set(uk, activeSeatId);
+        const newS = seats.find(x => x.id === activeSeatId);
+        newS.districtKeys.add(uk);
+        recalcSeat(activeSeatId);
+      }
+
+      refreshMap();
+    }
+
+    function recalcSeat(seatId) {
+      const seat = seats.find(s => s.id === seatId);
+      if(!seat) return;
+
+      let totalPop = 0;
+      let aggVotes = {};
+
+      seat.districtKeys.forEach(uk => {
+        const d = dataIndex.get(uk);
+        if(d) {
+          totalPop += d.pop24;
+          Object.entries(d.votes).forEach(([p, v]) => {
+            aggVotes[p] = (aggVotes[p] || 0) + v;
+          });
+        }
+      });
+
+      // Determine Winner
+      let winP = "Uncontested";
+      let maxV = -1;
+      Object.entries(aggVotes).forEach(([p, v]) => {
+        if(v > maxV) { maxV = v; winP = p; }
+      });
+
+      seat.pop = totalPop;
+      seat.winner = maxV > 0 ? winP : "—";
+      
+      updateSeatUI(seatId);
+    }
+
+    // --- UI Management ---
+    function setupUI() {
+      // Mode Switching
+      document.getElementById('modeViewBtn').onclick = () => setMode('view');
+      document.getElementById('modeDrawBtn').onclick = () => setMode('draw');
+      document.getElementById('metricSelect').onchange = refreshMap;
+
+      // Draw Tools
+      document.getElementById('addSeatBtn').onclick = createSeat;
+      document.getElementById('exportBtn').onclick = exportData;
+      
+      const tPaint = document.getElementById('toolPaint');
+      const tErase = document.getElementById('toolErase');
+      
+      tPaint.onclick = () => {
+        drawTool = 'paint';
+        tPaint.style.background = '#eff6ff'; tPaint.style.borderColor = 'var(--brand)'; tPaint.style.color = 'var(--brand)';
+        tErase.style.background = 'white'; tErase.style.borderColor = '#e2e8f0'; tErase.style.color = 'var(--ink)';
+      };
+      tErase.onclick = () => {
+        drawTool = 'erase';
+        tErase.style.background = '#eff6ff'; tErase.style.borderColor = 'var(--brand)'; tErase.style.color = 'var(--brand)';
+        tPaint.style.background = 'white'; tPaint.style.borderColor = '#e2e8f0'; tPaint.style.color = 'var(--ink)';
+      };
+    }
+
+    function setMode(m) {
+      mode = m;
+      document.getElementById('modeViewBtn').className = m === 'view' ? 'mode-btn active' : 'mode-btn';
+      document.getElementById('modeDrawBtn').className = m === 'draw' ? 'mode-btn active' : 'mode-btn';
+      
+      document.getElementById('panelView').style.display = m === 'view' ? 'flex' : 'none';
+      document.getElementById('panelDraw').style.display = m === 'draw' ? 'flex' : 'none';
+      document.getElementById('drawToolbar').classList.toggle('hidden', m !== 'draw');
+      
+      refreshMap();
+    }
+
+    function createSeat() {
+      const id = Date.now(); // simple ID
+      const idx = seats.length % CONFIG.palette.length;
+      const color = CONFIG.palette[idx];
+      
+      const newSeat = {
+        id: id,
+        name: `Seat ${seats.length + 1}`,
+        color: color,
+        districtKeys: new Set(),
+        pop: 0,
+        winner: "—"
+      };
+      
+      seats.push(newSeat);
+      renderSeatList();
+      activateSeat(id);
+    }
+
+    function activateSeat(id) {
+      activeSeatId = id;
+      drawTool = 'paint'; // Auto switch to paint
+      document.getElementById('toolPaint').click();
+      renderSeatList();
+      updateActiveSeatStats();
+    }
+
+    function renderSeatList() {
+      const container = document.getElementById('seatListContainer');
+      container.innerHTML = '';
+      
+      seats.forEach(s => {
+        const el = document.createElement('div');
+        el.className = `seat-card ${s.id === activeSeatId ? 'active' : ''}`;
+        el.innerHTML = `
+          <div class="color-dot" style="background:${s.color}"></div>
+          <div class="seat-info">
+            <div class="seat-name">${s.name}</div>
+            <div class="seat-meta">
+              <span>Pop: ${fmtNum(s.pop)}</span>
+            </div>
+          </div>
+          <div class="seat-win" style="color:${getPartyColor(s.winner)}">${s.winner}</div>
+        `;
+        el.onclick = () => activateSeat(s.id);
+        container.appendChild(el);
+      });
+    }
+
+    function updateSeatUI(seatId) {
+      renderSeatList(); // Refresh list to show new numbers
+      if(activeSeatId === seatId) updateActiveSeatStats();
+    }
+
+    function updateActiveSeatStats() {
+      const s = seats.find(x => x.id === activeSeatId);
+      if(!s) return;
+      
+      const div = document.getElementById('activeSeatStats');
+      div.style.display = 'block';
+      document.getElementById('asName').textContent = s.name;
+      document.getElementById('asPop').textContent = fmtNum(s.pop);
+      document.getElementById('asWinner').textContent = s.winner;
+      document.getElementById('asWinner').style.color = getPartyColor(s.winner);
+    }
+
+    function exportData() {
+      const exportObj = seats.map(s => ({
+        name: s.name,
+        population: s.pop,
+        projectedWinner: s.winner,
+        districts: Array.from(s.districtKeys)
+      }));
+      
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+      const el = document.createElement('a');
+      el.setAttribute("href", dataStr);
+      el.setAttribute("download", "turkey_redistricting_plan.json");
+      document.body.appendChild(el);
+      el.click();
+      el.remove();
+    }
+
+  </script>
+</body>
+</html>
