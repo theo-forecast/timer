@@ -308,7 +308,7 @@
     /* Map hover tooltip */
     .hoverTip{
       position:absolute;
-      z-index: 9999;
+      z-index: 45;
       pointer-events:none;
       transform: translate(-50%, calc(-100% - 12px));
       display:none;
@@ -440,6 +440,27 @@
     .drawerRow{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .drawerRow .btn{flex:0 0 auto}
     .drawerSummary{line-height:1.35}
+    .drawerActiveStats{
+      margin-top:10px;
+      padding:12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.72);
+      border:1px solid rgba(12,18,34,.12);
+      box-shadow: 0 10px 28px rgba(12,18,34,.06);
+    }
+    .drawerActiveHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .drawerActiveTitle{font-weight:950; letter-spacing:.1px}
+    .drawerActivePill{font-size:12px; font-weight:900; padding:4px 10px; border-radius:999px; border:1px solid rgba(12,18,34,.10); background: rgba(15,23,42,.03)}
+    .statGrid{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    .statCell{padding:10px; border-radius: 16px; background: rgba(15,23,42,.03); border:1px solid rgba(12,18,34,.10)}
+    .statLabel{font-size:11px; color: rgba(15,23,42,.60); text-transform:uppercase; letter-spacing:.14px}
+    .statValue{margin-top:3px; font-weight:950}
+    .partyList{margin-top:10px; display:flex; flex-direction:column; gap:8px}
+    .partyRow{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .partyLeft{display:flex; align-items:center; gap:8px; min-width:0}
+    .partyName{font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .partyVals{display:flex; align-items:baseline; gap:10px}
+    .partyShare{font-size:12px; color: rgba(15,23,42,.70)}
     .drawerList{display:flex; flex-direction:column; gap:10px; margin-top:10px}
     .drawerItem{
       padding:10px;
@@ -503,8 +524,6 @@
       backdrop-filter: blur(12px);
       display:none;
       max-width: 420px;
-    
-      pointer-events:none;
     }
     .drawHud b{font-weight:900}
     #map.drawMode .drawHud{display:block}
@@ -747,6 +766,8 @@
             Create a district, toggle Draw mode, then click districts on the map to build single-member districts.
           </div>
 
+          <div id="drawerActiveStats" class="drawerActiveStats"></div>
+
           <div id="drawerList" class="drawerList"></div>
 
           <div class="sep"></div>
@@ -951,6 +972,7 @@ function parsePlateFromNetwork(network){
       el.drawerClearActiveBtn = document.getElementById("drawerClearActiveBtn");
       el.drawerOverlayChk = document.getElementById("drawerOverlayChk");
       el.drawerSummary = document.getElementById("drawerSummary");
+      el.drawerActiveStats = document.getElementById("drawerActiveStats");
       el.drawerList = document.getElementById("drawerList");
       el.drawerExportBtn = document.getElementById("drawerExportBtn");
       el.drawerCopyBtn = document.getElementById("drawerCopyBtn");
@@ -985,7 +1007,7 @@ function parsePlateFromNetwork(network){
     };
 
     // Map
-    let map, districtLayer, canvasRenderer, drawerLayer, drawerRenderer;
+    let map, districtLayer, svgRenderer, canvasRenderer, drawerLayer, drawerRenderer;
 
     function initMap(){
       map = L.map("map", { zoomControl:true, preferCanvas:false }).setView([39.0, 35.0], 6);
@@ -996,9 +1018,8 @@ function parsePlateFromNetwork(network){
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
       }).addTo(map);
 
+      svgRenderer = L.svg({ padding: 0.5 });
       canvasRenderer = L.canvas({ padding: 0.5 });
-      // Use SVG renderer for the *interactive* base district layer (Safari-friendly hit testing).
-      const svgRenderer = L.svg({ padding: 0.5 });
 
       districtLayer = L.geoJSON([], {
         renderer: svgRenderer,
@@ -1027,7 +1048,7 @@ function parsePlateFromNetwork(network){
         weight: 0.9,
         opacity: 1,
         fillColor: colorForFeature(feature),
-        fillOpacity: 0.92
+        fillOpacity: (state.drawer?.enabled && state.drawer?.overlay) ? 0.70 : 0.92
       };
     }
 
@@ -1331,7 +1352,19 @@ function parsePlateFromNetwork(network){
         <div class="sep"></div>
       `;
 
-      // Population section
+      
+      // Map Drawer info (if enabled)
+      if (state.drawer?.enabled){
+        const sid = state.drawer.assignment.get(String(uk)) ?? null;
+        const sd = sid ? state.drawer.districts.find(x => x.id === sid) : null;
+        html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Map Drawer</div>`;
+        html += sd
+          ? `<div class="small" style="margin-bottom:6px">Assigned SMD: <b>${escapeHtml(sd.name)}</b></div>`
+          : `<div class="small" style="margin-bottom:6px">Assigned SMD: <span class="mono">Unassigned</span></div>`;
+        html += `<div class="sep"></div>`;
+      }
+
+// Population section
       html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Population</div>`;
       if (pop){
         const a = pop[state.yearA], b = pop[state.yearB];
@@ -1470,10 +1503,10 @@ function parsePlateFromNetwork(network){
 
       return {
         color: mixHex("#ffffff", c, 0.92),
-        weight: isActive ? 2.8 : 2.0,
-        opacity: 0.95,
+        weight: isActive ? 3.6 : 2.6,
+        opacity: 0.98,
         fillColor: c,
-        fillOpacity: 0.22,
+        fillOpacity: isActive ? 0.45 : 0.34,
       };
     }
 
@@ -1515,6 +1548,40 @@ function parsePlateFromNetwork(network){
 
       return { totalPop, ideal, byId, seats, year };
     }
+    function computeSmdAgg(dist, year){
+      let pop = 0;
+      let units = 0;
+      let registered = 0;
+      let cast = 0;
+      let valid = 0;
+      const parties = new Map();
+
+      for (const uk0 of (dist?.members ?? [])){
+        const uk = String(uk0);
+        units++;
+        pop += getPopForUk(uk, year);
+
+        const e = state.districtData.get(uk)?.election;
+        if (e){
+          registered += Number(e.__registered) || 0;
+          cast += Number(e.__cast) || 0;
+          valid += Number(e.__valid) || 0;
+
+          const pv = Array.isArray(e.__partyVotes) ? e.__partyVotes : [];
+          for (const pair of pv){
+            const name = String(pair?.[0] ?? "").trim();
+            const v = Number(pair?.[1]) || 0;
+            if (!name || !v) continue;
+            parties.set(name, (parties.get(name) || 0) + v);
+          }
+        }
+      }
+
+      const top = Array.from(parties.entries()).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      return { pop, units, registered, cast, valid, top };
+    }
+
+
 
     function renderDrawerUI(){
       const d = state.drawer;
@@ -1550,7 +1617,80 @@ function parsePlateFromNetwork(network){
            <span class="muted2">Draw mode overlays your SMD plan on top of the current layer — nothing is removed.</span>`;
       }
 
-      // List
+      
+      // Active district stats (the SMD you are currently drawing)
+      if (el.drawerActiveStats){
+        const active = d.districts.find(x => x.id === d.activeId) ?? null;
+
+        if (!active){
+          el.drawerActiveStats.style.borderLeft = "none";
+          el.drawerActiveStats.innerHTML = `<div class="muted small">No active district.</div>`;
+        } else {
+          const agg = computeSmdAgg(active, stats.year);
+          el.drawerActiveStats.style.borderLeft = `6px solid ${active.color}`;
+
+          const dev = (stats.ideal && stats.ideal !== 0) ? (agg.pop / stats.ideal - 1) : null;
+          const devPct = (dev == null) ? "—" : `${dev >= 0 ? "+" : ""}${(dev*100).toFixed(2)}%`;
+
+          const turnout = agg.registered ? (agg.cast / agg.registered) : null;
+          const turnoutTxt = (turnout == null) ? "—" : `${(turnout*100).toFixed(1)}%`;
+
+          const validRate = agg.cast ? (agg.valid / agg.cast) : null;
+          const validTxt = (validRate == null) ? "—" : `${(validRate*100).toFixed(1)}%`;
+
+          const partyHtml = (agg.top.length && agg.valid)
+            ? agg.top.map(([name, votes]) => {
+                const share = agg.valid ? (votes / agg.valid) : 0;
+                const dot = `<span class="winnerDot" style="background:${colorForParty(name)}"></span>`;
+                return `
+                  <div class="partyRow">
+                    <div class="partyLeft">
+                      ${dot}
+                      <div class="partyName">${escapeHtml(name)}</div>
+                    </div>
+                    <div class="partyVals mono">
+                      <div>${formatInt(votes)}</div>
+                      <div class="partyShare">${(share*100).toFixed(1)}%</div>
+                    </div>
+                  </div>
+                `;
+              }).join("")
+            : `<div class="muted2 small">Election totals unavailable / incomplete for this geography.</div>`;
+
+          el.drawerActiveStats.innerHTML = `
+            <div class="drawerActiveHead">
+              <div class="drawerActiveTitle">Active SMD: <span class="mono">${escapeHtml(active.name)}</span></div>
+              <div class="drawerActivePill"><span class="mono">${agg.units}</span> units</div>
+            </div>
+
+            <div class="statGrid">
+              <div class="statCell">
+                <div class="statLabel">Population (${stats.year})</div>
+                <div class="statValue mono">${formatInt(agg.pop)}</div>
+              </div>
+              <div class="statCell">
+                <div class="statLabel">Deviation vs ideal</div>
+                <div class="statValue">${devPct}</div>
+              </div>
+              <div class="statCell">
+                <div class="statLabel">Registered</div>
+                <div class="statValue mono">${formatInt(agg.registered)}</div>
+              </div>
+              <div class="statCell">
+                <div class="statLabel">Turnout • Valid</div>
+                <div class="statValue mono">${turnoutTxt} • ${validTxt}</div>
+              </div>
+            </div>
+
+            <div class="partyList">
+              <div class="statLabel">Top parties (sum of member units)</div>
+              ${partyHtml}
+            </div>
+          `;
+        }
+      }
+
+// List
       if (el.drawerList){
         el.drawerList.innerHTML = d.districts.map((dist, idx) => {
           const m = stats.byId.get(dist.id) ?? {pop:0,n:0};
@@ -2164,6 +2304,12 @@ const features = (geo.features || [])
 
       districtLayer.clearLayers();
       districtLayer.addData(features);
+
+      // Keep the Drawer overlay in sync with the base geography
+      if (drawerLayer){
+        drawerLayer.clearLayers();
+        drawerLayer.addData(features);
+      }
 
       // Mirror the same geometry into the (non-interactive) drawer overlay
       drawerLayer?.clearLayers?.();
