@@ -1092,7 +1092,7 @@ function parsePlateFromNetwork(network){
       const maxPop = pops.length ? Math.max(...pops) : 1;
       const scale = d3.scaleSqrt()
         .domain([minPop || 0, maxPop || 1])
-        .range([1, 6]).clamp(true);
+        .range([0.4, 3]).clamp(true);
 
       for (const [uk, j] of state.districtData.entries()){
         const p = j?.pop?.[year];
