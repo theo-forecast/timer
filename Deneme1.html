@@ -159,8 +159,7 @@
     .wrap{
       height: calc(100vh - 62px);
       display:grid;
-      --sidebarW: 420px;
-      grid-template-columns: 1fr var(--sidebarW);
+      grid-template-columns: 1fr 420px;
       gap: 14px;
       padding: 14px;
     }
@@ -188,121 +187,6 @@
       padding-right:6px;
       display:flex; flex-direction:column; gap:12px;
     }
-
-    /* Right panel: collapsible + always reachable */
-    #sidebar{ transition: opacity .18s ease, transform .18s ease; }
-    .wrap.panelCollapsed{ --sidebarW: 14px; }
-    .wrap.panelCollapsed #sidebar{
-      opacity: 0;
-      pointer-events: none;
-      transform: translateX(12px);
-    }
-    .panelTab{
-      position: fixed;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 2000;
-      padding: 10px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(12,18,34,.14);
-      background: rgba(255,255,255,.92);
-      box-shadow: 0 16px 40px rgba(12,18,34,.14);
-      font-weight: 900;
-      letter-spacing: .12px;
-      cursor: pointer;
-      display: none;
-      backdrop-filter: blur(12px);
-    }
-    .panelTab.show{ display:block; }
-
-    .sideNav{
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      display:flex;
-      gap:8px;
-      padding: 10px 8px 8px 0;
-      background: linear-gradient(180deg, rgba(243,244,246,.96), rgba(243,244,246,.75), rgba(243,244,246,0));
-      backdrop-filter: blur(10px);
-    }
-    .tabBtn{
-      border:1px solid rgba(12,18,34,.12);
-      background: rgba(255,255,255,.75);
-      box-shadow: 0 10px 22px rgba(12,18,34,.06);
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-weight: 900;
-      cursor: pointer;
-      color: rgba(15,23,42,.86);
-      transition: transform .12s ease, border-color .12s ease, background .12s ease;
-      user-select:none;
-    }
-    .tabBtn:hover{ transform: translateY(-1px); border-color: rgba(12,18,34,.18); background: rgba(255,255,255,.88); }
-
-    /* Make the drawer card comfortable: controls stay visible, list scrolls */
-    #drawerCard{ flex:1 1 auto; min-height: 0; }
-    #drawerCard .cardBody{ display:flex; flex-direction:column; min-height:0; }
-    #drawerList{
-      flex: 1 1 auto;
-      overflow:auto;
-      min-height: 150px;
-      padding-right: 4px;
-      scroll-behavior: smooth;
-    }
-    .drawerFooter{ flex:0 0 auto; }
-
-    .drawerActiveStats{
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 14px;
-      background: rgba(15,23,42,.03);
-      border: 1px solid rgba(12,18,34,.10);
-    }
-    .statGrid{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
-    .stat{
-      padding: 10px 10px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.62);
-      border: 1px solid rgba(12,18,34,.10);
-      box-shadow: 0 10px 18px rgba(12,18,34,.06);
-    }
-    .stat .k{ font-size:11px; font-weight:900; letter-spacing:.14px; text-transform:uppercase; color: rgba(15,23,42,.65); }
-    .stat .v{ margin-top:2px; font-weight: 950; }
-    .sparkBar{
-      height: 12px;
-      border-radius: 999px;
-      overflow:hidden;
-      border: 1px solid rgba(12,18,34,.12);
-      background: rgba(15,23,42,.04);
-      display:flex;
-      margin-top: 8px;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.55);
-    }
-    .sparkSeg{ height:100%; }
-    .sparkLabel{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      margin-top: 8px;
-      font-size: 12px;
-      color: rgba(15,23,42,.78);
-      font-weight: 900;
-    }
-    .drawerMini{ margin-top: 8px; }
-    .drawerMini.muted2{ margin-top: 8px; }
-
-    .sparkLabel span{ display:flex; align-items:center; gap:8px; min-width:0; }
-    .sparkDot{
-      width:10px;height:10px;border-radius:999px;
-      border:1px solid rgba(12,18,34,.14);
-      box-shadow: 0 10px 18px rgba(12,18,34,.10);
-      flex:0 0 auto;
-    }
-
-    /* Draw mode: dim base layer so assignments pop */
-    #map.drawMode .leaflet-overlay-pane path{ opacity: .55; }
-    #map.drawMode .drawHud{ pointer-events:none; }
     .card{
       background: rgba(255,255,255,.92);
       border:1px solid var(--border);
@@ -462,9 +346,6 @@
     }
 
     /* Loading curtain */
-    .loaderActions{display:flex;gap:10px;margin-top:12px}
-    .loaderActions .btn{flex:1}
-
     .curtain{
       position:fixed; inset:0;
       display:flex; align-items:center; justify-content:center;
@@ -498,22 +379,6 @@
     .loaderBody{margin-top:10px;color:var(--muted)}
     .loaderHint{margin-top:8px;color:var(--muted2);font-size:12px}
 
-    .loaderLog{
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(12,18,34,.12);
-      background: rgba(15,23,42,.03);
-      color: rgba(15,23,42,.82);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size:11px;
-      line-height:1.35;
-      max-height: 180px;
-      overflow:auto;
-      white-space: pre-wrap;
-    }
-    
-
     /* Dialog */
     dialog{
       width:min(760px, 92vw);
@@ -540,162 +405,6 @@
       padding:2px 8px;
       border-radius: 10px;
     }
-
-
-    /* ===== Map Drawer additions ===== */
-    .btn-primary{
-      background: linear-gradient(135deg, rgba(37,99,235,.96), rgba(6,182,212,.86));
-      color:#fff;
-      border:1px solid rgba(37,99,235,.28);
-      box-shadow: 0 14px 30px rgba(37,99,235,.18);
-    }
-    .btn-primary:hover{filter: brightness(1.02)}
-    .btn-primary:active{transform: translateY(1px)}
-    .btn.is-on{
-      box-shadow: 0 0 0 4px rgba(14,165,233,.18), 0 14px 30px rgba(37,99,235,.16);
-      border-color: rgba(14,165,233,.35);
-    }
-
-    .input{
-      width:100%;
-      padding:10px 12px;
-      border-radius: 12px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.92);
-      box-shadow: 0 10px 22px rgba(12,18,34,.06);
-      color: var(--ink);
-      font-weight:800;
-      outline:none;
-    }
-    .input:focus{
-      box-shadow: 0 0 0 4px rgba(14,165,233,.18), 0 10px 22px rgba(12,18,34,.06);
-      border-color: rgba(14,165,233,.38);
-    }
-    .drawerGrid{display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin:10px 0 6px}
-    .drawerRow{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-    .drawerRow .btn{flex:0 0 auto}
-    .drawerSummary{line-height:1.35}
-    .drawerActiveStats{
-      margin-top:10px;
-      padding:12px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.72);
-      border:1px solid rgba(12,18,34,.12);
-      box-shadow: 0 10px 28px rgba(12,18,34,.06);
-    }
-    .drawerActiveHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-    .drawerActiveTitle{font-weight:950; letter-spacing:.1px}
-    .drawerActivePill{font-size:12px; font-weight:900; padding:4px 10px; border-radius:999px; border:1px solid rgba(12,18,34,.10); background: rgba(15,23,42,.03)}
-    .statGrid{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
-    .statCell{padding:10px; border-radius: 16px; background: rgba(15,23,42,.03); border:1px solid rgba(12,18,34,.10)}
-    .statLabel{font-size:11px; color: rgba(15,23,42,.60); text-transform:uppercase; letter-spacing:.14px}
-    .statValue{margin-top:3px; font-weight:950}
-    .partyList{margin-top:10px; display:flex; flex-direction:column; gap:8px}
-    .partyRow{display:flex; align-items:center; justify-content:space-between; gap:10px}
-    .partyLeft{display:flex; align-items:center; gap:8px; min-width:0}
-    .partyName{font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    .partyVals{display:flex; align-items:baseline; gap:10px}
-    .partyShare{font-size:12px; color: rgba(15,23,42,.70)}
-    .drawerList{display:flex; flex-direction:column; gap:10px; margin-top:10px}
-    .drawerItem{
-      padding:10px;
-      border-radius: 16px;
-      background: rgba(15,23,42,.03);
-      border:1px solid rgba(12,18,34,.10);
-      transition: transform .12s ease, border-color .12s ease;
-    }
-    .drawerItem:hover{transform: translateY(-1px); border-color: rgba(12,18,34,.16)}
-    .drawerItem.active{
-      border-color: rgba(37,99,235,.32);
-      box-shadow: 0 0 0 4px rgba(37,99,235,.10);
-      background: linear-gradient(180deg, rgba(37,99,235,.06), rgba(6,182,212,.03));
-    }
-    .drawerTop{display:flex; gap:10px; align-items:center}
-    .drawerName{
-      flex:1 1 auto;
-      min-width: 0;
-      padding:8px 10px;
-      border-radius: 12px;
-      border:1px solid rgba(12,18,34,.12);
-      background: rgba(255,255,255,.72);
-      font-weight:900;
-      outline:none;
-    }
-    .drawerName:focus{border-color: rgba(14,165,233,.45); box-shadow: 0 0 0 4px rgba(14,165,233,.14)}
-    .drawerColor{
-      width:34px; height:34px; padding:0; border:none; background: transparent;
-      border-radius: 10px; overflow:hidden; cursor:pointer;
-      box-shadow: 0 10px 18px rgba(12,18,34,.12);
-    }
-    .drawerMeta{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px; margin-top:8px;
-    }
-    .dev{font-weight:900}
-    .dev.pos{color: var(--greenD)}
-    .dev.neg{color: var(--redD)}
-    .drawerBtns{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
-    .btn.mini{padding:8px 10px; border-radius: 12px; font-size:12px}
-    .check{
-      display:flex; align-items:center; gap:8px;
-      padding:8px 10px;
-      border-radius: 12px;
-      border:1px solid rgba(12,18,34,.10);
-      background: rgba(255,255,255,.62);
-      font-weight:800;
-      color: rgba(15,23,42,.82);
-      user-select:none;
-    }
-    .check input{accent-color: var(--brand)}
-
-    /* Draw HUD */
-    .drawHud{
-      position:absolute; left:14px; top:14px; z-index:12;
-      padding:10px 12px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.92);
-      border:1px solid rgba(12,18,34,.12);
-      box-shadow: 0 16px 40px rgba(12,18,34,.10);
-      backdrop-filter: blur(12px);
-      display:none;
-      max-width: 420px;
-    }
-    .drawHud b{font-weight:900}
-    #map.drawMode .drawHud{display:block}
-    #map.drawMode{cursor: crosshair}
-    .drawHud .kbd{
-      font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      font-weight:900;
-      font-size:11px;
-      padding:3px 7px;
-      border-radius: 10px;
-      border:1px solid rgba(12,18,34,.14);
-      background: rgba(15,23,42,.04);
-      margin: 0 4px;
-      white-space:nowrap;
-    }
-
-    /* Toast */
-    .toast{
-      position: fixed;
-      left: 14px;
-      bottom: 14px;
-      z-index: 2000;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(15,23,42,.92);
-      color: rgba(255,255,255,.94);
-      box-shadow: 0 16px 60px rgba(12,18,34,.25);
-      border: 1px solid rgba(255,255,255,.12);
-      transform: translateY(20px);
-      opacity:0;
-      pointer-events:none;
-      transition: transform .16s ease, opacity .16s ease;
-      max-width: min(520px, calc(100vw - 28px));
-      font-weight:800;
-      font-size:12px;
-    }
-    .toast.show{opacity:1; transform: translateY(0)}
 
     /* Leaflet control theming */
     .leaflet-control-zoom, .leaflet-control-attribution{
@@ -735,12 +444,7 @@
         <div class="badge">light UI</div>
       </div>
       <div id="loaderMsg" class="loaderBody">Fetching GeoJSON & population…</div>
-      <pre id="loaderLog" class="loaderLog" hidden></pre>
       <div class="loaderHint">Run via GitHub Pages (avoid <span class="mono">file://</span>) so fetch works.</div>
-      <div class="loaderActions">
-        <button id="forceEnterBtn" class="btn ghost" hidden>Enter anyway</button>
-        <button id="curtainHelpBtn" class="btn ghost">Help</button>
-      </div>
     </div>
   </div>
 
@@ -822,46 +526,16 @@
         </svg>
         Help
       </button>
-
-      <button id="drawTopBtn" class="btn btn-primary" title="Map drawer (single-member districts)">
-        <svg class="ico" viewBox="0 0 24 24" fill="none">
-          <path d="M3 21h6l12-12a2.1 2.1 0 0 0 0-3l-1-1a2.1 2.1 0 0 0-3 0L5 17l-2 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M14 6l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        Draw
-      </button>
-
-      <button id="panelBtn" class="btn btn-ghost" title="Toggle right panel">
-        <svg class="ico" viewBox="0 0 24 24" fill="none">
-          <path d="M4 5h16M4 12h16M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M15 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/>
-        </svg>
-        Panel
-      </button>
-
     </div>
   </header>
 
-  <div class="wrap" id="appWrap">
+  <div class="wrap">
     <div id="map">
       <div id="hoverTip" class="hoverTip"></div>
-      <div id="drawHud" class="drawHud">
-        <div style="font-weight:900; margin-bottom:4px">DRAW MODE</div>
-        <div class="muted small">
-          Click a district to assign it to the active SMD. <span class="kbd">Alt</span> erases. <span class="kbd">Shift</span> inspects without assigning.
-        </div>
-      </div>
-
     </div>
 
-    <aside class="sidebar" id="sidebar">
-      <div class="sideNav" aria-label="Panel navigation">
-        <button class="tabBtn" data-scroll="#legendCard" title="Jump to legend">Legend</button>
-        <button class="tabBtn" data-scroll="#districtCard" title="Jump to district info">District</button>
-        <button class="tabBtn" data-scroll="#drawerCard" title="Jump to map drawer">Drawer</button>
-      </div>
-
-      <section class="card" id="legendCard">
+    <aside class="sidebar">
+      <section class="card">
         <div class="cardHeader">
           <div class="cardTitle">Legend</div>
           <div class="pill" id="legendPill">—</div>
@@ -871,7 +545,7 @@
         </div>
       </section>
 
-      <section class="card" id="districtCard">
+      <section class="card">
         <div class="cardHeader">
           <div class="cardTitle">District</div>
           <div class="pill" id="selPill">none</div>
@@ -880,68 +554,8 @@
           <div id="districtBox" class="muted small">Hover a district or click to select.</div>
         </div>
       </section>
-
-
-      <section class="card" id="drawerCard">
-        <div class="cardHeader">
-          <div class="cardTitle">Map Drawer</div>
-          <div class="pill" id="drawerStatusPill">off</div>
-        </div>
-        <div class="cardBody">
-          <div class="drawerRow" style="margin-bottom:10px">
-            <button id="drawerToggleBtn" class="btn btn-primary" title="Toggle draw mode">Draw mode</button>
-            <button id="drawerUndoBtn" class="btn btn-ghost" title="Undo (Ctrl+Z)">Undo</button>
-          </div>
-
-          <div class="drawerGrid">
-            <label class="ctl" style="min-width:0">
-              <span>Target districts</span>
-              <input id="drawerSeatsInput" class="input" type="number" min="1" step="1" value="1" />
-            </label>
-
-            <label class="ctl" style="min-width:0">
-              <span>Active</span>
-              <div class="selectWrap">
-                <select id="drawerActiveSelect"></select>
-              </div>
-            </label>
-          </div>
-
-          <div class="drawerRow" style="margin-top:8px">
-            <button id="drawerNewBtn" class="btn" title="Create a new SMD">New district</button>
-            <button id="drawerClearActiveBtn" class="btn btn-ghost" title="Remove all members from the active district">Clear active</button>
-            <label class="check" title="Show overlay on the map">
-              <input type="checkbox" id="drawerOverlayChk" checked />
-              Overlay
-            </label>
-          </div>
-
-          <div class="sep"></div>
-          <div id="drawerSummary" class="drawerSummary muted small">
-            Create a district, toggle Draw mode, then click districts on the map to build single-member districts.
-          </div>
-
-          <div id="drawerActiveStats" class="drawerActiveStats"></div>
-
-          <div id="drawerList" class="drawerList"></div>
-
-          <div class="sep"></div>
-          <div class="drawerFooter">
-          <div class="drawerRow">
-            <button id="drawerExportBtn" class="btn" title="Download a JSON plan">Export</button>
-            <button id="drawerCopyBtn" class="btn btn-ghost" title="Copy plan JSON to clipboard">Copy</button>
-            <button id="drawerImportBtn" class="btn btn-ghost" title="Import a JSON plan">Import</button>
-            <input id="drawerImportFile" type="file" accept=".json,application/json" style="display:none" />
-            <button id="drawerResetBtn" class="btn btn-ghost" title="Remove all drawn districts">Reset</button>
-          </div>
-          </div>
-        </div>
-      </section>
-
     </aside>
   </div>
-
-  <button id="panelTab" class="panelTab" title="Show right panel">Panel</button>
 
   <dialog id="helpDialog">
     <div class="dlgHead">
@@ -955,11 +569,11 @@
             <ul>
               <li><code>turkey-admin-level-6.geojson</code></li>
               <li><code>province_district_2014_2019_2024.csv</code></li>
+              <li><code>turkey_districts_second_round_full.csv</code> (optional; if present, used as the election dataset)</li>
               <li>Election JSONs: <code>Edirne.json</code>, <code>Ankara.json</code>… (missing is OK)</li>
             </ul>
           </li>
           <li>Hover shows info; click locks selection. Press <b>Esc</b> or Clear to reset.</li>
-          <li><b>Map Drawer:</b> toggle Draw mode to group districts into single-member districts (SMDs). Click assigns, <b>Alt</b> erases, <b>Shift</b> inspects.</li>
           <li>Population total: light→dark green. Change maps: red (decrease) / green (increase).</li>
           <li>Election winner: smaller margins become lighter shades of the winner’s color.</li>
         </ul>
@@ -967,35 +581,9 @@
     </div>
   </dialog>
 
-  <div id="toast" class="toast" aria-live="polite"></div>
-
   <script>
   (function(){
     "use strict";
-
-    // --- Reliability helpers (prevents "stuck on loading" even on bad paths / Safari quirks)
-    function withTimeout(promise, ms, msg){
-      let t = null;
-      const timeout = new Promise((_, rej) => { t = setTimeout(() => rej(new Error(msg || "Timed out")), ms); });
-      return Promise.race([promise, timeout]).finally(() => { if (t) clearTimeout(t); });
-    }
-    function safeHideCurtain(){
-      try{
-        const c = document.getElementById("curtain");
-        if (c) c.classList.add("hide");
-      }catch(_){}
-    }
-    function showFatal(message, err){
-      try{ console.error(err || message); }catch(_){}
-      try{
-        const m = document.getElementById("loaderMsg");
-        if (m) m.textContent = String(message || "Fatal error");
-      }catch(_){}
-      safeHideCurtain();
-      try{ toast(String(message || "Fatal error")); }catch(_){}
-      try{ document.getElementById("helpDialog")?.showModal?.(); }catch(_){}
-    }
-
 
     const FILES = {
       GEOJSON: "turkey-admin-level-6.geojson",
@@ -1015,12 +603,13 @@
       ["Düzce", 81],
     ];
     const plateToProvince = new Map(PROVINCES.map(([n,p]) => [p,n]));
-    const provinceKeyToPlate = new Map(PROVINCES.map(([n,p]) => [keyify(n), p]));
-
-    // Party colors (extend as needed)
+    const provinceToPlate = new Map(PROVINCES.map(([n,p]) => [n,p]));
+// Party colors (extend as needed)
     const PARTY_COLORS = new Map([
       ["CHP", "#e11d48"],
       ["AK PARTİ", "#f59e0b"],
+      ["Erdoğan", "#f59e0b"],
+      ["Kılıçdaroğlu", "#e11d48"],
       ["MHP", "#b91c1c"],
       ["İYİ PARTİ", "#facc15"],
       ["YEŞİL SOL PARTİ", "#10b981"],
@@ -1032,9 +621,6 @@
       ["DEVA", "#06b6d4"],
       ["GELECEK", "#7c3aed"],
       ["MEMLEKET", "#fb7185"],
-      // 2023 Presidential 2nd round (CSV)
-      ["Erdoğan", "#f59e0b"],
-      ["Kılıçdaroğlu", "#e11d48"],
     ]);
 
     // --- Robust Turkish letter normalization (fixes İ + combining dot & friends) ---
@@ -1059,6 +645,21 @@
       x = x.replace(/ı/g, "i");
       return x;
     }
+
+    // Fix common mojibake from UTF-8 bytes interpreted as Latin-1 (e.g., "SeÃ§im" -> "Seçim")
+    function fixMojibake(s){
+      if (s == null) return "";
+      const str = String(s);
+      if (!/[ÃÂ]/.test(str)) return str;
+      try{
+        const bytes = new Uint8Array(str.length);
+        for (let i=0;i<str.length;i++) bytes[i] = str.charCodeAt(i) & 0xff;
+        return new TextDecoder("utf-8").decode(bytes);
+      }catch(_){
+        return str;
+      }
+    }
+
 
     function parseIntTR(x){
       if (x == null) return null;
@@ -1106,150 +707,19 @@
       return PARTY_COLORS.get(clean) ?? hashColor(clean);
     }
 
-    // Robust URL resolution + resilient data-path fallback
-    const DEBUG = new URLSearchParams(location.search).get("debug") === "1";
-    const QUERY_BASE = (new URLSearchParams(location.search).get("base") || "").trim();
-    const STORE_KEY_BASE = "turkey_redistricter_data_base";
-
-    function normBase(b){
-      if (!b) return "";
-      let x = String(b).trim();
-      // allow "data" -> "data/"
-      if (x && !x.endsWith("/")) x += "/";
-      return x;
-    }
-    function uniq(arr){
-      const out = [];
-      const seen = new Set();
-      for (const x of arr){
-        const k = String(x ?? "");
-        if (seen.has(k)) continue;
-        seen.add(k);
-        out.push(x);
-      }
-      return out;
-    }
+    // Robust URL resolution (prevents “expected pattern” issues)
     function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
-
-    function isGithubPages(){
-      return /github\.io$/i.test(location.hostname || "");
-    }
-    function githubRawUrlsForAttempt(attempt){
-      try{
-        if (!isGithubPages()) return [];
-        const user = String(location.hostname || "").replace(/\.github\.io$/i, "");
-        const parts = String(location.pathname || "").split("/").filter(Boolean);
-        const repo = (parts.length ? parts[0] : `${user}.github.io`);
-        const abs = new URL(attempt, window.location.href);
-        let repoPath = abs.pathname.split("/").filter(Boolean);
-        if (repoPath[0] === repo) repoPath = repoPath.slice(1);
-        const filePath = repoPath.join("/");
-        const branches = ["main","master"];
-        return branches.map(br => `https://raw.githubusercontent.com/${user}/${repo}/${br}/${filePath}`);
-      }catch(_){
-        return [];
-      }
-    }
-
-    function loaderLog(line){
-      if (!el.loaderLog) return;
-      if (!DEBUG) return;
-      el.loaderLog.hidden = false;
-      const ts = new Date().toLocaleTimeString();
-      el.loaderLog.textContent += `[${ts}] ${line}
-`;
-      el.loaderLog.scrollTop = el.loaderLog.scrollHeight;
-    }
-
-    function buildBaseCandidates(){
-      let stored = "";
-      try{ stored = localStorage.getItem(STORE_KEY_BASE) || ""; }catch(_){}
-      const bases = uniq([
-        normBase(QUERY_BASE),
-        normBase(stored),
-        "", "./",
-        "data/", "assets/", "static/", "public/",
-        "../", "../data/", "../assets/",
-      ]);
-      return bases;
-    }
-
-
-    async function fetchWithTimeout(url, ms){
-      const ctrl = new AbortController();
-      const t = setTimeout(() => { try{ ctrl.abort(); }catch(_){} }, ms);
-      try{
-        return await fetch(url, { cache:"no-store", signal: ctrl.signal });
-      }finally{
-        clearTimeout(t);
-      }
-    }
-
     async function fetchText(rel){
-      if (location.protocol === "file:"){
-        throw new Error("Opened via file://. Browsers block fetch() for local files. Use a local server or GitHub Pages.");
-      }
-
-      const bases = buildBaseCandidates();
-      const tried = [];
-      const explicit = String(rel || "");
-      const timeoutMs = (/\.geojson$/i.test(explicit) ? 60000 : 20000);
-
-      const isExplicitPath = /[\/]/.test(explicit); // has a slash -> treat as already-pathed
-
-      for (const base of bases){
-        const attempt = isExplicitPath ? explicit : (base + explicit);
-        const url = resolveUrl(attempt);
-        tried.push(attempt);
-
-        loaderLog(`fetch ${attempt}`);
-
-        try{
-          const resp = await fetchWithTimeout(url, 7000);
-          if (!resp.ok) continue;
-
-          // remember a working base for next load (only when rel has no path)
-          if (!isExplicitPath){
-            const b = normBase(base);
-            if (b){
-              try{ localStorage.setItem(STORE_KEY_BASE, b); }catch(_){}
-            }
-          }
-          return await resp.text();
-        }catch(err){
-          // keep trying
-          loaderLog(`  error ${attempt}: ${err?.message ?? err}`);
-        }
-      }
-
-
-      // GitHub Pages fallback: sometimes the site build drops uncommon static extensions.
-      // If so, try fetching directly from raw.githubusercontent.com using the current repo path.
-      const rawAttempts = [];
-      const uniqTried = uniq(tried);
-      for (const attempt of uniqTried){
-        const raws = githubRawUrlsForAttempt(attempt);
-        for (const rawUrl of raws){
-          rawAttempts.push(rawUrl);
-          loaderLog(`raw ${rawUrl}`);
-          try{
-            const resp = await fetchWithTimeout(rawUrl, timeoutMs);
-            if (!resp.ok) continue;
-            return await resp.text();
-          }catch(err){
-            loaderLog(`  raw error ${rawUrl}: ${err?.message ?? err}`);
-          }
-        }
-      }
-
-      throw new Error(`${rel} not found. Tried: ${tried.join(", ")}${rawAttempts.length ? " | raw: " + rawAttempts.join(", ") : ""}`);
+      const url = resolveUrl(rel);
+      const resp = await fetch(url, { cache:"no-store" });
+      if (!resp.ok) throw new Error(`${rel} -> HTTP ${resp.status}`);
+      return await resp.text();
     }
-
     async function fetchJson(rel){ return JSON.parse(await fetchText(rel)); }
     async function fetchCsv(rel){ return d3.csvParse(await fetchText(rel)); }
 
 function parsePlateFromNetwork(network){
-  const m = String(network ?? "").match(/TR-?(\d{2})-(districts|counties)/i);
+  const m = String(network ?? "").match(/TR-?(\d{2})-(districts|counties|provinces)/i);
   return m ? Number(m[1]) : null;
 }
     function uniqueKey(plate, distKey){ return `${plate}|${distKey}`; }
@@ -1275,40 +745,8 @@ function parsePlateFromNetwork(network){
       el.closeHelpBtn = document.getElementById("closeHelpBtn");
       el.curtain = document.getElementById("curtain");
       el.loaderMsg = document.getElementById("loaderMsg");
-      el.loaderLog = document.getElementById("loaderLog");
-      el.forceEnterBtn = document.getElementById("forceEnterBtn");
-      el.curtainHelpBtn = document.getElementById("curtainHelpBtn");
       el.hoverTip = document.getElementById("hoverTip");
       el.mapDiv = document.getElementById("map");
-      // Drawer UI
-      el.drawTopBtn = document.getElementById("drawTopBtn");
-      el.drawHud = document.getElementById("drawHud");
-      el.toast = document.getElementById("toast");
-
-      el.drawerStatusPill = document.getElementById("drawerStatusPill");
-      el.drawerToggleBtn = document.getElementById("drawerToggleBtn");
-      el.drawerUndoBtn = document.getElementById("drawerUndoBtn");
-      el.drawerSeatsInput = document.getElementById("drawerSeatsInput");
-      el.drawerActiveSelect = document.getElementById("drawerActiveSelect");
-      el.drawerNewBtn = document.getElementById("drawerNewBtn");
-      el.drawerClearActiveBtn = document.getElementById("drawerClearActiveBtn");
-      el.drawerOverlayChk = document.getElementById("drawerOverlayChk");
-      el.drawerSummary = document.getElementById("drawerSummary");
-      el.drawerActiveStats = document.getElementById("drawerActiveStats");
-      el.drawerList = document.getElementById("drawerList");
-      el.drawerExportBtn = document.getElementById("drawerExportBtn");
-      el.drawerCopyBtn = document.getElementById("drawerCopyBtn");
-      el.drawerImportBtn = document.getElementById("drawerImportBtn");
-      el.drawerImportFile = document.getElementById("drawerImportFile");
-      el.drawerResetBtn = document.getElementById("drawerResetBtn");
-
-      // Panel + navigation
-      el.panelBtn = document.getElementById("panelBtn");
-      el.panelTab = document.getElementById("panelTab");
-      el.sidebar = document.getElementById("sidebar");
-      el.appWrap = document.getElementById("appWrap");
-      el.drawerActiveStats = document.getElementById("drawerActiveStats");
-
     }
 
     // State
@@ -1323,26 +761,13 @@ function parsePlateFromNetwork(network){
 
       hoverUk: null,
       selectedUk: null,
-
-      ui: { panelCollapsed: false },
-
-      // Map drawer (single-member district builder)
-      drawer: {
-        enabled: false,
-        overlay: true,
-        targetSeats: 1,
-        districts: [],           // [{id,name,color,members:Set<uk>}]
-        activeId: null,
-        assignment: new Map(),   // uk -> districtId
-        undo: [],                // stack of {uk, fromId, toId}
-      },
     };
 
     // Map
-    let map, districtLayer, svgRenderer, canvasRenderer, drawerLayer, drawerRenderer;
+    let map, districtLayer, canvasRenderer;
 
     function initMap(){
-      map = L.map("map", { zoomControl:true, preferCanvas:false }).setView([39.0, 35.0], 6);
+      map = L.map("map", { zoomControl:true, preferCanvas:true }).setView([39.0, 35.0], 6);
 
       // Light basemap (clean)
       L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
@@ -1350,27 +775,12 @@ function parsePlateFromNetwork(network){
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
       }).addTo(map);
 
-      svgRenderer = L.svg({ padding: 0.5 });
       canvasRenderer = L.canvas({ padding: 0.5 });
 
       districtLayer = L.geoJSON([], {
-        renderer: svgRenderer,
+        renderer: canvasRenderer,
         style: featureStyle,
         onEachFeature: onEachDistrict,
-      }).addTo(map);
-
-      // Drawer overlay pane (non-interactive): shows user-drawn single-member districts on top of the current layer
-      map.createPane("drawerPane");
-      const dp = map.getPane("drawerPane");
-      dp.style.zIndex = 450;             // above overlayPane (400), below markerPane (600)
-      dp.style.pointerEvents = "none";   // never intercept clicks/hover
-
-      drawerRenderer = L.svg({ padding: 0.5 });
-      drawerLayer = L.geoJSON([], {
-        pane: "drawerPane",
-        renderer: drawerRenderer,
-        interactive: false,
-        style: drawerFeatureStyle,
       }).addTo(map);
     }
 
@@ -1380,7 +790,7 @@ function parsePlateFromNetwork(network){
         weight: 0.9,
         opacity: 1,
         fillColor: colorForFeature(feature),
-        fillOpacity: (state.drawer?.enabled && state.drawer?.overlay) ? 0.70 : 0.92
+        fillOpacity: 0.92
       };
     }
 
@@ -1458,86 +868,6 @@ function parsePlateFromNetwork(network){
       return clean;
     }
 
-    // Elections (CSV: 2023 presidential 2nd round)
-    function parseSecondRoundCsvRows(rows){
-      const clean = [];
-      if (!Array.isArray(rows)) return clean;
-
-      // CSV columns: district, erdogan, kilicdaroglu (province column may be noisy)
-      // District field often looks like: "Adana Ceyhan" (province first token)
-      const seen = new Set();
-
-      for (const r of rows){
-        const draw = String(r["district"] ?? r["District"] ?? r["DISTRICT"] ?? "").trim();
-        if (!draw) continue;
-
-        const parts = draw.split(/\s+/).filter(Boolean);
-        if (parts.length < 2) continue;
-
-        const provName = parts[0];
-        const distName = parts.slice(1).join(" ");
-        const plate = provinceKeyToPlate.get(keyify(provName));
-        if (!plate) continue;
-
-        const distKey = keyify(distName);
-        const uk = uniqueKey(plate, distKey);
-        if (seen.has(uk)) continue;
-        seen.add(uk);
-
-        const erdo = parseIntTR(r["erdogan"] ?? r["Erdoğan"] ?? r["Erdogan"] ?? r["ERDOGAN"]);
-        const kili = parseIntTR(r["kilicdaroglu"] ?? r["Kılıçdaroğlu"] ?? r["Kilicdaroglu"] ?? r["KILICDAROGLU"]);
-        if (erdo == null && kili == null) continue;
-
-        const eVotes = erdo ?? 0;
-        const kVotes = kili ?? 0;
-        const valid = eVotes + kVotes;
-
-        const partyVotes = [
-          ["Erdoğan", eVotes],
-          ["Kılıçdaroğlu", kVotes],
-        ].sort((a,b)=>b[1]-a[1]);
-
-        const winner = partyVotes[0]?.[0] ?? null;
-        const winnerVotes = partyVotes[0]?.[1] ?? null;
-        const runnerVotes = partyVotes[1]?.[1] ?? null;
-
-        clean.push({
-          __source: "csv_2023_2r",
-          __provName: provName,
-          __district: distName,
-          __distKey: distKey,
-          __registered: null,
-          __cast: null,
-          __valid: valid,
-          __partyVotes: partyVotes,
-          __winner: winner,
-          __winnerVotes: winnerVotes,
-          __runner: partyVotes[1]?.[0] ?? null,
-          __marginVotes: (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes - runnerVotes) : null,
-          __marginShare: (valid && winnerVotes!=null && runnerVotes!=null) ? ((winnerVotes - runnerVotes)/valid) : null,
-          __uk: uk,
-        });
-      }
-      return clean;
-    }
-
-    async function loadElectionCsv(){
-      try{
-        const rows = await fetchCsv(FILES.ELECTIONCSV);
-        const parsed = parseSecondRoundCsvRows(rows);
-        for (const row of parsed){
-          if (!state.elections.has(row.__uk)){
-            state.elections.set(row.__uk, row);
-          }
-        }
-        return parsed.length;
-      }catch(err){
-        console.warn("Election CSV not loaded (optional):", err?.message ?? err);
-        return 0;
-      }
-    }
-
-
     async function tryFetchElectionJson(provName, plate){
       const candidates = [
         `${provName}.json`,
@@ -1547,7 +877,7 @@ function parsePlateFromNetwork(network){
       for (const rel of candidates){
         try{
           const url = resolveUrl(rel);
-          const resp = await fetchWithTimeout(url, 7000);
+          const resp = await fetch(url, { cache:"no-store" });
           if (!resp.ok) continue;
           return await resp.json();
         }catch(_){}
@@ -1567,12 +897,108 @@ function parsePlateFromNetwork(network){
             const parsed = parseElectionRows(raw);
             for (const row of parsed){
               const uk = uniqueKey(job.plate, row.__distKey);
-              if (!state.elections.has(uk)) state.elections.set(uk, row);
+              state.elections.set(uk, row);
             }
           }
         }
       }
       await Promise.all(Array.from({length: concurrency}, worker));
+    }
+
+
+    // Build an index of which district keys exist per province plate (helps match messy CSV names)
+    function buildPlateDistKeyIndex(features){
+      const m = new Map();
+      for (const f of features){
+        const p = f?.properties;
+        const plate = p?.__plate;
+        const dk = p?.__distKey;
+        if (!plate || !dk) continue;
+        if (!m.has(plate)) m.set(plate, new Set());
+        m.get(plate).add(dk);
+      }
+      return m;
+    }
+
+    // Load 2023 presidential 2nd-round results from a single CSV (fast path)
+    function loadPresidentialElectionCsv(rows, plateDistKeys){
+      if (!Array.isArray(rows) || !rows.length) return 0;
+
+      // Treat as authoritative: overwrite any prior election rows
+      state.elections.clear();
+
+      function getAny(r, keys){
+        for (const k of keys){
+          if (r && Object.prototype.hasOwnProperty.call(r, k) && r[k] != null && r[k] !== "") return r[k];
+        }
+        return null;
+      }
+
+      let loaded = 0;
+      for (const r of rows){
+        const provRaw = fixMojibake(getAny(r, ["province","Province","PROVINCE"]) ?? "");
+        const provToken = String(provRaw).trim().split(/\s+/)[0];
+        if (!provToken) continue;
+
+        const plate = provinceToPlate.get(provToken);
+        if (!plate) continue;
+
+        const distRaw = fixMojibake(getAny(r, ["district","District","DISTRICT"]) ?? "");
+        const distFull = String(distRaw).trim();
+        if (!distFull) continue;
+
+        const fullKey = keyify(distFull);
+
+        // common scrape format: "Adana Aladağ" -> "Aladağ"
+        let stripped = distFull;
+        const firstTok = stripped.split(/\s+/)[0];
+        if (firstTok && keyify(firstTok) === keyify(provToken)){
+          stripped = stripped.slice(firstTok.length).trim();
+        }
+        const strippedKey = keyify(stripped);
+
+        // pick the key that actually exists in the GeoJSON for this plate
+        let distKey = strippedKey || fullKey;
+        const set = plateDistKeys?.get(plate);
+        if (set){
+          if (strippedKey && set.has(strippedKey)) distKey = strippedKey;
+          else if (fullKey && set.has(fullKey)) distKey = fullKey;
+        }
+
+        const vE = parseIntTR(getAny(r, ["erdogan","Erdogan","ERDOGAN","Erdoğan","ERDOĞAN"]));
+        const vK = parseIntTR(getAny(r, ["kilicdaroglu","Kilicdaroglu","KILICDAROGLU","Kılıçdaroğlu","KILIÇDAROĞLU"]));
+        if (vE == null && vK == null) continue;
+
+        const partyVotes = [
+          ["Erdoğan", vE ?? 0],
+          ["Kılıçdaroğlu", vK ?? 0],
+        ].sort((a,b)=>b[1]-a[1]);
+
+        const valid = (vE ?? 0) + (vK ?? 0);
+
+        const winner = partyVotes[0]?.[0] ?? null;
+        const winnerVotes = partyVotes[0]?.[1] ?? null;
+        const runnerVotes = partyVotes[1]?.[1] ?? null;
+
+        const row = {
+          __district: stripped || distFull,
+          __distKey: distKey,
+          __registered: null,
+          __cast: valid || null,
+          __valid: valid || null,
+          __partyVotes: partyVotes,
+          __winner: winner,
+          __winnerVotes: winnerVotes,
+          __runner: partyVotes[1]?.[0] ?? null,
+          __marginVotes: (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes - runnerVotes) : null,
+          __marginShare: (valid && winnerVotes!=null && runnerVotes!=null) ? ((winnerVotes - runnerVotes)/valid) : null,
+        };
+
+        const uk = uniqueKey(plate, distKey);
+        state.elections.set(uk, row);
+        loaded++;
+      }
+      return loaded;
     }
 
     function rebuildDistrictDataIndex(){
@@ -1764,19 +1190,7 @@ function parsePlateFromNetwork(network){
         <div class="sep"></div>
       `;
 
-      
-      // Map Drawer info (if enabled)
-      if (state.drawer?.enabled){
-        const sid = state.drawer.assignment.get(String(uk)) ?? null;
-        const sd = sid ? state.drawer.districts.find(x => x.id === sid) : null;
-        html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Map Drawer</div>`;
-        html += sd
-          ? `<div class="small" style="margin-bottom:6px">Assigned SMD: <b>${escapeHtml(sd.name)}</b></div>`
-          : `<div class="small" style="margin-bottom:6px">Assigned SMD: <span class="mono">Unassigned</span></div>`;
-        html += `<div class="sep"></div>`;
-      }
-
-// Population section
+      // Population section
       html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Population</div>`;
       if (pop){
         const a = pop[state.yearA], b = pop[state.yearB];
@@ -1857,533 +1271,6 @@ function parsePlateFromNetwork(network){
       refreshFeatureStyles();
     }
 
-
-    // ===== Map Drawer (single-member district builder) =====
-    const DRAW_PALETTE = ["#2563eb","#06b6d4","#16a34a","#f97316","#db2777","#7c3aed","#0f766e","#dc2626","#0ea5e9","#9333ea","#65a30d","#f59e0b"];
-
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#39;");
-    }
-
-    function toast(msg){
-      if (!el.toast) return;
-      el.toast.textContent = msg;
-      el.toast.classList.add("show");
-      clearTimeout(state.drawer._toastT);
-      state.drawer._toastT = setTimeout(() => el.toast.classList.remove("show"), 2200);
-    }
-
-
-    // Right panel collapse (UI only)
-    function setPanelCollapsed(on){
-      state.ui.panelCollapsed = !!on;
-      if (el.appWrap) el.appWrap.classList.toggle("panelCollapsed", state.ui.panelCollapsed);
-      if (el.panelTab) el.panelTab.classList.toggle("show", state.ui.panelCollapsed);
-      try{ localStorage.setItem("panelCollapsed", state.ui.panelCollapsed ? "1" : "0"); }catch(_){}
-    }
-
-    function randId(){
-      return Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
-    }
-
-    function ensureDrawerHasDistrict(){
-      const d = state.drawer;
-      if (d.districts.length) return;
-      const id = randId();
-      d.districts.push({
-        id,
-        name: "District 1",
-        color: DRAW_PALETTE[0],
-        members: new Set(),
-      });
-      d.activeId = id;
-    }
-
-    function setDrawMode(on){
-      state.drawer.enabled = !!on;
-      el.mapDiv?.classList.toggle("drawMode", state.drawer.enabled);
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
-      toast(state.drawer.enabled ? "Draw mode: ON" : "Draw mode: OFF");
-    }
-
-    function drawerFeatureStyle(feature){
-      const d = state.drawer;
-      if (!d.overlay) return {opacity:0, fillOpacity:0, weight:0};
-      const uk = feature?.properties?.__uk;
-      const id = uk ? d.assignment.get(uk) : null;
-      if (!id) return {opacity:0, fillOpacity:0, weight:0};
-      const dist = d.districts.find(x => x.id === id);
-      const c = dist?.color ?? "#111827";
-      const isActive = (id === d.activeId);
-
-      return {
-        color: mixHex("#ffffff", c, 0.92),
-        weight: isActive ? 3.6 : 2.6,
-        opacity: 0.98,
-        fillColor: c,
-        fillOpacity: isActive ? 0.45 : 0.34,
-      };
-    }
-
-    function refreshDrawerOverlayStyles(){
-      if (!drawerLayer) return;
-      const pane = map?.getPane?.("drawerPane");
-      if (pane) pane.style.display = state.drawer.overlay ? "block" : "none";
-      drawerLayer.eachLayer(layer => {
-        layer.setStyle(drawerFeatureStyle(layer.feature));
-      });
-    }
-
-    function getPopForUk(uk, year){
-      const j = state.districtData.get(uk);
-      const v = j?.pop?.[year];
-      return Number.isFinite(v) ? v : 0;
-    }
-
-    function computeDrawerStats(){
-      const d = state.drawer;
-      const year = state.year;
-      let totalPop = 0;
-
-      // Total population across *all* units (for ideal pop target)
-      for (const j of state.districtData.values()){
-        const v = j?.pop?.[year];
-        totalPop += Number.isFinite(v) ? v : 0;
-      }
-
-      const byId = new Map();
-      for (const dist of d.districts){
-        let pop = 0;
-        for (const uk of dist.members) pop += getPopForUk(uk, year);
-        byId.set(dist.id, { pop, n: dist.members.size });
-      }
-
-      const seats = Math.max(1, Math.floor(Number(d.targetSeats || 1)));
-      const ideal = totalPop ? (totalPop / seats) : null;
-
-      return { totalPop, ideal, byId, seats, year };
-    }
-    function computeSmdAgg(dist, year){
-      let pop = 0;
-      let units = 0;
-      let registered = 0;
-      let cast = 0;
-      let valid = 0;
-      const parties = new Map();
-
-      for (const uk0 of (dist?.members ?? [])){
-        const uk = String(uk0);
-        units++;
-        pop += getPopForUk(uk, year);
-
-        const e = state.districtData.get(uk)?.election;
-        if (e){
-          registered += Number(e.__registered) || 0;
-          cast += Number(e.__cast) || 0;
-          valid += Number(e.__valid) || 0;
-
-          const pv = Array.isArray(e.__partyVotes) ? e.__partyVotes : [];
-          for (const pair of pv){
-            const name = String(pair?.[0] ?? "").trim();
-            const v = Number(pair?.[1]) || 0;
-            if (!name || !v) continue;
-            parties.set(name, (parties.get(name) || 0) + v);
-          }
-        }
-      }
-
-      const top = Array.from(parties.entries()).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      return { pop, units, registered, cast, valid, top };
-    }
-
-
-
-    function renderDrawerUI(){
-      const d = state.drawer;
-      ensureDrawerHasDistrict();
-
-      if (el.drawerStatusPill) el.drawerStatusPill.textContent = d.enabled ? "draw" : "off";
-
-      // Sync toggles
-      if (el.drawTopBtn){
-        el.drawTopBtn.classList.toggle("is-on", d.enabled);
-      }
-      if (el.drawerToggleBtn){
-        el.drawerToggleBtn.classList.toggle("is-on", d.enabled);
-      }
-      if (el.drawerOverlayChk) el.drawerOverlayChk.checked = !!d.overlay;
-
-      // Active select options
-      if (el.drawerActiveSelect){
-        const cur = d.activeId;
-        el.drawerActiveSelect.innerHTML = d.districts.map(x =>
-          `<option value="${escapeHtml(x.id)}">${escapeHtml(x.name)}</option>`
-        ).join("");
-        el.drawerActiveSelect.value = cur ?? d.districts[0]?.id ?? "";
-      }
-
-      const stats = computeDrawerStats();
-      if (el.drawerSeatsInput) el.drawerSeatsInput.value = String(d.targetSeats ?? 1);
-
-      if (el.drawerSummary){
-        const idealTxt = stats.ideal ? formatInt(Math.round(stats.ideal)) : "—";
-        el.drawerSummary.innerHTML =
-          `Year: <b>${stats.year}</b> • Target: <b>${stats.seats}</b> districts • Ideal pop: <b class="mono">${idealTxt}</b><br/>
-           <span class="muted2">Draw mode overlays your SMD plan on top of the current layer — nothing is removed.</span>`;
-      }
-
-      
-      // Active district stats (the SMD you are currently drawing)
-      if (el.drawerActiveStats){
-        const active = d.districts.find(x => x.id === d.activeId) ?? null;
-
-        if (!active){
-          el.drawerActiveStats.style.borderLeft = "none";
-          el.drawerActiveStats.innerHTML = `<div class="muted small">No active district.</div>`;
-        } else {
-          const agg = computeSmdAgg(active, stats.year);
-          el.drawerActiveStats.style.borderLeft = `6px solid ${active.color}`;
-
-          const dev = (stats.ideal && stats.ideal !== 0) ? (agg.pop / stats.ideal - 1) : null;
-          const devPct = (dev == null) ? "—" : `${dev >= 0 ? "+" : ""}${(dev*100).toFixed(2)}%`;
-
-          const turnout = agg.registered ? (agg.cast / agg.registered) : null;
-          const turnoutTxt = (turnout == null) ? "—" : `${(turnout*100).toFixed(1)}%`;
-
-          const validRate = agg.cast ? (agg.valid / agg.cast) : null;
-          const validTxt = (validRate == null) ? "—" : `${(validRate*100).toFixed(1)}%`;
-
-          const partyHtml = (agg.top.length && agg.valid)
-            ? agg.top.map(([name, votes]) => {
-                const share = agg.valid ? (votes / agg.valid) : 0;
-                const dot = `<span class="winnerDot" style="background:${colorForParty(name)}"></span>`;
-                return `
-                  <div class="partyRow">
-                    <div class="partyLeft">
-                      ${dot}
-                      <div class="partyName">${escapeHtml(name)}</div>
-                    </div>
-                    <div class="partyVals mono">
-                      <div>${formatInt(votes)}</div>
-                      <div class="partyShare">${(share*100).toFixed(1)}%</div>
-                    </div>
-                  </div>
-                `;
-              }).join("")
-            : `<div class="muted2 small">Election totals unavailable / incomplete for this geography.</div>`;
-
-          el.drawerActiveStats.innerHTML = `
-            <div class="drawerActiveHead">
-              <div class="drawerActiveTitle">Active SMD: <span class="mono">${escapeHtml(active.name)}</span></div>
-              <div class="drawerActivePill"><span class="mono">${agg.units}</span> units</div>
-            </div>
-
-            <div class="statGrid">
-              <div class="statCell">
-                <div class="statLabel">Population (${stats.year})</div>
-                <div class="statValue mono">${formatInt(agg.pop)}</div>
-              </div>
-              <div class="statCell">
-                <div class="statLabel">Deviation vs ideal</div>
-                <div class="statValue">${devPct}</div>
-              </div>
-              <div class="statCell">
-                <div class="statLabel">Registered</div>
-                <div class="statValue mono">${formatInt(agg.registered)}</div>
-              </div>
-              <div class="statCell">
-                <div class="statLabel">Turnout • Valid</div>
-                <div class="statValue mono">${turnoutTxt} • ${validTxt}</div>
-              </div>
-            </div>
-
-            <div class="partyList">
-              <div class="statLabel">Top parties (sum of member units)</div>
-              ${partyHtml}
-            </div>
-          `;
-        }
-      }
-
-// List
-      if (el.drawerList){
-        el.drawerList.innerHTML = d.districts.map((dist, idx) => {
-          const m = stats.byId.get(dist.id) ?? {pop:0,n:0};
-          const dev = (stats.ideal && stats.ideal !== 0) ? (m.pop / stats.ideal - 1) : null;
-          const devPct = (dev == null) ? "—" : `${dev >= 0 ? "+" : ""}${(dev*100).toFixed(1)}%`;
-          const devCls = dev == null ? "" : (dev > 0.005 ? "pos" : (dev < -0.005 ? "neg" : ""));
-          const isActive = dist.id === d.activeId;
-
-          // Election summary for this drawn district (aggregated)
-          const agg = computeSmdAgg(dist, stats.year);
-          const top = agg?.top ?? [];
-          const totalVotes = (agg?.valid || 0) || top.reduce((a,kv)=>a+(Number(kv?.[1])||0),0);
-          const t1 = top[0] ?? null;
-          const t2 = top[1] ?? null;
-
-          const miniElectionHtml = (!t1 || !totalVotes) ?
-            `<div class="drawerMini muted2 small">No election data.</div>` : (() => {
-              const s1 = clamp01((Number(t1[1])||0) / totalVotes);
-              const s2 = t2 ? clamp01((Number(t2[1])||0) / totalVotes) : 0;
-              const rest = Math.max(0, 1 - s1 - s2);
-              const margin = t2 ? (s1 - s2) : s1;
-              const name1 = escapeHtml(String(t1[0] ?? "—"));
-              const name2 = escapeHtml(String(t2?.[0] ?? ""));
-              const c1 = colorForParty(String(t1[0] ?? ""));
-              const c2 = t2 ? colorForParty(String(t2[0] ?? "")) : "rgba(15,23,42,.20)";
-              const labelRight = t2 ? `±${(100*margin).toFixed(1)}%` : `${(100*s1).toFixed(1)}%`;
-
-              return `
-                <div class="drawerMini">
-                  <div class="sparkBar" aria-label="Election share bar">
-                    <div class="sparkSeg" style="flex:${(s1*100).toFixed(3)}; background:${c1}"></div>
-                    ${t2 ? `<div class="sparkSeg" style="flex:${(s2*100).toFixed(3)}; background:${c2}"></div>` : ``}
-                    <div class="sparkSeg" style="flex:${(rest*100).toFixed(3)}; background: rgba(15,23,42,.12)"></div>
-                  </div>
-                  <div class="sparkLabel">
-                    <span title="${name1}"><span class="sparkDot" style="background:${c1}"></span>${name1} ${(100*s1).toFixed(1)}%</span>
-                    ${t2 ? `<span class="mono" title="${name2}">${labelRight}</span>` : `<span class="mono">${labelRight}</span>`}
-                  </div>
-                </div>
-              `;
-            })();
-
-          return `
-            <div class="drawerItem ${isActive ? "active" : ""}" data-id="${escapeHtml(dist.id)}">
-              <div class="drawerTop">
-                <input class="drawerColor" data-act="color" type="color" value="${escapeHtml(dist.color)}" title="Color"/>
-                <input class="drawerName" data-act="name" value="${escapeHtml(dist.name)}" title="Name"/>
-              </div>
-              <div class="drawerMeta">
-                <div class="mono">${formatInt(m.pop)}</div>
-                <div class="muted2 small">${m.n} units</div>
-                <div class="dev ${devCls}">${devPct}</div>
-              </div>
-              ${miniElectionHtml}
-              <div class="drawerBtns">
-                <button class="btn btn-ghost mini" data-act="active" title="Set active">Active</button>
-                <button class="btn btn-ghost mini" data-act="zoom" title="Zoom to this district">Zoom</button>
-                <button class="btn btn-ghost mini" data-act="clear" title="Clear members">Clear</button>
-                <button class="btn btn-ghost mini" data-act="del" title="Delete district">Delete</button>
-              </div>
-            </div>
-          `;
-        }).join("");
-      }
-
-      // HUD content
-      if (el.drawHud){
-        const active = d.districts.find(x => x.id === d.activeId);
-        el.drawHud.querySelector("div")?.replaceChildren?.(); // no-op in most browsers; keep safe
-        // Keep the HUD template but update the first line via innerHTML (simple, safe enough here).
-        el.drawHud.innerHTML = `
-          <div style="font-weight:900; margin-bottom:4px">DRAW MODE — ${escapeHtml(active?.name ?? "Active")}</div>
-          <div class="muted small">
-            Click to assign to the active SMD. <span class="kbd">Alt</span> erases. <span class="kbd">Shift</span> inspects. <span class="kbd">Ctrl</span>+<span class="kbd">Z</span> undo.
-          </div>
-        `;
-      }
-    }
-
-    function drawerSetActive(id){
-      const d = state.drawer;
-      if (!d.districts.some(x => x.id === id)) return;
-      d.activeId = id;
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
-    }
-
-    function drawerAddDistrict(){
-      const d = state.drawer;
-      const id = randId();
-      const color = DRAW_PALETTE[d.districts.length % DRAW_PALETTE.length];
-      d.districts.push({ id, name: `District ${d.districts.length + 1}`, color, members: new Set() });
-      d.activeId = id;
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
-      toast("Created a new district.");
-    }
-
-    function drawerDeleteDistrict(id){
-      const d = state.drawer;
-      if (d.districts.length <= 1){
-        toast("Can't delete the last district.");
-        return;
-      }
-
-      // Unassign its members
-      const dist = d.districts.find(x => x.id === id);
-      if (dist){
-        for (const uk of dist.members) d.assignment.delete(uk);
-      }
-
-      d.districts = d.districts.filter(x => x.id !== id);
-      if (d.activeId === id) d.activeId = d.districts[0]?.id ?? null;
-
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
-    }
-
-    function drawerClearDistrict(id){
-      const d = state.drawer;
-      const dist = d.districts.find(x => x.id === id);
-      if (!dist) return;
-      for (const uk of dist.members) d.assignment.delete(uk);
-      dist.members.clear();
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
-    }
-
-    function drawerClearActive(){
-      drawerClearDistrict(state.drawer.activeId);
-      toast("Cleared active district.");
-    }
-
-    function drawerAssignUk(uk, toId, {recordUndo=true} = {}){
-      const d = state.drawer;
-      ensureDrawerHasDistrict();
-
-      const fromId = d.assignment.get(uk) ?? null;
-      if (fromId === toId) return;
-
-      // Remove from previous
-      if (fromId){
-        const prev = d.districts.find(x => x.id === fromId);
-        prev?.members?.delete?.(uk);
-      }
-
-      // Add to new
-      if (toId){
-        const next = d.districts.find(x => x.id === toId);
-        next?.members?.add?.(uk);
-        d.assignment.set(uk, toId);
-      } else {
-        d.assignment.delete(uk);
-      }
-
-      if (recordUndo){
-        d.undo.push({ uk, fromId, toId });
-        if (d.undo.length > 5000) d.undo.shift();
-      }
-    }
-
-    function drawerHandleMapClick(uk, ev){
-      const d = state.drawer;
-      ensureDrawerHasDistrict();
-
-      // Shift-click = inspect only (preserve existing selection behavior)
-      if (ev?.originalEvent?.shiftKey) return false;
-
-      const erase = !!ev?.originalEvent?.altKey;
-      const cur = d.assignment.get(uk) ?? null;
-
-      // Alt = erase
-      if (erase){
-        if (cur){
-          drawerAssignUk(uk, null);
-          renderDrawerUI();
-          refreshDrawerOverlayStyles();
-        }
-        return true;
-      }
-
-      // Toggle: if already in active, remove. Otherwise move into active.
-      const toId = (cur === d.activeId) ? null : d.activeId;
-      drawerAssignUk(uk, toId);
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
-      return true;
-    }
-
-    function drawerUndo(){
-      const d = state.drawer;
-      const last = d.undo.pop();
-      if (!last) { toast("Nothing to undo."); return; }
-      drawerAssignUk(last.uk, last.fromId, {recordUndo:false});
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
-    }
-
-    function drawerZoomTo(id){
-      const dist = state.drawer.districts.find(x => x.id === id);
-      if (!dist || dist.members.size === 0) { toast("Nothing to zoom to."); return; }
-
-      const b = L.latLngBounds();
-      districtLayer.eachLayer(layer => {
-        const uk = layer.feature?.properties?.__uk;
-        if (uk && dist.members.has(uk)){
-          try{ b.extend(layer.getBounds()); }catch(_){}
-        }
-      });
-      try{ map.fitBounds(b, { padding:[18,18] }); }catch(_){}
-    }
-
-    function serializeDrawerPlan(){
-      const d = state.drawer;
-      const payload = {
-        version: 1,
-        createdAt: new Date().toISOString(),
-        year: state.year,
-        targetSeats: d.targetSeats,
-        districts: d.districts.map(x => ({
-          id: x.id,
-          name: x.name,
-          color: x.color,
-          members: [...x.members],
-        })),
-      };
-      return JSON.stringify(payload, null, 2);
-    }
-
-    function downloadJson(filename, jsonStr){
-      const blob = new Blob([jsonStr], {type:"application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 500);
-    }
-
-    function applyDrawerPlan(obj){
-      if (!obj || typeof obj !== "object" || !Array.isArray(obj.districts)){
-        throw new Error("Invalid plan JSON.");
-      }
-
-      const d = state.drawer;
-      d.targetSeats = Math.max(1, Math.floor(Number(obj.targetSeats || 1)));
-
-      // Reset
-      d.districts = [];
-      d.assignment = new Map();
-      d.undo = [];
-
-      for (const x of obj.districts){
-        const id = String(x.id ?? randId());
-        const name = String(x.name ?? "District");
-        const color = String(x.color ?? DRAW_PALETTE[d.districts.length % DRAW_PALETTE.length]);
-        const membersArr = Array.isArray(x.members) ? x.members : [];
-        const members = new Set(membersArr.map(String));
-
-        d.districts.push({ id, name, color, members });
-        for (const uk of members) d.assignment.set(String(uk), id);
-      }
-
-      d.activeId = d.districts[0]?.id ?? null;
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
-      toast("Plan imported.");
-    }
-
-
     // Feature interaction
     function onEachDistrict(feature, layer){
       const uk = feature.properties.__uk;
@@ -2422,13 +1309,7 @@ function parsePlateFromNetwork(network){
             el.districtBox.innerHTML = `<div class="muted small">Hover a district or click to select.</div>`;
           }
         },
-        click: (ev) => {
-          // In draw mode, clicks assign units to the active SMD.
-          if (state.drawer.enabled){
-            const handled = drawerHandleMapClick(uk, ev);
-            if (handled) return;
-          }
-
+        click: () => {
           // toggle select
           if (state.selectedUk === uk){
             clearSelection();
@@ -2558,7 +1439,6 @@ function parsePlateFromNetwork(network){
         renderLegend();
         if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
-        renderDrawerUI();
 
       el.yearASelect.addEventListener("change", () => {
         state.yearA = Number(el.yearASelect.value);
@@ -2566,7 +1446,6 @@ function parsePlateFromNetwork(network){
         renderLegend();
         if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
-        renderDrawerUI();
 
       el.yearBSelect.addEventListener("change", () => {
         state.yearB = Number(el.yearBSelect.value);
@@ -2574,7 +1453,6 @@ function parsePlateFromNetwork(network){
         renderLegend();
         if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
       });
-        renderDrawerUI();
 
       el.fitBtn.addEventListener("click", () => {
         try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
@@ -2589,134 +1467,6 @@ function parsePlateFromNetwork(network){
       el.helpBtn.addEventListener("click", () => el.helpDialog.showModal());
       el.closeHelpBtn.addEventListener("click", () => el.helpDialog.close());
 
-
-      // Panel toggle + sidebar jump buttons
-      if (el.panelBtn) el.panelBtn.addEventListener("click", () => setPanelCollapsed(!state.ui.panelCollapsed));
-      if (el.panelTab) el.panelTab.addEventListener("click", () => setPanelCollapsed(false));
-
-      // Sidebar quick navigation
-      document.querySelectorAll(".tabBtn[data-scroll]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const sel = btn.getAttribute("data-scroll");
-          const target = sel ? document.querySelector(sel) : null;
-          if (target) target.scrollIntoView({ behavior:"smooth", block:"start" });
-        });
-      });
-
-      // Drawer wiring
-      if (el.drawTopBtn) el.drawTopBtn.addEventListener("click", () => setDrawMode(!state.drawer.enabled));
-      if (el.drawerToggleBtn) el.drawerToggleBtn.addEventListener("click", () => setDrawMode(!state.drawer.enabled));
-      if (el.drawerOverlayChk) el.drawerOverlayChk.addEventListener("change", () => {
-        state.drawer.overlay = !!el.drawerOverlayChk.checked;
-        refreshDrawerOverlayStyles();
-      });
-
-      if (el.drawerSeatsInput) el.drawerSeatsInput.addEventListener("change", () => {
-        state.drawer.targetSeats = Math.max(1, Math.floor(Number(el.drawerSeatsInput.value || 1)));
-        renderDrawerUI();
-      });
-
-      if (el.drawerActiveSelect) el.drawerActiveSelect.addEventListener("change", () => {
-        drawerSetActive(el.drawerActiveSelect.value);
-      });
-
-      if (el.drawerNewBtn) el.drawerNewBtn.addEventListener("click", drawerAddDistrict);
-      if (el.drawerClearActiveBtn) el.drawerClearActiveBtn.addEventListener("click", drawerClearActive);
-
-      if (el.drawerUndoBtn) el.drawerUndoBtn.addEventListener("click", drawerUndo);
-
-      if (el.drawerExportBtn) el.drawerExportBtn.addEventListener("click", () => {
-        const json = serializeDrawerPlan();
-        downloadJson("district-plan.json", json);
-        toast("Exported JSON.");
-      });
-
-      if (el.drawerCopyBtn) el.drawerCopyBtn.addEventListener("click", async () => {
-        const json = serializeDrawerPlan();
-        try{
-          await navigator.clipboard.writeText(json);
-          toast("Copied plan JSON.");
-        }catch(_){
-          toast("Clipboard blocked by browser.");
-        }
-      });
-
-      if (el.drawerImportBtn && el.drawerImportFile){
-        el.drawerImportBtn.addEventListener("click", () => el.drawerImportFile.click());
-        el.drawerImportFile.addEventListener("change", async () => {
-          const f = el.drawerImportFile.files?.[0];
-          if (!f) return;
-          const txt = await f.text();
-          try{
-            applyDrawerPlan(JSON.parse(txt));
-          }catch(err){
-            console.error(err);
-            toast("Import failed: invalid JSON.");
-          } finally {
-            el.drawerImportFile.value = "";
-          }
-        });
-      }
-
-      if (el.drawerResetBtn) el.drawerResetBtn.addEventListener("click", () => {
-        // Reset to a single empty district
-        state.drawer.districts = [];
-        state.drawer.assignment = new Map();
-        state.drawer.undo = [];
-        state.drawer.activeId = null;
-        ensureDrawerHasDistrict();
-        renderDrawerUI();
-        refreshDrawerOverlayStyles();
-        toast("Reset plan.");
-      });
-
-      // List delegation (set active / zoom / clear / delete, rename/color)
-      if (el.drawerList){
-        el.drawerList.addEventListener("click", (e) => {
-          const item = e.target.closest(".drawerItem");
-          if (!item) return;
-          const id = item.dataset.id;
-          const act = e.target?.dataset?.act;
-
-          if (!act){
-            drawerSetActive(id);
-            return;
-          }
-          if (act === "active") drawerSetActive(id);
-          if (act === "zoom") drawerZoomTo(id);
-          if (act === "clear") drawerClearDistrict(id);
-          if (act === "del") drawerDeleteDistrict(id);
-        });
-
-        el.drawerList.addEventListener("input", (e) => {
-          const item = e.target.closest(".drawerItem");
-          if (!item) return;
-          const id = item.dataset.id;
-          const dist = state.drawer.districts.find(x => x.id === id);
-          if (!dist) return;
-
-          if (e.target?.dataset?.act === "name"){
-            dist.name = String(e.target.value || "").slice(0, 48);
-            renderDrawerUI();
-            return;
-          }
-          if (e.target?.dataset?.act === "color"){
-            dist.color = String(e.target.value || "#2563eb");
-            renderDrawerUI();
-            refreshDrawerOverlayStyles();
-            return;
-          }
-        });
-      }
-
-      window.addEventListener("keydown", (e) => {
-        const z = (e.key === "z" || e.key === "Z");
-        if ((e.ctrlKey || e.metaKey) && z){
-          e.preventDefault();
-          drawerUndo();
-        }
-      });
-
       renderModeYearVisibility();
     }
 
@@ -2727,6 +1477,14 @@ function parsePlateFromNetwork(network){
         fetchJson(FILES.GEOJSON),
         fetchCsv(FILES.POPCSV),
       ]);
+
+      let presRows = null;
+      try{
+        presRows = await fetchCsv(FILES.ELECTIONCSV);
+      }catch(_){
+        presRows = null;
+      }
+
 
       // population index (keyify)
       const pop = {};
@@ -2775,125 +1533,40 @@ const features = (geo.features || [])
       districtLayer.clearLayers();
       districtLayer.addData(features);
 
-      // Keep the Drawer overlay in sync with the base geography
-      if (drawerLayer){
-        drawerLayer.clearLayers();
-        drawerLayer.addData(features);
-      }
-
-      // Mirror the same geometry into the (non-interactive) drawer overlay
-      drawerLayer?.clearLayers?.();
-      drawerLayer?.addData?.(features);
-
+      const plateDistKeys = buildPlateDistKeyIndex(features);
       rebuildDistrictDataIndex();
       refreshFeatureStyles();
 
       try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
 
       renderLegend();
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
 
-      // elections (non-blocking): bring the map up ASAP, then enrich results in the background.
-      // GitHub Pages can be slow if we probe many optional JSON files (lots of 404s), so those are opt-in.
-      el.loaderMsg.textContent = "Map ready. Loading elections in background…";
-      safeHideCurtain();
-
-      // 1) Preferred: compiled second-round CSV (fast, one request)
-      loadElectionCsv().then((n) => {
-        if (n) try{ toast(`Loaded ${n} district results from CSV.`); }catch(_){}
-        rebuildDistrictDataIndex();
-        refreshFeatureStyles();
-        renderLegend();
-      }).catch((err) => {
-        console.warn("Election CSV background load failed:", err?.message ?? err);
-      });
-
-      // 2) Optional: per-province JSON files (slow on GH Pages unless you actually host them)
-      const wantJson = (new URLSearchParams(location.search).get("json") === "1");
-      if (wantJson){
-        (async () => {
-          try{
-            el.loaderMsg.textContent = "Loading province JSON files…";
-            await loadAllElections();
-            rebuildDistrictDataIndex();
-            refreshFeatureStyles();
-            renderLegend();
-            try{ toast("Loaded province JSON election files."); }catch(_){}
-          }catch(err){
-            console.warn("Province JSON load failed (optional):", err?.message ?? err);
-          }
-        })();
-      }else{
-        loaderLog("Skipping province JSON loads. Add ?json=1 to enable.");
+      // elections
+      if (presRows && presRows.length){
+        el.loaderMsg.textContent = "Loading 2023 presidential 2nd-round (CSV)…";
+        loadPresidentialElectionCsv(presRows, plateDistKeys);
+      } else {
+        el.loaderMsg.textContent = "Loading election JSON files (missing files are OK)…";
+        await loadAllElections();
       }
 
+      rebuildDistrictDataIndex();
+      refreshFeatureStyles();
+      renderLegend();
 
+      el.curtain.classList.add("hide");
     }
 
     window.addEventListener("DOMContentLoaded", async () => {
       grabEls();
-
-      // Global error hooks: never leave the user trapped behind the curtain.
-      window.addEventListener("unhandledrejection", (e) => {
-        const msg = (e?.reason && (e.reason.message || String(e.reason))) || "Unhandled promise rejection";
-        showFatal(msg, e?.reason);
-      });
-      window.addEventListener("error", (e) => {
-        const msg = (e?.error && (e.error.message || String(e.error))) || (e?.message || "Script error");
-        showFatal(msg, e?.error || e);
-      });
-
-      // Curtain controls
-      if (el.curtainHelpBtn) el.curtainHelpBtn.addEventListener("click", () => {
-        try{ el.helpDialog.showModal(); }catch(_){}
-      });
-      if (el.forceEnterBtn){
-        el.forceEnterBtn.addEventListener("click", () => safeHideCurtain());
-        // If something is slow (big GeoJSON / slow hosting), allow manual entry.
-        setTimeout(() => {
-          try{
-            if (!el.curtain.classList.contains("hide")) el.forceEnterBtn.hidden = false;
-          }catch(_){}
-        }, 8000);
-      }
-
-      // Hard backstop: if the curtain is still up after 25s, drop it and surface help.
-      setTimeout(() => {
-        try{
-          if (!el.curtain.classList.contains("hide")){
-            safeHideCurtain();
-            try{ toast("Loader timed out; showing map anyway."); }catch(_){}
-            try{ el.helpDialog.showModal(); }catch(_){}
-          }
-        }catch(_){}
-      }, 25000);
-
-
-      // Restore panel state
-      try{ setPanelCollapsed(localStorage.getItem("panelCollapsed")==="1"); }catch(_){ setPanelCollapsed(false); }
-
       initMap();
       wireUI();
-
-      // Drawer initial render
-      renderDrawerUI();
-      refreshDrawerOverlayStyles();
 
       try{
         await loadAll();
       }catch(err){
         console.error(err);
         el.loaderMsg.textContent = `Fatal: ${err.message}`;
-        loaderLog(`FATAL: ${err?.stack ?? err}`);
-        // Don't trap the user behind the curtain forever.
-        try{ el.curtain.classList.add("hide"); }catch(_){ }
-        try{ toast(`Load failed: ${err.message}`); }catch(_){ }
-        // If it looks like a file/path issue, surface the help dialog.
-        const msg = String(err?.message ?? "");
-        if (location.protocol === "file:" || /HTTP\s*404|not found|Failed to fetch/i.test(msg)){
-          try{ el.helpDialog.showModal(); }catch(_){ }
-        }
       }
     });
 
