@@ -1108,19 +1108,29 @@ function parsePlateFromNetwork(network){
           ? colorForParty(winner)
           : "rgba(15,23,42,.22)";
 
-// ---- STATIC, SMALL POPULATION CIRCLES ----
+// ===== STATIC, SMALL POPULATION CIRCLES (SAFE COPY-PASTE) =====
 
-// build once (near your other scales)
-const popCircleScale = d3.scaleSqrt()
-  .domain([d3.min(popValues), d3.max(popValues)])
-  .range([2, 9])      // small & static (pixels)
-  .clamp(true);
+// build scale lazily, once
+if (!window.__popCircleScale) {
+  let maxPop = 0;
 
-// ---- inside your population-circle loop ----
+  for (const d of districtData.values()) {
+    const v = +d.population;
+    if (Number.isFinite(v) && v > maxPop) maxPop = v;
+  }
+
+  if (!maxPop || maxPop <= 0) maxPop = 1_000_000;
+
+  window.__popCircleScale = d3.scaleSqrt()
+    .domain([0, maxPop])
+    .range([2, 9])    // small, static pixels
+    .clamp(true);
+}
+
 const cm = L.circleMarker(center, {
   renderer: canvasRenderer,
   interactive: false,
-  radius: popCircleScale(p),   // static size
+  radius: window.__popCircleScale(p),
   color: "rgba(15,23,42,.28)",
   weight: 0.8,
   fillColor: fill,
