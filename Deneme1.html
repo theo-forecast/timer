@@ -159,7 +159,8 @@
     .wrap{
       height: calc(100vh - 62px);
       display:grid;
-      grid-template-columns: 1fr 420px;
+      --sidebarW: 420px;
+      grid-template-columns: 1fr var(--sidebarW);
       gap: 14px;
       padding: 14px;
     }
@@ -187,6 +188,121 @@
       padding-right:6px;
       display:flex; flex-direction:column; gap:12px;
     }
+
+    /* Right panel: collapsible + always reachable */
+    #sidebar{ transition: opacity .18s ease, transform .18s ease; }
+    .wrap.panelCollapsed{ --sidebarW: 14px; }
+    .wrap.panelCollapsed #sidebar{
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(12px);
+    }
+    .panelTab{
+      position: fixed;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2000;
+      padding: 10px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(12,18,34,.14);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 16px 40px rgba(12,18,34,.14);
+      font-weight: 900;
+      letter-spacing: .12px;
+      cursor: pointer;
+      display: none;
+      backdrop-filter: blur(12px);
+    }
+    .panelTab.show{ display:block; }
+
+    .sideNav{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display:flex;
+      gap:8px;
+      padding: 10px 8px 8px 0;
+      background: linear-gradient(180deg, rgba(243,244,246,.96), rgba(243,244,246,.75), rgba(243,244,246,0));
+      backdrop-filter: blur(10px);
+    }
+    .tabBtn{
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(255,255,255,.75);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      cursor: pointer;
+      color: rgba(15,23,42,.86);
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      user-select:none;
+    }
+    .tabBtn:hover{ transform: translateY(-1px); border-color: rgba(12,18,34,.18); background: rgba(255,255,255,.88); }
+
+    /* Make the drawer card comfortable: controls stay visible, list scrolls */
+    #drawerCard{ flex:1 1 auto; min-height: 0; }
+    #drawerCard .cardBody{ display:flex; flex-direction:column; min-height:0; }
+    #drawerList{
+      flex: 1 1 auto;
+      overflow:auto;
+      min-height: 150px;
+      padding-right: 4px;
+      scroll-behavior: smooth;
+    }
+    .drawerFooter{ flex:0 0 auto; }
+
+    .drawerActiveStats{
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 14px;
+      background: rgba(15,23,42,.03);
+      border: 1px solid rgba(12,18,34,.10);
+    }
+    .statGrid{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
+    .stat{
+      padding: 10px 10px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.62);
+      border: 1px solid rgba(12,18,34,.10);
+      box-shadow: 0 10px 18px rgba(12,18,34,.06);
+    }
+    .stat .k{ font-size:11px; font-weight:900; letter-spacing:.14px; text-transform:uppercase; color: rgba(15,23,42,.65); }
+    .stat .v{ margin-top:2px; font-weight: 950; }
+    .sparkBar{
+      height: 12px;
+      border-radius: 999px;
+      overflow:hidden;
+      border: 1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.04);
+      display:flex;
+      margin-top: 8px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.55);
+    }
+    .sparkSeg{ height:100%; }
+    .sparkLabel{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(15,23,42,.78);
+      font-weight: 900;
+    }
+    .drawerMini{ margin-top: 8px; }
+    .drawerMini.muted2{ margin-top: 8px; }
+
+    .sparkLabel span{ display:flex; align-items:center; gap:8px; min-width:0; }
+    .sparkDot{
+      width:10px;height:10px;border-radius:999px;
+      border:1px solid rgba(12,18,34,.14);
+      box-shadow: 0 10px 18px rgba(12,18,34,.10);
+      flex:0 0 auto;
+    }
+
+    /* Draw mode: dim base layer so assignments pop */
+    #map.drawMode .leaflet-overlay-pane path{ opacity: .55; }
+    #map.drawMode .drawHud{ pointer-events:none; }
     .card{
       background: rgba(255,255,255,.92);
       border:1px solid var(--border);
@@ -690,10 +806,19 @@
         </svg>
         Draw
       </button>
+
+      <button id="panelBtn" class="btn btn-ghost" title="Toggle right panel">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M4 5h16M4 12h16M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M15 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+        </svg>
+        Panel
+      </button>
+
     </div>
   </header>
 
-  <div class="wrap">
+  <div class="wrap" id="appWrap">
     <div id="map">
       <div id="hoverTip" class="hoverTip"></div>
       <div id="drawHud" class="drawHud">
@@ -705,8 +830,14 @@
 
     </div>
 
-    <aside class="sidebar">
-      <section class="card">
+    <aside class="sidebar" id="sidebar">
+      <div class="sideNav" aria-label="Panel navigation">
+        <button class="tabBtn" data-scroll="#legendCard" title="Jump to legend">Legend</button>
+        <button class="tabBtn" data-scroll="#districtCard" title="Jump to district info">District</button>
+        <button class="tabBtn" data-scroll="#drawerCard" title="Jump to map drawer">Drawer</button>
+      </div>
+
+      <section class="card" id="legendCard">
         <div class="cardHeader">
           <div class="cardTitle">Legend</div>
           <div class="pill" id="legendPill">—</div>
@@ -716,7 +847,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="card" id="districtCard">
         <div class="cardHeader">
           <div class="cardTitle">District</div>
           <div class="pill" id="selPill">none</div>
@@ -771,6 +902,7 @@
           <div id="drawerList" class="drawerList"></div>
 
           <div class="sep"></div>
+          <div class="drawerFooter">
           <div class="drawerRow">
             <button id="drawerExportBtn" class="btn" title="Download a JSON plan">Export</button>
             <button id="drawerCopyBtn" class="btn btn-ghost" title="Copy plan JSON to clipboard">Copy</button>
@@ -778,11 +910,14 @@
             <input id="drawerImportFile" type="file" accept=".json,application/json" style="display:none" />
             <button id="drawerResetBtn" class="btn btn-ghost" title="Remove all drawn districts">Reset</button>
           </div>
+          </div>
         </div>
       </section>
 
     </aside>
   </div>
+
+  <button id="panelTab" class="panelTab" title="Show right panel">Panel</button>
 
   <dialog id="helpDialog">
     <div class="dlgHead">
@@ -817,6 +952,7 @@
     const FILES = {
       GEOJSON: "turkey-admin-level-6.geojson",
       POPCSV: "province_district_2014_2019_2024.csv",
+      ELECTIONCSV: "turkey_districts_second_round_full.csv",
     };
 
     const PROVINCES = [
@@ -831,6 +967,7 @@
       ["Düzce", 81],
     ];
     const plateToProvince = new Map(PROVINCES.map(([n,p]) => [p,n]));
+    const provinceKeyToPlate = new Map(PROVINCES.map(([n,p]) => [keyify(n), p]));
 
     // Party colors (extend as needed)
     const PARTY_COLORS = new Map([
@@ -847,6 +984,9 @@
       ["DEVA", "#06b6d4"],
       ["GELECEK", "#7c3aed"],
       ["MEMLEKET", "#fb7185"],
+      // 2023 Presidential 2nd round (CSV)
+      ["Erdoğan", "#f59e0b"],
+      ["Kılıçdaroğlu", "#e11d48"],
     ]);
 
     // --- Robust Turkish letter normalization (fixes İ + combining dot & friends) ---
@@ -979,6 +1119,14 @@ function parsePlateFromNetwork(network){
       el.drawerImportBtn = document.getElementById("drawerImportBtn");
       el.drawerImportFile = document.getElementById("drawerImportFile");
       el.drawerResetBtn = document.getElementById("drawerResetBtn");
+
+      // Panel + navigation
+      el.panelBtn = document.getElementById("panelBtn");
+      el.panelTab = document.getElementById("panelTab");
+      el.sidebar = document.getElementById("sidebar");
+      el.appWrap = document.getElementById("appWrap");
+      el.drawerActiveStats = document.getElementById("drawerActiveStats");
+
     }
 
     // State
@@ -993,6 +1141,8 @@ function parsePlateFromNetwork(network){
 
       hoverUk: null,
       selectedUk: null,
+
+      ui: { panelCollapsed: false },
 
       // Map drawer (single-member district builder)
       drawer: {
@@ -1033,7 +1183,7 @@ function parsePlateFromNetwork(network){
       dp.style.zIndex = 450;             // above overlayPane (400), below markerPane (600)
       dp.style.pointerEvents = "none";   // never intercept clicks/hover
 
-      drawerRenderer = L.canvas({ padding: 0.5 });
+      drawerRenderer = L.svg({ padding: 0.5 });
       drawerLayer = L.geoJSON([], {
         pane: "drawerPane",
         renderer: drawerRenderer,
@@ -1126,6 +1276,86 @@ function parsePlateFromNetwork(network){
       return clean;
     }
 
+    // Elections (CSV: 2023 presidential 2nd round)
+    function parseSecondRoundCsvRows(rows){
+      const clean = [];
+      if (!Array.isArray(rows)) return clean;
+
+      // CSV columns: district, erdogan, kilicdaroglu (province column may be noisy)
+      // District field often looks like: "Adana Ceyhan" (province first token)
+      const seen = new Set();
+
+      for (const r of rows){
+        const draw = String(r["district"] ?? r["District"] ?? r["DISTRICT"] ?? "").trim();
+        if (!draw) continue;
+
+        const parts = draw.split(/\s+/).filter(Boolean);
+        if (parts.length < 2) continue;
+
+        const provName = parts[0];
+        const distName = parts.slice(1).join(" ");
+        const plate = provinceKeyToPlate.get(keyify(provName));
+        if (!plate) continue;
+
+        const distKey = keyify(distName);
+        const uk = uniqueKey(plate, distKey);
+        if (seen.has(uk)) continue;
+        seen.add(uk);
+
+        const erdo = parseIntTR(r["erdogan"] ?? r["Erdoğan"] ?? r["Erdogan"] ?? r["ERDOGAN"]);
+        const kili = parseIntTR(r["kilicdaroglu"] ?? r["Kılıçdaroğlu"] ?? r["Kilicdaroglu"] ?? r["KILICDAROGLU"]);
+        if (erdo == null && kili == null) continue;
+
+        const eVotes = erdo ?? 0;
+        const kVotes = kili ?? 0;
+        const valid = eVotes + kVotes;
+
+        const partyVotes = [
+          ["Erdoğan", eVotes],
+          ["Kılıçdaroğlu", kVotes],
+        ].sort((a,b)=>b[1]-a[1]);
+
+        const winner = partyVotes[0]?.[0] ?? null;
+        const winnerVotes = partyVotes[0]?.[1] ?? null;
+        const runnerVotes = partyVotes[1]?.[1] ?? null;
+
+        clean.push({
+          __source: "csv_2023_2r",
+          __provName: provName,
+          __district: distName,
+          __distKey: distKey,
+          __registered: null,
+          __cast: null,
+          __valid: valid,
+          __partyVotes: partyVotes,
+          __winner: winner,
+          __winnerVotes: winnerVotes,
+          __runner: partyVotes[1]?.[0] ?? null,
+          __marginVotes: (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes - runnerVotes) : null,
+          __marginShare: (valid && winnerVotes!=null && runnerVotes!=null) ? ((winnerVotes - runnerVotes)/valid) : null,
+          __uk: uk,
+        });
+      }
+      return clean;
+    }
+
+    async function loadElectionCsv(){
+      try{
+        const rows = await fetchCsv(FILES.ELECTIONCSV);
+        const parsed = parseSecondRoundCsvRows(rows);
+        for (const row of parsed){
+          if (!state.elections.has(row.__uk)){
+            state.elections.set(row.__uk, row);
+          }
+        }
+        return parsed.length;
+      }catch(err){
+        console.warn("Election CSV not loaded (optional):", err?.message ?? err);
+        return 0;
+      }
+    }
+
+
     async function tryFetchElectionJson(provName, plate){
       const candidates = [
         `${provName}.json`,
@@ -1155,7 +1385,7 @@ function parsePlateFromNetwork(network){
             const parsed = parseElectionRows(raw);
             for (const row of parsed){
               const uk = uniqueKey(job.plate, row.__distKey);
-              state.elections.set(uk, row);
+              if (!state.elections.has(uk)) state.elections.set(uk, row);
             }
           }
         }
@@ -1466,6 +1696,15 @@ function parsePlateFromNetwork(network){
       state.drawer._toastT = setTimeout(() => el.toast.classList.remove("show"), 2200);
     }
 
+
+    // Right panel collapse (UI only)
+    function setPanelCollapsed(on){
+      state.ui.panelCollapsed = !!on;
+      if (el.appWrap) el.appWrap.classList.toggle("panelCollapsed", state.ui.panelCollapsed);
+      if (el.panelTab) el.panelTab.classList.toggle("show", state.ui.panelCollapsed);
+      try{ localStorage.setItem("panelCollapsed", state.ui.panelCollapsed ? "1" : "0"); }catch(_){}
+    }
+
     function randId(){
       return Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
     }
@@ -1699,6 +1938,40 @@ function parsePlateFromNetwork(network){
           const devCls = dev == null ? "" : (dev > 0.005 ? "pos" : (dev < -0.005 ? "neg" : ""));
           const isActive = dist.id === d.activeId;
 
+          // Election summary for this drawn district (aggregated)
+          const agg = computeSmdAgg(dist, stats.year);
+          const top = agg?.top ?? [];
+          const totalVotes = (agg?.valid || 0) || top.reduce((a,kv)=>a+(Number(kv?.[1])||0),0);
+          const t1 = top[0] ?? null;
+          const t2 = top[1] ?? null;
+
+          const miniElectionHtml = (!t1 || !totalVotes) ?
+            `<div class="drawerMini muted2 small">No election data.</div>` : (() => {
+              const s1 = clamp01((Number(t1[1])||0) / totalVotes);
+              const s2 = t2 ? clamp01((Number(t2[1])||0) / totalVotes) : 0;
+              const rest = Math.max(0, 1 - s1 - s2);
+              const margin = t2 ? (s1 - s2) : s1;
+              const name1 = escapeHtml(String(t1[0] ?? "—"));
+              const name2 = escapeHtml(String(t2?.[0] ?? ""));
+              const c1 = colorForParty(String(t1[0] ?? ""));
+              const c2 = t2 ? colorForParty(String(t2[0] ?? "")) : "rgba(15,23,42,.20)";
+              const labelRight = t2 ? `±${(100*margin).toFixed(1)}%` : `${(100*s1).toFixed(1)}%`;
+
+              return `
+                <div class="drawerMini">
+                  <div class="sparkBar" aria-label="Election share bar">
+                    <div class="sparkSeg" style="flex:${(s1*100).toFixed(3)}; background:${c1}"></div>
+                    ${t2 ? `<div class="sparkSeg" style="flex:${(s2*100).toFixed(3)}; background:${c2}"></div>` : ``}
+                    <div class="sparkSeg" style="flex:${(rest*100).toFixed(3)}; background: rgba(15,23,42,.12)"></div>
+                  </div>
+                  <div class="sparkLabel">
+                    <span title="${name1}"><span class="sparkDot" style="background:${c1}"></span>${name1} ${(100*s1).toFixed(1)}%</span>
+                    ${t2 ? `<span class="mono" title="${name2}">${labelRight}</span>` : `<span class="mono">${labelRight}</span>`}
+                  </div>
+                </div>
+              `;
+            })();
+
           return `
             <div class="drawerItem ${isActive ? "active" : ""}" data-id="${escapeHtml(dist.id)}">
               <div class="drawerTop">
@@ -1710,6 +1983,7 @@ function parsePlateFromNetwork(network){
                 <div class="muted2 small">${m.n} units</div>
                 <div class="dev ${devCls}">${devPct}</div>
               </div>
+              ${miniElectionHtml}
               <div class="drawerBtns">
                 <button class="btn btn-ghost mini" data-act="active" title="Set active">Active</button>
                 <button class="btn btn-ghost mini" data-act="zoom" title="Zoom to this district">Zoom</button>
@@ -2133,6 +2407,20 @@ function parsePlateFromNetwork(network){
       el.helpBtn.addEventListener("click", () => el.helpDialog.showModal());
       el.closeHelpBtn.addEventListener("click", () => el.helpDialog.close());
 
+
+      // Panel toggle + sidebar jump buttons
+      if (el.panelBtn) el.panelBtn.addEventListener("click", () => setPanelCollapsed(!state.ui.panelCollapsed));
+      if (el.panelTab) el.panelTab.addEventListener("click", () => setPanelCollapsed(false));
+
+      // Sidebar quick navigation
+      document.querySelectorAll(".tabBtn[data-scroll]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const sel = btn.getAttribute("data-scroll");
+          const target = sel ? document.querySelector(sel) : null;
+          if (target) target.scrollIntoView({ behavior:"smooth", block:"start" });
+        });
+      });
+
       // Drawer wiring
       if (el.drawTopBtn) el.drawTopBtn.addEventListener("click", () => setDrawMode(!state.drawer.enabled));
       if (el.drawerToggleBtn) el.drawerToggleBtn.addEventListener("click", () => setDrawMode(!state.drawer.enabled));
@@ -2325,6 +2613,9 @@ const features = (geo.features || [])
       refreshDrawerOverlayStyles();
 
       // elections
+      el.loaderMsg.textContent = "Loading election CSV (if present)…";
+      await loadElectionCsv();
+
       el.loaderMsg.textContent = "Loading election files (missing files are OK)…";
       await loadAllElections();
 
@@ -2337,6 +2628,10 @@ const features = (geo.features || [])
 
     window.addEventListener("DOMContentLoaded", async () => {
       grabEls();
+
+      // Restore panel state
+      try{ setPanelCollapsed(localStorage.getItem("panelCollapsed")==="1"); }catch(_){ setPanelCollapsed(false); }
+
       initMap();
       wireUI();
 
