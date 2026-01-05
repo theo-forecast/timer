@@ -1131,6 +1131,26 @@
     }
     function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
 
+    function isGithubPages(){
+      return /github\.io$/i.test(location.hostname || "");
+    }
+    function githubRawUrlsForAttempt(attempt){
+      try{
+        if (!isGithubPages()) return [];
+        const user = String(location.hostname || "").replace(/\.github\.io$/i, "");
+        const parts = String(location.pathname || "").split("/").filter(Boolean);
+        const repo = (parts.length ? parts[0] : `${user}.github.io`);
+        const abs = new URL(attempt, window.location.href);
+        let repoPath = abs.pathname.split("/").filter(Boolean);
+        if (repoPath[0] === repo) repoPath = repoPath.slice(1);
+        const filePath = repoPath.join("/");
+        const branches = ["main","master"];
+        return branches.map(br => `https://raw.githubusercontent.com/${user}/${repo}/${br}/${filePath}`);
+      }catch(_){
+        return [];
+      }
+    }
+
     function loaderLog(line){
       if (!el.loaderLog) return;
       if (!DEBUG) return;
@@ -1154,6 +1174,17 @@
       return bases;
     }
 
+
+    async function fetchWithTimeout(url, ms){
+      const ctrl = new AbortController();
+      const t = setTimeout(() => { try{ ctrl.abort(); }catch(_){} }, ms);
+      try{
+        return await fetch(url, { cache:"no-store", signal: ctrl.signal });
+      }finally{
+        clearTimeout(t);
+      }
+    }
+
     async function fetchText(rel){
       if (location.protocol === "file:"){
         throw new Error("Opened via file://. Browsers block fetch() for local files. Use a local server or GitHub Pages.");
@@ -1162,6 +1193,8 @@
       const bases = buildBaseCandidates();
       const tried = [];
       const explicit = String(rel || "");
+      const timeoutMs = (/\.geojson$/i.test(explicit) ? 60000 : 20000);
+
       const isExplicitPath = /[\/]/.test(explicit); // has a slash -> treat as already-pathed
 
       for (const base of bases){
@@ -1172,7 +1205,7 @@
         loaderLog(`fetch ${attempt}`);
 
         try{
-          const resp = await fetch(url, { cache:"no-store" });
+          const resp = await fetchWithTimeout(url, 7000);
           if (!resp.ok) continue;
 
           // remember a working base for next load (only when rel has no path)
@@ -1189,7 +1222,27 @@
         }
       }
 
-      throw new Error(`${rel} not found. Tried: ${tried.join(", ")}`);
+
+      // GitHub Pages fallback: sometimes the site build drops uncommon static extensions.
+      // If so, try fetching directly from raw.githubusercontent.com using the current repo path.
+      const rawAttempts = [];
+      const uniqTried = uniq(tried);
+      for (const attempt of uniqTried){
+        const raws = githubRawUrlsForAttempt(attempt);
+        for (const rawUrl of raws){
+          rawAttempts.push(rawUrl);
+          loaderLog(`raw ${rawUrl}`);
+          try{
+            const resp = await fetchWithTimeout(rawUrl, timeoutMs);
+            if (!resp.ok) continue;
+            return await resp.text();
+          }catch(err){
+            loaderLog(`  raw error ${rawUrl}: ${err?.message ?? err}`);
+          }
+        }
+      }
+
+      throw new Error(`${rel} not found. Tried: ${tried.join(", ")}${rawAttempts.length ? " | raw: " + rawAttempts.join(", ") : ""}`);
     }
 
     async function fetchJson(rel){ return JSON.parse(await fetchText(rel)); }
@@ -1494,7 +1547,7 @@ function parsePlateFromNetwork(network){
       for (const rel of candidates){
         try{
           const url = resolveUrl(rel);
-          const resp = await fetch(url, { cache:"no-store" });
+          const resp = await fetchWithTimeout(url, 7000);
           if (!resp.ok) continue;
           return await resp.json();
         }catch(_){}
@@ -2741,18 +2794,41 @@ const features = (geo.features || [])
       renderDrawerUI();
       refreshDrawerOverlayStyles();
 
-      // elections
-      el.loaderMsg.textContent = "Loading election CSV (if present)…";
-      await loadElectionCsv();
+      // elections (non-blocking): bring the map up ASAP, then enrich results in the background.
+      // GitHub Pages can be slow if we probe many optional JSON files (lots of 404s), so those are opt-in.
+      el.loaderMsg.textContent = "Map ready. Loading elections in background…";
+      safeHideCurtain();
 
-      el.loaderMsg.textContent = "Loading election files (missing files are OK)…";
-      await loadAllElections();
+      // 1) Preferred: compiled second-round CSV (fast, one request)
+      loadElectionCsv().then((n) => {
+        if (n) try{ toast(`Loaded ${n} district results from CSV.`); }catch(_){}
+        rebuildDistrictDataIndex();
+        refreshFeatureStyles();
+        renderLegend();
+      }).catch((err) => {
+        console.warn("Election CSV background load failed:", err?.message ?? err);
+      });
 
-      rebuildDistrictDataIndex();
-      refreshFeatureStyles();
-      renderLegend();
+      // 2) Optional: per-province JSON files (slow on GH Pages unless you actually host them)
+      const wantJson = (new URLSearchParams(location.search).get("json") === "1");
+      if (wantJson){
+        (async () => {
+          try{
+            el.loaderMsg.textContent = "Loading province JSON files…";
+            await loadAllElections();
+            rebuildDistrictDataIndex();
+            refreshFeatureStyles();
+            renderLegend();
+            try{ toast("Loaded province JSON election files."); }catch(_){}
+          }catch(err){
+            console.warn("Province JSON load failed (optional):", err?.message ?? err);
+          }
+        })();
+      }else{
+        loaderLog("Skipping province JSON loads. Add ?json=1 to enable.");
+      }
 
-      el.curtain.classList.add("hide");
+
     }
 
     window.addEventListener("DOMContentLoaded", async () => {
