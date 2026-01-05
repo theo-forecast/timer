@@ -495,6 +495,22 @@
     .loaderBody{margin-top:10px;color:var(--muted)}
     .loaderHint{margin-top:8px;color:var(--muted2);font-size:12px}
 
+    .loaderLog{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.03);
+      color: rgba(15,23,42,.82);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:11px;
+      line-height:1.35;
+      max-height: 180px;
+      overflow:auto;
+      white-space: pre-wrap;
+    }
+    
+
     /* Dialog */
     dialog{
       width:min(760px, 92vw);
@@ -716,6 +732,7 @@
         <div class="badge">light UI</div>
       </div>
       <div id="loaderMsg" class="loaderBody">Fetching GeoJSON & population…</div>
+      <pre id="loaderLog" class="loaderLog" hidden></pre>
       <div class="loaderHint">Run via GitHub Pages (avoid <span class="mono">file://</span>) so fetch works.</div>
     </div>
   </div>
@@ -1058,14 +1075,92 @@
       return PARTY_COLORS.get(clean) ?? hashColor(clean);
     }
 
-    // Robust URL resolution (prevents “expected pattern” issues)
-    function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
-    async function fetchText(rel){
-      const url = resolveUrl(rel);
-      const resp = await fetch(url, { cache:"no-store" });
-      if (!resp.ok) throw new Error(`${rel} -> HTTP ${resp.status}`);
-      return await resp.text();
+    // Robust URL resolution + resilient data-path fallback
+    const DEBUG = new URLSearchParams(location.search).get("debug") === "1";
+    const QUERY_BASE = (new URLSearchParams(location.search).get("base") || "").trim();
+    const STORE_KEY_BASE = "turkey_redistricter_data_base";
+
+    function normBase(b){
+      if (!b) return "";
+      let x = String(b).trim();
+      // allow "data" -> "data/"
+      if (x && !x.endsWith("/")) x += "/";
+      return x;
     }
+    function uniq(arr){
+      const out = [];
+      const seen = new Set();
+      for (const x of arr){
+        const k = String(x ?? "");
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(x);
+      }
+      return out;
+    }
+    function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
+
+    function loaderLog(line){
+      if (!el.loaderLog) return;
+      if (!DEBUG) return;
+      el.loaderLog.hidden = false;
+      const ts = new Date().toLocaleTimeString();
+      el.loaderLog.textContent += `[${ts}] ${line}
+`;
+      el.loaderLog.scrollTop = el.loaderLog.scrollHeight;
+    }
+
+    function buildBaseCandidates(){
+      let stored = "";
+      try{ stored = localStorage.getItem(STORE_KEY_BASE) || ""; }catch(_){}
+      const bases = uniq([
+        normBase(QUERY_BASE),
+        normBase(stored),
+        "", "./",
+        "data/", "assets/", "static/", "public/",
+        "../", "../data/", "../assets/",
+      ]);
+      return bases;
+    }
+
+    async function fetchText(rel){
+      if (location.protocol === "file:"){
+        throw new Error("Opened via file://. Browsers block fetch() for local files. Use a local server or GitHub Pages.");
+      }
+
+      const bases = buildBaseCandidates();
+      const tried = [];
+      const explicit = String(rel || "");
+      const isExplicitPath = /[\/]/.test(explicit); // has a slash -> treat as already-pathed
+
+      for (const base of bases){
+        const attempt = isExplicitPath ? explicit : (base + explicit);
+        const url = resolveUrl(attempt);
+        tried.push(attempt);
+
+        loaderLog(`fetch ${attempt}`);
+
+        try{
+          const resp = await fetch(url, { cache:"no-store" });
+          if (!resp.ok) continue;
+
+          // remember a working base for next load (only when rel has no path)
+          if (!isExplicitPath){
+            const b = normBase(base);
+            if (b){
+              try{ localStorage.setItem(STORE_KEY_BASE, b); }catch(_){}
+            }
+          }
+          return await resp.text();
+        }catch(err){
+          // keep trying
+          loaderLog(`  error ${attempt}: ${err?.message ?? err}`);
+        }
+      }
+
+      throw new Error(`${rel} not found. Tried: ${tried.join(", ")}`);
+    }
+
     async function fetchJson(rel){ return JSON.parse(await fetchText(rel)); }
     async function fetchCsv(rel){ return d3.csvParse(await fetchText(rel)); }
 
@@ -1096,6 +1191,7 @@ function parsePlateFromNetwork(network){
       el.closeHelpBtn = document.getElementById("closeHelpBtn");
       el.curtain = document.getElementById("curtain");
       el.loaderMsg = document.getElementById("loaderMsg");
+      el.loaderLog = document.getElementById("loaderLog");
       el.hoverTip = document.getElementById("hoverTip");
       el.mapDiv = document.getElementById("map");
       // Drawer UI
@@ -2644,6 +2740,15 @@ const features = (geo.features || [])
       }catch(err){
         console.error(err);
         el.loaderMsg.textContent = `Fatal: ${err.message}`;
+        loaderLog(`FATAL: ${err?.stack ?? err}`);
+        // Don't trap the user behind the curtain forever.
+        try{ el.curtain.classList.add("hide"); }catch(_){ }
+        try{ toast(`Load failed: ${err.message}`); }catch(_){ }
+        // If it looks like a file/path issue, surface the help dialog.
+        const msg = String(err?.message ?? "");
+        if (location.protocol === "file:" || /HTTP\s*404|not found|Failed to fetch/i.test(msg)){
+          try{ el.helpDialog.showModal(); }catch(_){ }
+        }
       }
     });
 
