@@ -462,6 +462,9 @@
     }
 
     /* Loading curtain */
+    .loaderActions{display:flex;gap:10px;margin-top:12px}
+    .loaderActions .btn{flex:1}
+
     .curtain{
       position:fixed; inset:0;
       display:flex; align-items:center; justify-content:center;
@@ -734,6 +737,10 @@
       <div id="loaderMsg" class="loaderBody">Fetching GeoJSON & population…</div>
       <pre id="loaderLog" class="loaderLog" hidden></pre>
       <div class="loaderHint">Run via GitHub Pages (avoid <span class="mono">file://</span>) so fetch works.</div>
+      <div class="loaderActions">
+        <button id="forceEnterBtn" class="btn ghost" hidden>Enter anyway</button>
+        <button id="curtainHelpBtn" class="btn ghost">Help</button>
+      </div>
     </div>
   </div>
 
@@ -966,6 +973,30 @@
   (function(){
     "use strict";
 
+    // --- Reliability helpers (prevents "stuck on loading" even on bad paths / Safari quirks)
+    function withTimeout(promise, ms, msg){
+      let t = null;
+      const timeout = new Promise((_, rej) => { t = setTimeout(() => rej(new Error(msg || "Timed out")), ms); });
+      return Promise.race([promise, timeout]).finally(() => { if (t) clearTimeout(t); });
+    }
+    function safeHideCurtain(){
+      try{
+        const c = document.getElementById("curtain");
+        if (c) c.classList.add("hide");
+      }catch(_){}
+    }
+    function showFatal(message, err){
+      try{ console.error(err || message); }catch(_){}
+      try{
+        const m = document.getElementById("loaderMsg");
+        if (m) m.textContent = String(message || "Fatal error");
+      }catch(_){}
+      safeHideCurtain();
+      try{ toast(String(message || "Fatal error")); }catch(_){}
+      try{ document.getElementById("helpDialog")?.showModal?.(); }catch(_){}
+    }
+
+
     const FILES = {
       GEOJSON: "turkey-admin-level-6.geojson",
       POPCSV: "province_district_2014_2019_2024.csv",
@@ -1192,6 +1223,8 @@ function parsePlateFromNetwork(network){
       el.curtain = document.getElementById("curtain");
       el.loaderMsg = document.getElementById("loaderMsg");
       el.loaderLog = document.getElementById("loaderLog");
+      el.forceEnterBtn = document.getElementById("forceEnterBtn");
+      el.curtainHelpBtn = document.getElementById("curtainHelpBtn");
       el.hoverTip = document.getElementById("hoverTip");
       el.mapDiv = document.getElementById("map");
       // Drawer UI
@@ -2724,6 +2757,42 @@ const features = (geo.features || [])
 
     window.addEventListener("DOMContentLoaded", async () => {
       grabEls();
+
+      // Global error hooks: never leave the user trapped behind the curtain.
+      window.addEventListener("unhandledrejection", (e) => {
+        const msg = (e?.reason && (e.reason.message || String(e.reason))) || "Unhandled promise rejection";
+        showFatal(msg, e?.reason);
+      });
+      window.addEventListener("error", (e) => {
+        const msg = (e?.error && (e.error.message || String(e.error))) || (e?.message || "Script error");
+        showFatal(msg, e?.error || e);
+      });
+
+      // Curtain controls
+      if (el.curtainHelpBtn) el.curtainHelpBtn.addEventListener("click", () => {
+        try{ el.helpDialog.showModal(); }catch(_){}
+      });
+      if (el.forceEnterBtn){
+        el.forceEnterBtn.addEventListener("click", () => safeHideCurtain());
+        // If something is slow (big GeoJSON / slow hosting), allow manual entry.
+        setTimeout(() => {
+          try{
+            if (!el.curtain.classList.contains("hide")) el.forceEnterBtn.hidden = false;
+          }catch(_){}
+        }, 8000);
+      }
+
+      // Hard backstop: if the curtain is still up after 25s, drop it and surface help.
+      setTimeout(() => {
+        try{
+          if (!el.curtain.classList.contains("hide")){
+            safeHideCurtain();
+            try{ toast("Loader timed out; showing map anyway."); }catch(_){}
+            try{ el.helpDialog.showModal(); }catch(_){}
+          }
+        }catch(_){}
+      }, 25000);
+
 
       // Restore panel state
       try{ setPanelCollapsed(localStorage.getItem("panelCollapsed")==="1"); }catch(_){ setPanelCollapsed(false); }
