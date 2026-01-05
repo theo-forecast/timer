@@ -1,0 +1,1854 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Turkey Redistricter</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- d3 for CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --bg2:#ffffff;
+      --ink:#0b1220;
+      --muted:#52627a;
+      --muted2:#7a8aa3;
+
+      --border:rgba(12,18,34,.12);
+      --border2:rgba(12,18,34,.18);
+
+      --shadow: 0 16px 60px rgba(12,18,34,.10);
+      --shadow2: 0 12px 30px rgba(12,18,34,.10);
+
+      --radius:16px;
+      --radius2:14px;
+
+      --greenL:#e6f6ea;
+      --greenD:#0f7a3b;
+
+      --redL:#fde8e8;
+      --redD:#b42318;
+
+      --brand:#2563eb;
+      --brand2:#06b6d4;
+
+      --focus:#0ea5e9;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+      background:
+        radial-gradient(1200px 800px at 12% 6%, rgba(37,99,235,.10), transparent 60%),
+        radial-gradient(1100px 900px at 88% 10%, rgba(6,182,212,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg) 0%, #eef2f7 100%);
+      color:var(--ink);
+      overflow:hidden;
+    }
+
+    /* Topbar */
+    .topbar{
+      position:sticky; top:0; z-index:60;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      background: rgba(255,255,255,.82);
+      border-bottom:1px solid var(--border);
+      backdrop-filter: blur(14px);
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      min-width:260px;
+    }
+    .logo{
+      width:36px;height:36px;border-radius:14px;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      box-shadow: 0 14px 30px rgba(37,99,235,.18);
+      position:relative; overflow:hidden;
+    }
+    .logo:before{
+      content:"";
+      position:absolute; inset:-60%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.55), transparent 45%);
+      transform: rotate(18deg);
+    }
+    .brandText{display:flex; flex-direction:column; gap:2px}
+    .brandTitle{
+      font-weight:900; letter-spacing:.2px; font-size:14px;
+      display:flex; align-items:center; gap:10px;
+    }
+    .badge{
+      font-size:11px; font-weight:900;
+      padding:4px 10px; border-radius:999px;
+      background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(6,182,212,.12));
+      border:1px solid rgba(37,99,235,.16);
+      color:#1343c7;
+      white-space:nowrap;
+    }
+    .brandSub{font-size:12px;color:var(--muted2)}
+
+    .controls{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .ctl{display:flex; flex-direction:column; gap:6px; min-width:180px}
+    .ctl span{
+      font-size:11px; color:var(--muted2);
+      text-transform:uppercase; letter-spacing:.16px;
+    }
+    .selectWrap{position:relative}
+    select{
+      appearance:none;
+      width:100%;
+      padding:10px 38px 10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
+      color: var(--ink);
+      font-weight:700;
+      outline:none;
+      transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+    }
+    select:hover{border-color: var(--border2)}
+    select:focus{
+      border-color: rgba(14,165,233,.50);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.12), 0 10px 22px rgba(12,18,34,.06);
+    }
+    .selectWrap:after{
+      content:"";
+      position:absolute; right:12px; top:50%;
+      width:10px;height:10px;
+      border-right:2px solid rgba(15,23,42,.55);
+      border-bottom:2px solid rgba(15,23,42,.55);
+      transform: translateY(-65%) rotate(45deg);
+      pointer-events:none;
+    }
+    .btn{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 22px rgba(12,18,34,.06);
+      font-weight:900;
+      cursor:pointer;
+      display:inline-flex; align-items:center; gap:8px;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      border-color: var(--border2);
+      box-shadow: 0 14px 28px rgba(12,18,34,.08);
+    }
+    .btn:active{transform: translateY(0)}
+    .btn-ghost{background:transparent; box-shadow:none}
+    .btn-ghost:hover{background: rgba(15,23,42,.04); box-shadow:none}
+    .ico{width:16px;height:16px;display:inline-block}
+
+    /* Layout */
+    .wrap{
+      height: calc(100vh - 62px);
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap: 14px;
+      padding: 14px;
+    }
+    #map{
+      height:100%;
+      border-radius: var(--radius);
+      overflow:hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      background:#eef2f7;
+      position:relative;
+    }
+    #map:before{
+      content:"";
+      position:absolute; inset:0;
+      border-radius: var(--radius);
+      pointer-events:none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.75), inset 0 40px 120px rgba(37,99,235,.05);
+      z-index:8;
+    }
+
+    .sidebar{
+      height:100%;
+      overflow:auto;
+      padding-right:6px;
+      display:flex; flex-direction:column; gap:12px;
+    }
+    .card{
+      background: rgba(255,255,255,.92);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      backdrop-filter: blur(12px);
+    }
+    .cardHeader{
+      padding:12px 14px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(12,18,34,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.86));
+    }
+    .cardTitle{font-weight:900; letter-spacing:.2px}
+    .pill{
+      font-size:11px; font-weight:900;
+      padding:4px 10px; border-radius:999px;
+      background: rgba(15,23,42,.05);
+      border:1px solid rgba(12,18,34,.10);
+      color: rgba(15,23,42,.74);
+      white-space:nowrap;
+    }
+    .cardBody{padding:12px 14px}
+    .muted{color:var(--muted)}
+    .muted2{color:var(--muted2)}
+    .small{font-size:12px}
+    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .sep{height:1px;background:rgba(12,18,34,.10); margin:12px 0}
+
+    /* Legend */
+    .legend{display:flex; flex-direction:column; gap:10px}
+    .legendItem{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 10px;
+      border-radius: 14px;
+      background: rgba(15,23,42,.03);
+      border:1px solid rgba(12,18,34,.10);
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    .legendItem:hover{transform: translateY(-1px); border-color: rgba(12,18,34,.16)}
+    .swatch{
+      width:16px;height:16px;border-radius:6px;
+      border:1px solid rgba(12,18,34,.14);
+      box-shadow: 0 10px 18px rgba(12,18,34,.08);
+      flex:0 0 auto;
+    }
+    .legendLabel{
+      display:flex; width:100%;
+      align-items:baseline; justify-content:space-between; gap:10px;
+    }
+    .legendLabel b{font-weight:900}
+    .legendLabel span{font-size:12px;color:var(--muted2)}
+
+    .gradWrap{
+      padding:12px;
+      border-radius: 14px;
+      background: rgba(15,23,42,.03);
+      border:1px solid rgba(12,18,34,.10);
+    }
+    .gradBar{
+      height:18px;border-radius:999px;
+      border:1px solid rgba(12,18,34,.14);
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.65), 0 10px 18px rgba(12,18,34,.08);
+      background: linear-gradient(90deg, var(--greenL), var(--greenD));
+    }
+    .gradBar.divAbs{
+      background: linear-gradient(90deg, var(--redD), var(--redL), #f3f4f6, var(--greenL), var(--greenD));
+    }
+    .gradBar.divPct{
+      background: linear-gradient(90deg, var(--redD), var(--redL), #f3f4f6, var(--greenL), var(--greenD));
+    }
+    .gradMeta{
+      display:flex; justify-content:space-between; gap:10px;
+      margin-top:10px;
+      color:var(--muted2);
+      font-size:12px;
+    }
+
+    /* District panel (hover + selection) */
+    .headline{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .hTitle{font-size:14px;font-weight:900;letter-spacing:.2px;line-height:1.2}
+    .hSub{margin-top:2px;color:var(--muted2);font-size:12px}
+    .kvs{display:grid;grid-template-columns:1fr auto;gap:8px 12px;margin-top:10px}
+    .k{color:var(--muted2);font-size:12px}
+    .v{font-weight:900}
+    .chipRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.03);
+      color: rgba(15,23,42,.76);
+      font-size:12px;
+      display:inline-flex;align-items:center;gap:8px;
+      font-weight:800;
+    }
+    .winnerDot{
+      width:10px;height:10px;border-radius:999px;
+      border:1px solid rgba(12,18,34,.18);
+      box-shadow: 0 10px 16px rgba(12,18,34,.08);
+    }
+
+    .bars{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+    .barRow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+    .barName{font-size:12px;font-weight:900}
+    .barTrack{
+      height:10px;border-radius:999px;
+      background: rgba(15,23,42,.06);
+      border:1px solid rgba(12,18,34,.12);
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.70);
+    }
+    .barFill{height:100%;width:0%;border-radius:999px}
+    .barVal{font-size:12px;color:var(--muted2);white-space:nowrap}
+
+    /* Map hover tooltip */
+    .hoverTip{
+      position:absolute;
+      z-index: 45;
+      pointer-events:none;
+      transform: translate(-50%, calc(-100% - 12px));
+      display:none;
+      min-width: 220px;
+      max-width: 340px;
+      padding: 10px 11px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.96);
+      border: 1px solid rgba(12,18,34,.14);
+      box-shadow: 0 18px 50px rgba(12,18,34,.12);
+      backdrop-filter: blur(12px);
+    }
+    .hoverTip:after{
+      content:"";
+      position:absolute;
+      left:50%; bottom:-8px;
+      width:16px; height:16px;
+      transform: translateX(-50%) rotate(45deg);
+      background: rgba(255,255,255,.96);
+      border-right: 1px solid rgba(12,18,34,.12);
+      border-bottom: 1px solid rgba(12,18,34,.12);
+    }
+    .hoverTip .t1{font-weight:900; font-size:13px}
+    .hoverTip .t2{margin-top:2px; color: var(--muted2); font-size:12px; display:flex; justify-content:space-between; gap:10px}
+    .hoverTip .mini{margin-top:8px; display:flex; gap:8px; flex-wrap:wrap}
+    .miniPill{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(12,18,34,.12);
+      background: rgba(15,23,42,.03);
+      color: rgba(15,23,42,.76);
+      display:inline-flex; align-items:center; gap:8px;
+      font-weight:800;
+    }
+
+    /* Loading curtain */
+    .curtain{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(246,247,251,.90);
+      backdrop-filter: blur(10px);
+      z-index:999;
+      transition: opacity .25s ease, visibility .25s ease;
+    }
+    .curtain.hide{opacity:0;visibility:hidden;pointer-events:none}
+    .loaderCard{
+      width:min(560px, 92vw);
+      border-radius: 18px;
+      padding: 16px 16px 18px;
+      background: rgba(255,255,255,.96);
+      border:1px solid rgba(12,18,34,.14);
+      box-shadow: 0 22px 70px rgba(12,18,34,.14);
+    }
+    .loaderTop{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding-bottom:10px;border-bottom:1px solid rgba(12,18,34,.10);
+    }
+    .loaderTop .left{display:flex;align-items:center;gap:12px}
+    .spinner{
+      width:18px;height:18px;border-radius:999px;
+      border:2px solid rgba(12,18,34,.18);
+      border-top-color: rgba(37,99,235,.80);
+      animation: spin .85s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loaderTitle{font-weight:900}
+    .loaderBody{margin-top:10px;color:var(--muted)}
+    .loaderHint{margin-top:8px;color:var(--muted2);font-size:12px}
+
+    /* Dialog */
+    dialog{
+      width:min(760px, 92vw);
+      border:none;
+      border-radius: 18px;
+      padding:0;
+      background: rgba(255,255,255,.98);
+      color: var(--ink);
+      box-shadow: 0 26px 110px rgba(12,18,34,.18);
+      overflow:hidden;
+    }
+    dialog::backdrop{background: rgba(12,18,34,.45)}
+    .dlgHead{
+      padding:14px 16px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      border-bottom:1px solid rgba(12,18,34,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.92));
+      font-weight:900;
+    }
+    .dlgBody{padding:14px 16px}
+    code{
+      background: rgba(15,23,42,.04);
+      border:1px solid rgba(12,18,34,.10);
+      padding:2px 8px;
+      border-radius: 10px;
+    }
+
+    /* Leaflet control theming */
+    .leaflet-control-zoom, .leaflet-control-attribution{
+      border-radius: 12px !important;
+      border: 1px solid rgba(12,18,34,.14) !important;
+      overflow:hidden !important;
+      box-shadow: 0 12px 30px rgba(12,18,34,.10);
+      background: rgba(255,255,255,.92) !important;
+    }
+    .leaflet-control-zoom a{
+      background: transparent !important;
+      color: rgba(15,23,42,.82) !important;
+      border-bottom: 1px solid rgba(12,18,34,.10) !important;
+      font-weight:900;
+    }
+    .leaflet-control-zoom a:last-child{border-bottom:none !important}
+    .leaflet-control-zoom a:hover{background: rgba(15,23,42,.04) !important}
+    .leaflet-control-attribution{padding:6px 10px !important; color: rgba(82,98,122,.88) !important}
+
+    
+/* Swingometer */
+.swingRow{
+  display:grid;
+  grid-template-columns: 1fr 92px auto;
+  gap:10px;
+  align-items:center;
+  margin-top:10px;
+}
+.swingRange{
+  width:100%;
+  accent-color: var(--brand);
+}
+.numInput{
+  width:100%;
+  padding:10px 10px;
+  border-radius: 12px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 10px 22px rgba(12,18,34,.06);
+  color: var(--ink);
+  font-weight:900;
+  outline:none;
+  transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+.numInput:hover{border-color: var(--border2)}
+.numInput:focus{
+  border-color: rgba(14,165,233,.50);
+  box-shadow: 0 0 0 4px rgba(14,165,233,.12), 0 10px 22px rgba(12,18,34,.06);
+}
+.swingHint{
+  margin-top:8px;
+}
+
+    @media (max-width: 980px){
+      body{overflow:auto}
+      .wrap{grid-template-columns:1fr; height:auto; min-height: calc(100vh - 62px)}
+      #map{height: 62vh}
+      .sidebar{height:auto}
+    }
+  </style>
+</head>
+
+<body>
+  <div id="curtain" class="curtain">
+    <div class="loaderCard">
+      <div class="loaderTop">
+        <div class="left">
+          <div class="spinner"></div>
+          <div class="loaderTitle">Loading Turkey districts…</div>
+        </div>
+        <div class="badge">light UI</div>
+      </div>
+      <div id="loaderMsg" class="loaderBody">Fetching GeoJSON & population…</div>
+      <div class="loaderHint">Run via GitHub Pages (avoid <span class="mono">file://</span>) so fetch works.</div>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div class="brandText">
+        <div class="brandTitle">Turkey Redistricter <span class="badge">district view</span></div>
+        <div class="brandSub">hover + click select • elections • population • layers</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <label class="ctl">
+        <span>Layer</span>
+        <div class="selectWrap">
+          <select id="modeSelect">
+            <option value="election_winner">Election: winner (margin → lighter)</option>
+            <option value="population_year">Population: total (green)</option>
+            <option value="population_change_abs">Population: change (red/green)</option>
+            <option value="population_change_pct">Population: change % (red/green)</option>
+          </select>
+        </div>
+      </label>
+
+      <label class="ctl" id="yearWrap">
+        <span>Year</span>
+        <div class="selectWrap">
+          <select id="yearSelect">
+            <option value="2014">2014</option>
+            <option value="2019">2019</option>
+            <option value="2024" selected>2024</option>
+          </select>
+        </div>
+      </label>
+
+      <label class="ctl" id="yearAWrap">
+        <span>From</span>
+        <div class="selectWrap">
+          <select id="yearASelect">
+            <option value="2014" selected>2014</option>
+            <option value="2019">2019</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+      </label>
+
+      <label class="ctl" id="yearBWrap">
+        <span>To</span>
+        <div class="selectWrap">
+          <select id="yearBSelect">
+            <option value="2014">2014</option>
+            <option value="2019">2019</option>
+            <option value="2024" selected>2024</option>
+          </select>
+        </div>
+      </label>
+
+      <button id="fitBtn" class="btn" title="Fit to Turkey">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M7 3H3v4M17 3h4v4M7 21H3v-4M21 21h-4v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Fit
+      </button>
+
+      <button id="clearBtn" class="btn btn-ghost" title="Clear selection (Esc)">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Clear
+      </button>
+
+      <button id="helpBtn" class="btn btn-ghost" title="Help">
+        <svg class="ico" viewBox="0 0 24 24" fill="none">
+          <path d="M12 18h.01" stroke="currentColor" stroke-width="3" stroke-lineca
+<section class="card" id="swingCard">
+  <div class="cardHeader">
+    <div class="cardTitle">Swingometer</div>
+    <div class="pill" id="swingPill">0.0</div>
+  </div>
+  <div class="cardBody">
+    <div class="muted small">
+      Uniform swing between <b id="swingA">—</b> and <b id="swingB">—</b>. Affects the Election layer.
+    </div>
+
+    <div class="swingRow">
+      <input id="swingRange" class="swingRange" type="range" min="-20" max="20" step="0.1" value="0" />
+      <input id="swingNumber" class="numInput" type="number" min="-20" max="20" step="0.1" value="0" />
+      <button id="swingReset" class="btn btn-ghost" title="Reset swing">Reset</button>
+    </div>
+
+    <div class="swingHint muted2 small" id="swingHint">—</div>
+
+    <div class="sep"></div>
+    <div id="swingSummary" class="small muted">—</div>
+  </div>
+</section>
+
+p="round"/>
+          <path d="M10.2 9a2 2 0 1 1 3.6 1.2c-.7.8-1.8 1.1-1.8 2.3v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10Z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Help
+      </button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div id="map">
+      <div id="hoverTip" class="hoverTip"></div>
+    </div>
+
+    <aside class="sidebar">
+      <section class="card">
+        <div class="cardHeader">
+          <div class="cardTitle">Legend</div>
+          <div class="pill" id="legendPill">—</div>
+        </div>
+        <div class="cardBody">
+          <div id="legend" class="legend"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardHeader">
+          <div class="cardTitle">District</div>
+          <div class="pill" id="selPill">none</div>
+        </div>
+        <div class="cardBody">
+          <div id="districtBox" class="muted small">Hover a district or click to select.</div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <dialog id="helpDialog">
+    <div class="dlgHead">
+      <div>Help</div>
+      <button id="closeHelpBtn" class="btn btn-ghost">Close</button>
+    </div>
+    <div class="dlgBody">
+      <div class="muted">
+        <ul>
+          <li>Required files in the same folder:
+            <ul>
+              <li><code>turkey-admin-level-6.geojson</code></li>
+              <li><code>province_district_2014_2019_2024.csv</code></li>
+              <li><code>turkey_districts_second_round_full.csv</code> (optional; if present, used as the election dataset)</li>
+              <li>Election JSONs: <code>Edirne.json</code>, <code>Ankara.json</code>… (missing is OK)</li>
+            </ul>
+          </li>
+          <li>Hover shows info; click locks selection. Press <b>Esc</b> or Clear to reset.</li>
+          <li>Population total: light→dark green. Change maps: red (decrease) / green (increase).</li>
+          <li>Election winner: smaller margins become lighter shades of the winner’s color.</li>
+          <li>Swingometer: apply a uniform vote-share swing between the top two candidates/parties in the loaded election data.</li>
+        </ul>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+  (function(){
+    "use strict";
+
+    const FILES = {
+      GEOJSON: "turkey-admin-level-6.geojson",
+      POPCSV: "province_district_2014_2019_2024.csv",
+      ELECTIONCSV: "turkey_districts_second_round_full.csv",
+    };
+
+    const PROVINCES = [
+      ["Adana", 1],["Adıyaman", 2],["Afyonkarahisar", 3],["Ağrı", 4],["Amasya", 5],["Ankara", 6],["Antalya", 7],["Artvin", 8],["Aydın", 9],["Balıkesir", 10],
+      ["Bilecik", 11],["Bingöl", 12],["Bitlis", 13],["Bolu", 14],["Burdur", 15],["Bursa", 16],["Çanakkale", 17],["Çankırı", 18],["Çorum", 19],["Denizli", 20],
+      ["Diyarbakır", 21],["Edirne", 22],["Elazığ", 23],["Erzincan", 24],["Erzurum", 25],["Eskişehir", 26],["Gaziantep", 27],["Giresun", 28],["Gümüşhane", 29],["Hakkâri", 30],
+      ["Hatay", 31],["Isparta", 32],["Mersin", 33],["İstanbul", 34],["İzmir", 35],["Kars", 36],["Kastamonu", 37],["Kayseri", 38],["Kırklareli", 39],["Kırşehir", 40],
+      ["Kocaeli", 41],["Konya", 42],["Kütahya", 43],["Malatya", 44],["Manisa", 45],["Kahramanmaraş", 46],["Mardin", 47],["Muğla", 48],["Muş", 49],["Nevşehir", 50],
+      ["Niğde", 51],["Ordu", 52],["Rize", 53],["Sakarya", 54],["Samsun", 55],["Siirt", 56],["Sinop", 57],["Sivas", 58],["Tekirdağ", 59],["Tokat", 60],
+      ["Trabzon", 61],["Tunceli", 62],["Şanlıurfa", 63],["Uşak", 64],["Van", 65],["Yozgat", 66],["Zonguldak", 67],["Aksaray", 68],["Bayburt", 69],["Karaman", 70],
+      ["Kırıkkale", 71],["Batman", 72],["Şırnak", 73],["Bartın", 74],["Ardahan", 75],["Iğdır", 76],["Yalova", 77],["Karabük", 78],["Kilis", 79],["Osmaniye", 80],
+      ["Düzce", 81],
+    ];
+    const plateToProvince = new Map(PROVINCES.map(([n,p]) => [p,n]));
+    const provinceToPlate = new Map(PROVINCES.map(([n,p]) => [n,p]));
+// Party colors (extend as needed)
+    const PARTY_COLORS = new Map([
+      ["CHP", "#e11d48"],
+      ["AK PARTİ", "#f59e0b"],
+      ["Erdoğan", "#f59e0b"],
+      ["Kılıçdaroğlu", "#e11d48"],
+      ["MHP", "#b91c1c"],
+      ["İYİ PARTİ", "#facc15"],
+      ["YEŞİL SOL PARTİ", "#10b981"],
+      ["DEM PARTİ", "#10b981"],
+      ["TİP", "#ef4444"],
+      ["ZAFER PARTİSİ", "#2563eb"],
+      ["YENİDEN REFAH", "#16a34a"],
+      ["SAADET", "#22c55e"],
+      ["DEVA", "#06b6d4"],
+      ["GELECEK", "#7c3aed"],
+      ["MEMLEKET", "#fb7185"],
+    ]);
+
+    // --- Robust Turkish letter normalization (fixes İ + combining dot & friends) ---
+    const HAS_UNICODE_PROPS = (() => { try { new RegExp("\\p{L}", "u"); return true; } catch { return false; } })();
+
+    function stripDiacritics(s){
+      return String(s).normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+    }
+    function keyify(s){
+      if (s == null) return "";
+      let x = String(s).trim();
+      x = stripDiacritics(x);
+      x = x.replace(/ı/g, "i"); // dotless i
+      x = x.replace(/[’']/g, " ");
+      x = HAS_UNICODE_PROPS ? x.replace(/[^\p{L}\p{N}]+/gu, " ") : x.replace(/[^A-Za-z0-9]+/g, " ");
+      x = x.replace(/\s+/g, " ").trim().toUpperCase();
+      return x;
+    }
+    function asciiName(s){
+      if (s == null) return "";
+      let x = stripDiacritics(String(s));
+      x = x.replace(/ı/g, "i");
+      return x;
+    }
+
+    // Fix common mojibake from UTF-8 bytes interpreted as Latin-1 (e.g., "SeÃ§im" -> "Seçim")
+    function fixMojibake(s){
+      if (s == null) return "";
+      const str = String(s);
+      if (!/[ÃÂ]/.test(str)) return str;
+      try{
+        const bytes = new Uint8Array(str.length);
+        for (let i=0;i<str.length;i++) bytes[i] = str.charCodeAt(i) & 0xff;
+        return new TextDecoder("utf-8").decode(bytes);
+      }catch(_){
+        return str;
+      }
+    }
+
+
+    function parseIntTR(x){
+      if (x == null) return null;
+      const s = String(x).trim();
+      if (!s) return null;
+      if (s.includes("%")) return null;
+      const digits = s.replace(/[^\d]/g,"");
+      if (!digits) return null;
+      return Number(digits);
+    }
+    function formatInt(n){
+      if (n == null || Number.isNaN(n)) return "—";
+      return new Intl.NumberFormat("tr-TR").format(n);
+    }
+    function safe(v){ return (v==null || v==="") ? "—" : String(v); }
+    function clamp01(x){ return Math.max(0, Math.min(1, (x==null||Number.isNaN(x))?0:x)); }
+    function curve(t){ t=clamp01(t); return Math.pow(t, 0.65); } // punchy but not cartoon
+
+    // Color helpers
+    function lerp(a,b,t){ return a + (b-a)*t; }
+    function hexToRgb(hex){
+      const h = hex.replace("#","");
+      const full = h.length===3 ? h.split("").map(c=>c+c).join("") : h;
+      return [parseInt(full.slice(0,2),16), parseInt(full.slice(2,4),16), parseInt(full.slice(4,6),16)];
+    }
+    function rgbToHex(r,g,b){
+      const to = (x)=>x.toString(16).padStart(2,"0");
+      return `#${to(r)}${to(g)}${to(b)}`;
+    }
+    function mixHex(a,b,t){
+      const [ar,ag,ab]=hexToRgb(a), [br,bg,bb]=hexToRgb(b);
+      return rgbToHex(Math.round(lerp(ar,br,t)), Math.round(lerp(ag,bg,t)), Math.round(lerp(ab,bb,t)));
+    }
+    function hashColor(str){
+      let h=0;
+      for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i))>>>0;
+      const r = 80 + (h & 0x7f);
+      const g = 80 + ((h>>8) & 0x7f);
+      const b = 80 + ((h>>16) & 0x7f);
+      return rgbToHex(r,g,b);
+    }
+    function colorForParty(name){
+      if (!name) return "#cbd5e1";
+      const clean = String(name).trim();
+      return PARTY_COLORS.get(clean) ?? hashColor(clean);
+    }
+
+    // Robust URL resolution (prevents “expected pattern” issues)
+    function resolveUrl(rel){ return new URL(rel, window.location.href).toString(); }
+    async function fetchText(rel){
+      const url = resolveUrl(rel);
+      const resp = await fetch(url, { cache:"no-store" });
+      if (!resp.ok) throw new Error(`${rel} -> HTTP ${resp.status}`);
+      return await resp.text();
+    }
+    async function fetchJson(rel){ return JSON.parse(await fetchText(rel)); }
+    async function fetchCsv(rel){ return d3.csvParse(await fetchText(rel)); }
+
+function parsePlateFromNetwork(network){
+  const m = String(network ?? "").match(/TR-?(\d{2})-(districts|counties|provinces)/i);
+  return m ? Number(m[1]) : null;
+}
+    function uniqueKey(plate, distKey){ return `${plate}|${distKey}`; }
+
+    // UI refs
+    const el = {};
+    function grabEls(){
+      el.modeSelect = document.getElementById("modeSelect");
+      el.yearSelect = document.getElementById("yearSelect");
+      el.yearASelect = document.getElementById("yearASelect");
+      el.yearBSelect = document.getElementById("yearBSelect");
+      el.yearWrap = document.getElementById("yearWrap");
+      el.yearAWrap = document.getElementById("yearAWrap");
+      el.yearBWrap = document.getElementById("yearBWrap");
+      el.legend = document.getElementById("legend");
+      el.legendPill = document.getElementById("legendPill");
+      el.districtBox = document.getElementById("districtBox");
+
+el.swingCard = document.getElementById("swingCard");
+el.swingPill = document.getElementById("swingPill");
+el.swingA = document.getElementById("swingA");
+el.swingB = document.getElementById("swingB");
+el.swingRange = document.getElementById("swingRange");
+el.swingNumber = document.getElementById("swingNumber");
+el.swingReset = document.getElementById("swingReset");
+el.swingHint = document.getElementById("swingHint");
+el.swingSummary = document.getElementById("swingSummary");
+      el.selPill = document.getElementById("selPill");
+      el.fitBtn = document.getElementById("fitBtn");
+      el.clearBtn = document.getElementById("clearBtn");
+      el.helpBtn = document.getElementById("helpBtn");
+      el.helpDialog = document.getElementById("helpDialog");
+      el.closeHelpBtn = document.getElementById("closeHelpBtn");
+      el.curtain = document.getElementById("curtain");
+      el.loaderMsg = document.getElementById("loaderMsg");
+      el.hoverTip = document.getElementById("hoverTip");
+      el.mapDiv = document.getElementById("map");
+    }
+
+    // State
+    const state = {
+      pop: null,                 // {provKey: {distKey: {2014,2019,2024}}}
+      electionsBase: new Map(),  // uk -> base row (never mutated)
+      elections: new Map(),      // uk -> row (after swing)
+      districtData: new Map(),   // uk -> joined
+      mode: "election_winner",
+      year: 2024,
+      yearA: 2014,
+      yearB: 2024,
+
+      hoverUk: null,
+      selectedUk: null,
+      swingPct: 0,              // signed points (e.g., +2.5 means +2.5pp to swingPair[1])
+      swingPair: [null, null],  // top-2 parties/candidates nationally (derived from electionsBase)
+    };
+
+    // Map
+    let map, districtLayer, canvasRenderer;
+
+    function initMap(){
+      map = L.map("map", { zoomControl:true, preferCanvas:true }).setView([39.0, 35.0], 6);
+
+      // Light basemap (clean)
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      }).addTo(map);
+
+      canvasRenderer = L.canvas({ padding: 0.5 });
+
+      districtLayer = L.geoJSON([], {
+        renderer: canvasRenderer,
+        style: featureStyle,
+        onEachFeature: onEachDistrict,
+      }).addTo(map);
+    }
+
+    function styleBase(feature){
+      return {
+        color: "rgba(15,23,42,.28)",
+        weight: 0.9,
+        opacity: 1,
+        fillColor: colorForFeature(feature),
+        fillOpacity: 0.92
+      };
+    }
+
+    function styleHover(){
+      return {
+        weight: 2.6,
+        color: "rgba(14,165,233,.95)",
+        fillOpacity: 0.96
+      };
+    }
+
+    function styleSelected(){
+      return {
+        weight: 3.2,
+        color: "rgba(37,99,235,.98)",
+        fillOpacity: 0.98
+      };
+    }
+
+    function featureStyle(feature){
+      // base style; selection/hover adjustments happen via setStyle on events
+      return styleBase(feature);
+    }
+
+    function refreshFeatureStyles(){
+      districtLayer.eachLayer(layer => {
+        const uk = layer.feature?.properties?.__uk;
+        layer.setStyle(styleBase(layer.feature));
+        if (uk && state.selectedUk === uk) layer.setStyle(styleSelected());
+      });
+    }
+
+    // Elections
+    function parseElectionRows(rows){
+      const clean = [];
+      if (!Array.isArray(rows)) return clean;
+
+      for (const r of rows){
+        const idRaw = (r["İlçe Id"] ?? r["Ilçe Id"] ?? r["Ilce Id"] ?? r["İLÇE ID"]);
+        const idStr = String(idRaw ?? "").trim();
+        if (!/^\d+$/.test(idStr)) continue;
+
+        const row = { ...r };
+        row.__district = (r["İlçe Adı"] ?? r["Ilçe Adı"] ?? r["Ilce Adı"] ?? r["İlçe Adi"] ?? "").toString().trim();
+        row.__distKey = keyify(row.__district);
+
+        row.__registered = parseIntTR(r["Kayıtlı Seçmen Sayısı"]);
+        row.__cast = parseIntTR(r["Oy Kullanan Seçmen Sayısı"]);
+        row.__valid = parseIntTR(r["Geçerli Oy Toplamı"]);
+
+        const partyVotes = [];
+        for (const [k, v] of Object.entries(r)){
+          const kk = String(k).trim();
+          if (!kk) continue;
+          if (["İlçe Id","İlçe Adı","Belde Adı","Kayıtlı Seçmen Sayısı","Oy Kullanan Seçmen Sayısı","Geçerli Oy Toplamı"].includes(kk)) continue;
+          const votes = parseIntTR(v);
+          if (votes == null) continue;
+          partyVotes.push([kk.trim(), votes]);
+        }
+        partyVotes.sort((a,b)=>b[1]-a[1]);
+        row.__partyVotes = partyVotes;
+
+        const winner = partyVotes[0]?.[0] ?? null;
+        const winnerVotes = partyVotes[0]?.[1] ?? null;
+        const runnerVotes = partyVotes[1]?.[1] ?? null;
+
+        row.__winner = winner;
+        row.__winnerVotes = winnerVotes;
+        row.__runner = partyVotes[1]?.[0] ?? null;
+        row.__marginVotes = (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes - runnerVotes) : null;
+        row.__marginShare = (row.__valid && row.__marginVotes!=null) ? (row.__marginVotes / row.__valid) : null;
+
+        clean.push(row);
+      }
+      return clean;
+    }
+
+    async function tryFetchElectionJson(provName, plate){
+      const candidates = [
+        `${provName}.json`,
+        `${asciiName(provName)}.json`,
+        `${plate}.json`,
+      ];
+      for (const rel of candidates){
+        try{
+          const url = resolveUrl(rel);
+          const resp = await fetch(url, { cache:"no-store" });
+          if (!resp.ok) continue;
+          return await resp.json();
+        }catch(_){}
+      }
+      return null;
+    }
+
+    async function loadAllElections(){
+      const queue = PROVINCES.map(([name, plate]) => ({name, plate}));
+      const concurrency = 8;
+
+      async function worker(){
+        while (queue.length){
+          const job = queue.shift();
+          const raw = await tryFetchElectionJson(job.name, job.plate);
+          if (raw){
+            const parsed = parseElectionRows(raw);
+            for (const row of parsed){
+              const uk = uniqueKey(job.plate, row.__distKey);
+              state.electionsBase.set(uk, row);
+            }
+          }
+        }
+      }
+      await Promise.all(Array.from({length: concurrency}, worker));
+    }
+
+
+    // Build an index of which district keys exist per province plate (helps match messy CSV names)
+    function buildPlateDistKeyIndex(features){
+      const m = new Map();
+      for (const f of features){
+        const p = f?.properties;
+        const plate = p?.__plate;
+        const dk = p?.__distKey;
+        if (!plate || !dk) continue;
+        if (!m.has(plate)) m.set(plate, new Set());
+        m.get(plate).add(dk);
+      }
+      return m;
+    }
+
+    // Load 2023 presidential 2nd-round results from a single CSV (fast path)
+    function loadPresidentialElectionCsv(rows, plateDistKeys){
+      if (!Array.isArray(rows) || !rows.length) return 0;
+
+      // Treat as authoritative: overwrite any prior election rows
+      state.electionsBase.clear();
+
+      function getAny(r, keys){
+        for (const k of keys){
+          if (r && Object.prototype.hasOwnProperty.call(r, k) && r[k] != null && r[k] !== "") return r[k];
+        }
+        return null;
+      }
+
+      let loaded = 0;
+      for (const r of rows){
+        const provRaw = fixMojibake(getAny(r, ["province","Province","PROVINCE"]) ?? "");
+        const provToken = String(provRaw).trim().split(/\s+/)[0];
+        if (!provToken) continue;
+
+        const plate = provinceToPlate.get(provToken);
+        if (!plate) continue;
+
+        const distRaw = fixMojibake(getAny(r, ["district","District","DISTRICT"]) ?? "");
+        const distFull = String(distRaw).trim();
+        if (!distFull) continue;
+
+        const fullKey = keyify(distFull);
+
+        // common scrape format: "Adana Aladağ" -> "Aladağ"
+        let stripped = distFull;
+        const firstTok = stripped.split(/\s+/)[0];
+        if (firstTok && keyify(firstTok) === keyify(provToken)){
+          stripped = stripped.slice(firstTok.length).trim();
+        }
+        const strippedKey = keyify(stripped);
+
+        // pick the key that actually exists in the GeoJSON for this plate
+        let distKey = strippedKey || fullKey;
+        const set = plateDistKeys?.get(plate);
+        if (set){
+          if (strippedKey && set.has(strippedKey)) distKey = strippedKey;
+          else if (fullKey && set.has(fullKey)) distKey = fullKey;
+        }
+
+        const vE = parseIntTR(getAny(r, ["erdogan","Erdogan","ERDOGAN","Erdoğan","ERDOĞAN"]));
+        const vK = parseIntTR(getAny(r, ["kilicdaroglu","Kilicdaroglu","KILICDAROGLU","Kılıçdaroğlu","KILIÇDAROĞLU"]));
+        if (vE == null && vK == null) continue;
+
+        const partyVotes = [
+          ["Erdoğan", vE ?? 0],
+          ["Kılıçdaroğlu", vK ?? 0],
+        ].sort((a,b)=>b[1]-a[1]);
+
+        const valid = (vE ?? 0) + (vK ?? 0);
+
+        const winner = partyVotes[0]?.[0] ?? null;
+        const winnerVotes = partyVotes[0]?.[1] ?? null;
+        const runnerVotes = partyVotes[1]?.[1] ?? null;
+
+        const row = {
+          __district: stripped || distFull,
+          __distKey: distKey,
+          __registered: null,
+          __cast: valid || null,
+          __valid: valid || null,
+          __partyVotes: partyVotes,
+          __winner: winner,
+          __winnerVotes: winnerVotes,
+          __runner: partyVotes[1]?.[0] ?? null,
+          __marginVotes: (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes - runnerVotes) : null,
+          __marginShare: (valid && winnerVotes!=null && runnerVotes!=null) ? ((winnerVotes - runnerVotes)/valid) : null,
+        };
+
+        const uk = uniqueKey(plate, distKey);
+        state.electionsBase.set(uk, row);
+        loaded++;
+      }
+      return loaded;
+    }
+
+    function rebuildDistrictDataIndex(){
+      state.districtData.clear();
+      districtLayer.eachLayer(layer => {
+        const f = layer.feature;
+        const p = f.properties || {};
+        const uk = p.__uk;
+
+        const pop = state.pop?.[p.__provKey]?.[p.__distKey] ?? null;
+        const election = state.elections.get(uk) ?? null;
+
+        state.districtData.set(uk, {
+          feature: f,
+          pop,
+          election,
+          provName: p.__provName,
+          distName: p.__distName,
+        });
+      });
+    }
+
+// --- Swingometer (uniform swing between national top-2) ---
+function computeElectionTotals(mapLike){
+  const totals = new Map(); // party -> votes
+  let validTotal = 0;
+
+  for (const e of mapLike.values()){
+    const valid = e?.__valid ?? null;
+    if (valid != null) validTotal += Number(valid) || 0;
+
+    for (const [party, votes] of (e?.__partyVotes ?? [])){
+      const v = Number(votes) || 0;
+      totals.set(party, (totals.get(party) ?? 0) + v);
+    }
+  }
+  return { totals, validTotal };
+}
+
+function deriveSwingPair(){
+  const { totals } = computeElectionTotals(state.electionsBase);
+  const top = [...totals.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 2);
+  const a = top[0]?.[0] ?? null;
+  const b = top[1]?.[0] ?? null;
+
+  state.swingPair = [a, b];
+
+  // Update UI labels
+  if (el.swingA) el.swingA.textContent = a ?? "—";
+  if (el.swingB) el.swingB.textContent = b ?? "—";
+
+  if (!a || !b){
+    if (el.swingHint) el.swingHint.textContent = "Swingometer disabled (need at least two parties/candidates in election data).";
+    if (el.swingRange) el.swingRange.disabled = true;
+    if (el.swingNumber) el.swingNumber.disabled = true;
+    if (el.swingReset) el.swingReset.disabled = true;
+    return false;
+  }
+
+  if (el.swingRange) el.swingRange.disabled = false;
+  if (el.swingNumber) el.swingNumber.disabled = false;
+  if (el.swingReset) el.swingReset.disabled = false;
+
+  updateSwingHint();
+  return true;
+}
+
+function updateSwingHint(){
+  const [A,B] = state.swingPair;
+  if (!A || !B || !el.swingHint) return;
+  el.swingHint.textContent = `Positive swing gives + percentage points to ${B}; negative gives + percentage points to ${A}.`;
+}
+
+function clamp(x, lo, hi){ return Math.max(lo, Math.min(hi, x)); }
+
+function adjustElectionRow(base){
+  const [A, B] = state.swingPair;
+  const swingPoints = Number(state.swingPct) || 0;
+
+  // No-op fast paths
+  if (!base || !A || !B || !swingPoints) return base;
+  const valid = Number(base.__valid) || 0;
+  if (!valid) return base;
+
+  // Votes map (copy)
+  const votesBy = new Map((base.__partyVotes ?? []).map(([p,v]) => [p, Number(v) || 0]));
+  const votesA = votesBy.get(A) ?? 0;
+  const votesB = votesBy.get(B) ?? 0;
+  const pairVotes = votesA + votesB;
+  if (pairVotes <= 0) return base;
+
+  const shareB = votesB / valid;
+  const swing = swingPoints / 100;
+
+  // Keep all "other" parties fixed; swing between A and B only.
+  // Clamp so neither A nor B goes negative (and the pair total stays constant).
+  let newVotesB = Math.round((shareB + swing) * valid);
+  newVotesB = clamp(newVotesB, 0, pairVotes);
+  const newVotesA = pairVotes - newVotesB;
+
+  votesBy.set(A, newVotesA);
+  votesBy.set(B, newVotesB);
+
+  const newPartyVotes = [...votesBy.entries()].sort((x,y)=>y[1]-x[1]);
+
+  const winner = newPartyVotes[0]?.[0] ?? null;
+  const winnerVotes = newPartyVotes[0]?.[1] ?? null;
+  const runnerVotes = newPartyVotes[1]?.[1] ?? null;
+
+  const marginVotes = (winnerVotes!=null && runnerVotes!=null) ? (winnerVotes - runnerVotes) : null;
+  const marginShare = (valid && marginVotes!=null) ? (marginVotes / valid) : null;
+
+  return {
+    ...base,
+    __partyVotes: newPartyVotes,
+    __winner: winner,
+    __winnerVotes: winnerVotes,
+    __runner: newPartyVotes[1]?.[0] ?? null,
+    __marginVotes: marginVotes,
+    __marginShare: marginShare,
+  };
+}
+
+function applySwingAll(){
+  state.elections.clear();
+
+  const swingPoints = Number(state.swingPct) || 0;
+  if (!swingPoints){
+    // zero swing: direct view of base
+    for (const [uk, row] of state.electionsBase.entries()) state.elections.set(uk, row);
+  } else {
+    for (const [uk, row] of state.electionsBase.entries()) state.elections.set(uk, adjustElectionRow(row));
+  }
+
+  rebuildDistrictDataIndex();
+}
+
+function setSwing(v){
+  const raw = Number(v);
+  const swing = Number.isFinite(raw) ? clamp(raw, -20, 20) : 0;
+  state.swingPct = swing;
+
+  if (el.swingPill) el.swingPill.textContent = swing.toFixed(1);
+  if (el.swingRange && Number(el.swingRange.value) !== swing) el.swingRange.value = String(swing);
+  if (el.swingNumber && Number(el.swingNumber.value) !== swing) el.swingNumber.value = String(swing);
+
+  applySwingAll();
+  refreshFeatureStyles();
+  renderLegend();
+  updateSwingSummary();
+
+  if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+}
+
+function updateSwingSummary(){
+  if (!el.swingSummary){
+    return;
+  }
+
+  const [A,B] = state.swingPair;
+  if (!A || !B || !state.elections.size){
+    el.swingSummary.textContent = "No election data loaded.";
+    return;
+  }
+
+  const wins = new Map();
+  const totals = new Map();
+  let validTotal = 0;
+
+  for (const e of state.elections.values()){
+    const w = e?.__winner;
+    if (w) wins.set(w, (wins.get(w) ?? 0) + 1);
+
+    const valid = Number(e?.__valid) || 0;
+    validTotal += valid;
+
+    for (const [party, votes] of (e?.__partyVotes ?? [])){
+      totals.set(party, (totals.get(party) ?? 0) + (Number(votes) || 0));
+    }
+  }
+
+  const winA = wins.get(A) ?? 0;
+  const winB = wins.get(B) ?? 0;
+
+  const votesA = totals.get(A) ?? 0;
+  const votesB = totals.get(B) ?? 0;
+
+  const shareA = validTotal ? votesA / validTotal : 0;
+  const shareB = validTotal ? votesB / validTotal : 0;
+  const shareO = clamp(1 - shareA - shareB, 0, 1);
+
+  el.swingSummary.innerHTML = `
+    <div class="kvs">
+      <div class="k">Districts won — ${A}</div><div class="v mono">${winA}</div>
+      <div class="k">Districts won — ${B}</div><div class="v mono">${winB}</div>
+      <div class="k">National share — ${A}</div><div class="v mono">${(100*shareA).toFixed(1)}%</div>
+      <div class="k">National share — ${B}</div><div class="v mono">${(100*shareB).toFixed(1)}%</div>
+      <div class="k">Other</div><div class="v mono">${(100*shareO).toFixed(1)}%</div>
+    </div>
+    <div class="muted2 small" style="margin-top:10px">Not a forecast. Uniform swing is a blunt instrument (like most humans).</div>
+  `;
+}
+
+
+    // Scaling helper: get ranges for current layer
+    function getLayerStats(){
+      const values = [];
+      const pctValues = [];
+      for (const j of state.districtData.values()){
+        const pop = j.pop;
+        if (!pop) continue;
+        const a = pop[state.yearA], b = pop[state.yearB];
+        if (state.mode === "population_year"){
+          const v = pop[state.year];
+          if (v!=null) values.push(v);
+        } else if (state.mode === "population_change_abs"){
+          if (a!=null && b!=null) values.push(b-a);
+        } else if (state.mode === "population_change_pct"){
+          if (a!=null && b!=null && a !== 0) pctValues.push((b-a)/a);
+        }
+      }
+      values.sort((x,y)=>x-y);
+      pctValues.sort((x,y)=>x-y);
+
+      return {
+        popMin: values.length ? values[0] : null,
+        popMax: values.length ? values[values.length-1] : null,
+        changeAbsMax: values.length ? Math.max(Math.abs(values[0]), Math.abs(values[values.length-1])) : null,
+        pctMin: pctValues.length ? pctValues[0] : null,
+        pctMax: pctValues.length ? pctValues[pctValues.length-1] : null,
+        changePctMax: pctValues.length ? Math.max(Math.abs(pctValues[0]), Math.abs(pctValues[pctValues.length-1])) : null,
+      };
+    }
+
+    // Color for features per layer
+    function colorForFeature(feature){
+      const uk = feature.properties.__uk;
+      const joined = state.districtData.get(uk);
+
+      // Missing data fallback
+      if (!joined) return "#e5e7eb";
+
+      // Population total (green, light->dark)
+      if (state.mode === "population_year"){
+        const v = joined.pop?.[state.year];
+        if (v==null) return "#eef2f7";
+        const {popMin, popMax} = getLayerStats();
+        if (popMin==null || popMax==null || popMin===popMax) return "#34a853";
+        let t = (v - popMin) / (popMax - popMin);
+        t = curve(t);
+        return mixHex(getCss("--greenL"), getCss("--greenD"), t);
+      }
+
+      // Population change (absolute)
+      if (state.mode === "population_change_abs"){
+        const pop = joined.pop;
+        const a = pop?.[state.yearA], b = pop?.[state.yearB];
+        if (a==null || b==null) return "#eef2f7";
+        const delta = b - a;
+        const {changeAbsMax} = getLayerStats();
+        if (!changeAbsMax) return "#eef2f7";
+        if (delta === 0) return "#f3f4f6";
+        const t = curve(Math.min(1, Math.abs(delta) / changeAbsMax));
+        return delta < 0
+          ? mixHex(getCss("--redL"), getCss("--redD"), t)
+          : mixHex(getCss("--greenL"), getCss("--greenD"), t);
+      }
+
+      // Population change (percentage)
+      if (state.mode === "population_change_pct"){
+        const pop = joined.pop;
+        const a = pop?.[state.yearA], b = pop?.[state.yearB];
+        if (a==null || b==null || a===0) return "#eef2f7";
+        const pct = (b - a) / a;
+        const {changePctMax} = getLayerStats();
+        if (!changePctMax) return "#eef2f7";
+        if (pct === 0) return "#f3f4f6";
+        const t = curve(Math.min(1, Math.abs(pct) / changePctMax));
+        return pct < 0
+          ? mixHex(getCss("--redL"), getCss("--redD"), t)
+          : mixHex(getCss("--greenL"), getCss("--greenD"), t);
+      }
+
+      // Election winner (margin smaller => lighter shade of party color)
+      const e = joined.election;
+      if (!e) return "#eef2f7";
+
+      const base = colorForParty(e.__winner);
+      const m = e.__marginShare ?? 0;
+
+      // Scale: 0% margin = very light tint; 25%+ margin ≈ near full color
+      let t = clamp01(m / 0.25);
+      t = curve(t);
+
+      // Keep readable on light map: never pure white
+      const lightTint = mixHex("#ffffff", base, 0.30);   // very light party tint
+      const strong    = mixHex("#ffffff", base, 0.92);   // strong party color
+      return mixHex(lightTint, strong, t);
+    }
+
+    function getCss(name){
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // Hover tooltip
+    function showHoverTip(feature, ev){
+      const uk = feature.properties.__uk;
+      const j = state.districtData.get(uk);
+      if (!j) return;
+
+      const prov = j.provName ?? "";
+      const dist = j.distName ?? "";
+
+      const popSel = j.pop?.[state.year] ?? null;
+
+      const e = j.election;
+      const winner = e?.__winner ?? null;
+      const mShare = e?.__marginShare ?? null;
+
+      const dot = winner ? `<span class="winnerDot" style="background:${colorForParty(winner)}"></span>` : "";
+
+      el.hoverTip.innerHTML = `
+        <div class="t1">${dist}</div>
+        <div class="t2"><span>${prov}</span><span class="mono">${popSel==null?"—":formatInt(popSel)}</span></div>
+        <div class="mini">
+          ${winner ? `<span class="miniPill">${dot}<b>${winner}</b></span>` : `<span class="miniPill">No election</span>`}
+          ${mShare!=null ? `<span class="miniPill"><span class="mono">±</span>${(100*mShare).toFixed(1)}%</span>` : ``}
+        </div>
+      `;
+
+      const rect = el.mapDiv.getBoundingClientRect();
+      const x = ev.originalEvent.clientX - rect.left;
+      const y = ev.originalEvent.clientY - rect.top;
+
+      el.hoverTip.style.left = `${x}px`;
+      el.hoverTip.style.top  = `${y}px`;
+      el.hoverTip.style.display = "block";
+    }
+
+    function moveHoverTip(ev){
+      const rect = el.mapDiv.getBoundingClientRect();
+      const x = ev.originalEvent.clientX - rect.left;
+      const y = ev.originalEvent.clientY - rect.top;
+      el.hoverTip.style.left = `${x}px`;
+      el.hoverTip.style.top  = `${y}px`;
+    }
+    function hideHoverTip(){ el.hoverTip.style.display = "none"; }
+
+    // District panel render (works for hover or selection)
+    function renderDistrictPanel(uk, modeLabel){
+      const j = state.districtData.get(uk);
+      if (!j){
+        el.districtBox.innerHTML = `<div class="muted small">No data.</div>`;
+        return;
+      }
+
+      const provName = j.provName ?? "—";
+      const distName = j.distName ?? "—";
+      const pop = j.pop;
+      const e = j.election;
+
+      el.selPill.textContent = modeLabel;
+
+      let html = `
+        <div class="headline">
+          <div>
+            <div class="hTitle">${distName}</div>
+            <div class="hSub">${provName}</div>
+          </div>
+        </div>
+        <div class="sep"></div>
+      `;
+
+      // Population section
+      html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Population</div>`;
+      if (pop){
+        const a = pop[state.yearA], b = pop[state.yearB];
+        const delta = (a!=null && b!=null) ? (b-a) : null;
+        const pct = (a!=null && b!=null && a!==0) ? ((b-a)/a) : null;
+
+        html += `
+          <div class="kvs">
+            <div class="k">2014</div><div class="v mono">${formatInt(pop[2014])}</div>
+            <div class="k">2019</div><div class="v mono">${formatInt(pop[2019])}</div>
+            <div class="k">2024</div><div class="v mono">${formatInt(pop[2024])}</div>
+          </div>
+          <div class="chipRow">
+            <span class="chip">Selected <span class="mono">${state.year}</span>: <b>${formatInt(pop[state.year])}</b></span>
+            ${delta!=null ? `<span class="chip"><span class="mono">Δ</span>${state.yearA}→${state.yearB}: <b>${formatInt(delta)}</b></span>` : ``}
+            ${pct!=null ? `<span class="chip"><span class="mono">%</span>${state.yearA}→${state.yearB}: <b>${(pct*100).toFixed(1)}%</b></span>` : ``}
+          </div>
+        `;
+      } else {
+        html += `<div class="muted small" style="margin-top:8px">—</div>`;
+      }
+
+      // Election section
+      html += `<div class="sep"></div>`;
+      html += `<div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Election</div>`;
+
+if (state.swingPct && state.swingPair[0] && state.swingPair[1]){
+  const [A,B] = state.swingPair;
+  const dir = (state.swingPct >= 0) ? B : A;
+  html += `
+    <div class="chipRow" style="margin-top:10px">
+      <span class="chip">Swing: <b>${Math.abs(state.swingPct).toFixed(1)}pp</b> to <b>${dir}</b></span>
+    </div>
+  `;
+}
+
+      if (e){
+        const winnerColor = colorForParty(e.__winner);
+        const valid = e.__valid ?? null;
+
+        html += `
+          <div class="chipRow" style="margin-top:10px">
+            <span class="chip">
+              <span class="winnerDot" style="background:${winnerColor}"></span>
+              Winner: <b>${safe(e.__winner)}</b>
+              <span class="mono">(${formatInt(e.__winnerVotes)})</span>
+            </span>
+            ${e.__marginVotes!=null ? `<span class="chip">Margin: <b>${formatInt(e.__marginVotes)}</b> <span class="mono">${(100*(e.__marginShare??0)).toFixed(1)}%</span></span>` : ``}
+          </div>
+
+          <div class="kvs" style="margin-top:10px">
+            <div class="k">Registered</div><div class="v mono">${formatInt(e.__registered)}</div>
+            <div class="k">Cast</div><div class="v mono">${formatInt(e.__cast)}</div>
+            <div class="k">Valid</div><div class="v mono">${formatInt(e.__valid)}</div>
+          </div>
+        `;
+
+        const top = (e.__partyVotes ?? []).slice(0, 5);
+        if (top.length && valid){
+          html += `<div class="sep"></div><div class="muted2 small" style="text-transform:uppercase;letter-spacing:.16px">Top parties</div>`;
+          html += `<div class="bars">`;
+          for (const [party, votes] of top){
+            const share = valid ? (votes/valid) : 0;
+            const c = colorForParty(party);
+            html += `
+              <div class="barRow">
+                <div class="barName">${party}</div>
+                <div class="barTrack">
+                  <div class="barFill" style="width:${(100*share).toFixed(1)}%; background: linear-gradient(90deg, ${mixHex("#ffffff", c, 0.85)}, ${mixHex("#ffffff", c, 0.55)});"></div>
+                </div>
+                <div class="barVal mono">${(100*share).toFixed(1)}%</div>
+              </div>
+            `;
+          }
+          html += `</div>`;
+        }
+      } else {
+        html += `<div class="muted small" style="margin-top:10px">No election match for this district.</div>`;
+      }
+
+      el.districtBox.innerHTML = html;
+    }
+
+    function clearSelection(){
+      state.selectedUk = null;
+      el.selPill.textContent = "none";
+      el.districtBox.innerHTML = `<div class="muted small">Hover a district or click to select.</div>`;
+      refreshFeatureStyles();
+    }
+
+    // Feature interaction
+    function onEachDistrict(feature, layer){
+      const uk = feature.properties.__uk;
+
+      layer.on({
+        mouseover: (ev) => {
+          state.hoverUk = uk;
+
+          // hover styling only if not selected
+          if (state.selectedUk !== uk){
+            layer.setStyle(styleHover());
+          }
+
+          // tooltip + hover panel (unless selection exists)
+          showHoverTip(feature, ev);
+
+          if (!state.selectedUk){
+            renderDistrictPanel(uk, "hover");
+          }
+        },
+        mousemove: (ev) => {
+          moveHoverTip(ev);
+        },
+        mouseout: () => {
+          state.hoverUk = null;
+          hideHoverTip();
+
+          // revert hover styling unless selected
+          if (state.selectedUk !== uk){
+            layer.setStyle(styleBase(feature));
+          }
+
+          // if no selection, reset panel
+          if (!state.selectedUk){
+            el.selPill.textContent = "none";
+            el.districtBox.innerHTML = `<div class="muted small">Hover a district or click to select.</div>`;
+          }
+        },
+        click: () => {
+          // toggle select
+          if (state.selectedUk === uk){
+            clearSelection();
+            return;
+          }
+          state.selectedUk = uk;
+          refreshFeatureStyles();
+          renderDistrictPanel(uk, "selected");
+        }
+      });
+    }
+
+    // Legend
+    function renderLegend(){
+      el.legend.innerHTML = "";
+
+      const pill =
+        state.mode === "election_winner" ? "Election — winner" :
+        state.mode === "population_year" ? `Population — ${state.year}` :
+        state.mode === "population_change_abs" ? `Population Δ — ${state.yearA}→${state.yearB}` :
+        `Population % — ${state.yearA}→${state.yearB}`;
+
+      el.legendPill.textContent = pill;
+
+      if (state.mode === "election_winner"){
+        const wins = new Map();
+        for (const j of state.districtData.values()){
+          const w = j.election?.__winner;
+          if (!w) continue;
+          wins.set(w, (wins.get(w) ?? 0) + 1);
+        }
+
+        const top = [...wins.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 12);
+        if (!top.length){
+          el.legend.innerHTML = `<div class="muted small">No election files loaded (or missing / misnamed).</div>`;
+          return;
+        }
+
+        for (const [party, n] of top){
+          const item = document.createElement("div");
+          item.className = "legendItem";
+
+          const sw = document.createElement("div");
+          sw.className = "swatch";
+          sw.style.background = colorForParty(party);
+
+          const label = document.createElement("div");
+          label.className = "legendLabel";
+          label.innerHTML = `<b>${party}</b><span>${n} districts</span>`;
+
+          item.appendChild(sw);
+          item.appendChild(label);
+          el.legend.appendChild(item);
+        }
+
+        const note = document.createElement("div");
+        note.className = "muted2 small";
+        note.style.marginTop = "10px";
+        note.textContent = "Smaller margin → lighter shade of the winner’s color.";
+        el.legend.appendChild(note);
+        return;
+      }
+
+      const stats = getLayerStats();
+
+      const wrap = document.createElement("div");
+      wrap.className = "gradWrap";
+
+      const bar = document.createElement("div");
+      bar.className = "gradBar";
+      if (state.mode === "population_change_abs") bar.className = "gradBar divAbs";
+      if (state.mode === "population_change_pct") bar.className = "gradBar divPct";
+      wrap.appendChild(bar);
+
+      const meta = document.createElement("div");
+      meta.className = "gradMeta mono";
+
+      if (state.mode === "population_year"){
+        meta.innerHTML = `<div>${formatInt(stats.popMin)}</div><div>${formatInt(stats.popMax)}</div>`;
+      } else if (state.mode === "population_change_abs"){
+        const m = stats.changeAbsMax ?? 0;
+        meta.innerHTML = `<div>-${formatInt(m)}</div><div>0</div><div>+${formatInt(m)}</div>`;
+        meta.style.justifyContent = "space-between";
+      } else {
+        const m = stats.changePctMax ?? 0;
+        meta.innerHTML = `<div>${(-m*100).toFixed(1)}%</div><div>0%</div><div>${(m*100).toFixed(1)}%</div>`;
+        meta.style.justifyContent = "space-between";
+      }
+      wrap.appendChild(meta);
+
+      el.legend.appendChild(wrap);
+
+      const note = document.createElement("div");
+      note.className = "muted2 small";
+      note.style.marginTop = "10px";
+      note.textContent =
+        state.mode === "population_year" ? "Light green = smaller, dark green = larger." :
+        state.mode === "population_change_abs" ? "Red = decrease, green = increase." :
+        "Red = % decrease, green = % increase.";
+      el.legend.appendChild(note);
+    }
+
+    // UI logic
+    function renderModeYearVisibility(){
+      const isYear = (state.mode === "population_year");
+      const isChange = (state.mode === "population_change_abs" || state.mode === "population_change_pct");
+
+      el.yearWrap.style.display = isYear ? "flex" : "none";
+      el.yearAWrap.style.display = isChange ? "flex" : "none";
+      el.yearBWrap.style.display = isChange ? "flex" : "none";
+    }
+
+    function wireUI(){
+      el.modeSelect.addEventListener("change", () => {
+        state.mode = el.modeSelect.value;
+  
+// Swingometer
+if (el.swingRange){
+  el.swingRange.addEventListener("input", () => setSwing(el.swingRange.value));
+}
+if (el.swingNumber){
+  el.swingNumber.addEventListener("change", () => setSwing(el.swingNumber.value));
+  el.swingNumber.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") setSwing(el.swingNumber.value);
+  });
+}
+if (el.swingReset){
+  el.swingReset.addEventListener("click", () => setSwing(0));
+}
+
+      renderModeYearVisibility();
+        refreshFeatureStyles();
+        renderLegend();
+
+        // if a selection exists, refresh its panel label content (still selected)
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+      });
+
+      el.yearSelect.addEventListener("change", () => {
+        state.year = Number(el.yearSelect.value);
+        refreshFeatureStyles();
+        renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+      });
+
+      el.yearASelect.addEventListener("change", () => {
+        state.yearA = Number(el.yearASelect.value);
+        refreshFeatureStyles();
+        renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+      });
+
+      el.yearBSelect.addEventListener("change", () => {
+        state.yearB = Number(el.yearBSelect.value);
+        refreshFeatureStyles();
+        renderLegend();
+        if (state.selectedUk) renderDistrictPanel(state.selectedUk, "selected");
+      });
+
+      el.fitBtn.addEventListener("click", () => {
+        try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
+      });
+
+      el.clearBtn.addEventListener("click", clearSelection);
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") clearSelection();
+      });
+
+      el.helpBtn.addEventListener("click", () => el.helpDialog.showModal());
+      el.closeHelpBtn.addEventListener("click", () => el.helpDialog.close());
+
+      renderModeYearVisibility();
+    }
+
+    // Load everything
+    async function loadAll(){
+      el.loaderMsg.textContent = "Fetching GeoJSON & population…";
+      const [geo, popRows] = await Promise.all([
+        fetchJson(FILES.GEOJSON),
+        fetchCsv(FILES.POPCSV),
+      ]);
+
+      let presRows = null;
+      try{
+        presRows = await fetchCsv(FILES.ELECTIONCSV);
+      }catch(_){
+        presRows = null;
+      }
+
+
+      // population index (keyify)
+      const pop = {};
+      for (const row of popRows){
+        const prov = keyify(row.Province ?? row.province ?? row.PROVINCE);
+        const dist = keyify(row.District ?? row.district ?? row.DISTRICT);
+        if (!prov || !dist) continue;
+        pop[prov] ??= {};
+        pop[prov][dist] = {
+          2014: parseIntTR(row["2014"]),
+          2019: parseIntTR(row["2019"]),
+          2024: parseIntTR(row["2024"]),
+        };
+      }
+      state.pop = pop;
+
+      // prepare features
+const features = (geo.features || [])
+  .filter(f => f.geometry && f.properties && (
+    /TR-?\d{2}-(districts|counties)/i.test(String(f.properties.network ?? "")) ||
+    f.properties.admin_level === "6" || f.properties.admin_level === 6
+  ))
+  .map(f => {
+    const plate = parsePlateFromNetwork(f.properties?.network);
+    const provName = plateToProvince.get(plate) ?? "Unknown";
+    const provKey = keyify(provName);
+    const distName = f.properties?.name ?? "";
+    const distKey = keyify(distName);
+    const uk = `${plate ?? 0}|${distKey}`;
+
+    return {
+      ...f,
+      properties: {
+        ...f.properties,
+        __plate: plate,
+        __provName: provName,
+        __provKey: provKey,
+        __distName: distName,
+        __distKey: distKey,
+        __uk: uk
+      }
+    };
+  });
+
+
+      districtLayer.clearLayers();
+      districtLayer.addData(features);
+
+      const plateDistKeys = buildPlateDistKeyIndex(features);
+      rebuildDistrictDataIndex();
+      refreshFeatureStyles();
+
+      try{ map.fitBounds(districtLayer.getBounds(), { padding:[18,18] }); }catch(_){}
+
+      renderLegend();
+
+      // elections (load base, then apply swing view)
+      if (presRows && presRows.length){
+        el.loaderMsg.textContent = "Loading 2023 presidential 2nd-round (CSV)…";
+        loadPresidentialElectionCsv(presRows, plateDistKeys);
+      } else {
+        el.loaderMsg.textContent = "Loading election JSON files (missing files are OK)…";
+        await loadAllElections();
+      }
+
+      deriveSwingPair();
+      setSwing(state.swingPct);
+
+      el.curtain.classList.add("hide");
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      grabEls();
+      initMap();
+      wireUI();
+
+      try{
+        await loadAll();
+      }catch(err){
+        console.error(err);
+        el.loaderMsg.textContent = `Fatal: ${err.message}`;
+      }
+    });
+
+  })();
+  </script>
+</body>
+</html>
