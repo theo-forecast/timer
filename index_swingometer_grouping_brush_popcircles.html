@@ -1108,16 +1108,19 @@ function parsePlateFromNetwork(network){
           ? colorForParty(winner)
           : "rgba(15,23,42,.22)";
 
-        const cm = L.circleMarker(center, {
-          renderer: canvasRenderer,
-          interactive: false,
-          radius: Math.log(scale(p)) * 0.001,
-          color: "rgba(15,23,42,.28)",
-          weight: 0.8,
-          fillColor: fill,
-          fillOpacity: state.popCirclesWinnerColor ? 0.72 : 0.40,
-        });
-
+const cm = L.circleMarker(center, {
+  renderer: canvasRenderer,
+  interactive: false,
+  radius: popCircleScale(p),
+  color: "rgba(15,23,42,.28)",
+  weight: 0.8,
+  fillColor: fill,
+  fillOpacity: state.popCirclesWinnerColor ? 0.72 : 0.40,
+});
+const popCircleScale = d3.scaleSqrt()
+  .domain([d3.min(popValues), d3.max(popValues)])
+  .range([2, 9])        // SMALL + STATIC
+  .clamp(true);
         popCircleByUk.set(uk, cm);
         popCircleLayer.addLayer(cm);
       }
