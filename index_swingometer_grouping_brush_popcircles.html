@@ -1111,7 +1111,7 @@ function parsePlateFromNetwork(network){
         const cm = L.circleMarker(center, {
           renderer: canvasRenderer,
           interactive: false,
-          radius: scale(p)*0.3,
+          radius: Math.log(scale(p) + 1) * k,
           color: "rgba(15,23,42,.28)",
           weight: 0.8,
           fillColor: fill,
