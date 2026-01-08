@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turkey District Custom Districting Tool</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body, html, #root {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0; /* Slate 200 */
+            user-select: none;
+        }
+        #map-container {
+            height: 100%;
+            width: 100%;
+            z-index: 0;
+        }
+        .leaflet-container {
+            background: #1e293b;
+        }
+        /* Cursor Styles based on Tool */
+        .cursor-pointer-tool { cursor: grab; }
+        .cursor-pointer-tool:active { cursor: grabbing; }
+        .cursor-brush-tool { cursor: crosshair; }
+        .cursor-eraser-tool { cursor: not-allowed; }
+
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        
+        /* Label Styles */
+        .neighborhood-label {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            color: rgba(255,255,255,0.9);
+            font-weight: bold;
+            text-shadow: 0 0 3px #000;
+            text-align: center;
+            white-space: normal;
+            line-height: 1.1;
+            pointer-events: none;
+        }
+        .neighborhood-label.light-mode {
+            color: rgba(0,0,0,0.8);
+            text-shadow: 0 0 3px #fff;
+        }
+        .label-sub {
+            font-weight: normal;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <pre id="fatal" style="display:none;position:fixed;left:12px;right:12px;top:12px;z-index:99999;max-height:45vh;overflow:auto;white-space:pre-wrap;background:rgba(127,29,29,.92);color:#fee2e2;border:1px solid rgba(254,202,202,.55);border-radius:12px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;"></pre>
+    <div id="root"><div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px;text-align:center;">Loading… If this stays, open DevTools → Console/Network to see what failed.</div></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+        // --- Crash banner (so failures don't look like "blank map") ---
+        const __fatalEl = () => document.getElementById('fatal');
+        const __showFatal = (msg) => {
+            const el = __fatalEl();
+            if (!el) return;
+            el.style.display = 'block';
+            el.textContent = msg;
+        };
+        window.addEventListener('error', (e) => {
+            __showFatal(`JS error: ${e.message}\n${e.filename || ''}:${e.lineno || ''}:${e.colno || ''}`);
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            const r = e.reason;
+            __showFatal(`Unhandled promise rejection: ${r?.message || String(r)}`);
+        });
+
+
+        // --- Configuration: Default Files to Load ---
+        const DEFAULT_GEOJSON_FILE = 'turkey-admin-level-6.geojson';
+        const DEFAULT_ELECTION_CSV_FILE = 'turkey_districts_second_round_full.csv';
+
+        // --- Improved Normalization Functions ---
+
+        const normalizeName = (name) => {
+            if (!name) return "";
+            let normalized = '';
+            try { normalized = name.toLocaleUpperCase('tr-TR'); }
+            catch (e) { normalized = String(name).toUpperCase(); }
+            normalized = normalized
+                .replace(' MAHALLESİ', '')
+                .replace(' MAHALLESI', '')
+                .replace(' MAH.', '')
+                .replace(' MAH', '') 
+                .replace(' KÖYÜ', '')
+                .replace(' KOYU', '')
+                .replace(' KÖY', '')
+                .replace(' KOY', '');
+            // Allow numbers now!
+            normalized = normalized.replace(/[^A-ZÇĞİÖŞÜ0-9\s]/g, '');
+            // Standardize I/İ just in case
+            normalized = normalized.replace(/İ/g, 'İ').replace(/I/g, 'I'); 
+            return normalized.trim().replace(/\s+/g, ' ');
+        };
+
+        const toAscii = (str) => {
+            return str
+                .replace(/Ğ/g, 'G')
+                .replace(/Ü/g, 'U')
+                .replace(/Ş/g, 'S')
+                .replace(/İ/g, 'I')
+                .replace(/Ö/g, 'O')
+                .replace(/Ç/g, 'C');
+        };
+
+        // Levenshtein distance for fuzzy matching
+        const levenshtein = (a, b) => {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        };
+
+        const generateColor = (index) => {
+            const hues = [210, 150, 270, 45, 330, 180, 0, 90, 300, 60];
+            return `hsl(${hues[index % hues.length]}, 85%, 60%)`;
+        };
+
+        const formatNumber = (num) => new Intl.NumberFormat('tr-TR').format(num);
+
+        const calculatePercentage = (part, total) => {
+            if (total === 0) return "0.0";
+            return ((part / total) * 100).toFixed(1);
+        };
+
+        const getElectionColor = (rte, kk, multiplier = 1) => {
+            const total = rte + kk;
+            if (total === 0) return '#64748b';
+            const margin = (rte - kk) / total;
+            // Sensitivity Logic: 4x makes smaller margins more intense
+            const intensity = Math.min(Math.abs(margin) * 3 * multiplier, 1);
+            
+            const neutral = [226, 232, 240]; 
+            const colorKK = [239, 68, 68];   
+            const colorRTE = [249, 115, 22]; 
+            
+            const target = margin > 0 ? colorRTE : colorKK;
+            const r = Math.round(neutral[0] + (target[0] - neutral[0]) * intensity);
+            const g = Math.round(neutral[1] + (target[1] - neutral[1]) * intensity);
+            const b = Math.round(neutral[2] + (target[2] - neutral[2]) * intensity);
+            return `rgb(${r}, ${g}, ${b})`;
+        };
+
+        // --- Icons ---
+        const IconPointer = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="m13 13 6 6"/></svg>;
+        const IconBrush = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 12c.5-1.5.5-2.5 0-4-.8-.4-1.5-.4-2.5 0"/><path d="M10 10c1.3-1.3 3.3-1.3 4.6 0"/><path d="M17.4 7.6c-.8-2.3-2.7-4-5-4.6-4.5-1.1-9 2-9.6 7.6-.2 1.3.1 2.6.8 3.7l3.4 5.3c.7 1.1 1.7 1.9 2.9 2.5l5 2.5c.6.3 1.3.3 1.9 0l1.6-.8c2.4-1.2 2.6-4.5.3-6L10 10"/></svg>;
+        const IconEraser = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>;
+        const IconUndo = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>;
+        const IconRedo = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>;
+        const IconFix = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>;
+        const IconSettings = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
+        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+        const IconSun = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>;
+        const IconMoon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>;
+
+        // --- Settings Modal ---
+        const SettingsModal = ({ onClose, settings, setSettings }) => {
+            return (
+                <div className="absolute inset-0 z-[2000] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-8">
+                    <div className="bg-slate-800 border border-slate-600 w-full max-w-lg rounded-xl shadow-2xl flex flex-col">
+                        <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 rounded-t-xl">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <IconSettings /> Map & Data Settings
+                            </h2>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white">&times;</button>
+                        </div>
+                        
+                        <div className="p-6 space-y-6">
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wide border-b border-slate-700 pb-1">Election Data Visualization</h3>
+                                <div>
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-red-400 font-bold">KK</span>
+                                        <span className="text-slate-200">Shift Vote Share</span>
+                                        <span className="text-orange-400 font-bold">RTE</span>
+                                    </div>
+                                    <input 
+                                        type="range" min="-20" max="20" step="1" 
+                                        value={settings.voteSwing}
+                                        onChange={(e) => setSettings({...settings, voteSwing: parseInt(e.target.value)})}
+                                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                    />
+                                    <div className="text-center text-xs font-mono text-slate-400 mt-1">
+                                        {settings.voteSwing === 0 ? "No Shift" : (settings.voteSwing > 0 ? `RTE +${settings.voteSwing}% (KK -${settings.voteSwing}%)` : `KK +${Math.abs(settings.voteSwing)}% (RTE -${Math.abs(settings.voteSwing)}%)`)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-2">Color Intensity (Margin Scale)</label>
+                                    <div className="flex bg-slate-700 rounded p-1 gap-1">
+                                        {[1, 2, 4].map(val => (
+                                            <button 
+                                                key={val}
+                                                onClick={() => setSettings({...settings, marginMultiplier: val})}
+                                                className={`flex-1 py-1 text-xs font-bold rounded ${settings.marginMultiplier === val ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                            >
+                                                {val}x
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wide border-b border-slate-700 pb-1">Map Styling</h3>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-2">Labels Overlay</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {['none', 'name', 'results', 'total'].map(mode => (
+                                            <button 
+                                                key={mode}
+                                                onClick={() => setSettings({...settings, labelMode: mode})}
+                                                className={`py-1.5 px-2 text-xs font-medium rounded border ${settings.labelMode === mode ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'}`}
+                                            >
+                                                {mode === 'none' ? 'None' : mode === 'name' ? 'Names' : mode === 'results' ? 'Percentages' : 'Total Votes'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-slate-400 block mb-1">Label Size</label>
+                                        <input 
+                                            type="range" min="8" max="20" step="1" 
+                                            value={settings.labelSize}
+                                            onChange={(e) => setSettings({...settings, labelSize: parseInt(e.target.value)})}
+                                            className="w-full h-1 bg-slate-700 rounded appearance-none cursor-pointer accent-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-slate-400 block mb-1">District Opacity</label>
+                                        <input 
+                                            type="range" min="10" max="100" step="10" 
+                                            value={settings.opacity * 100}
+                                            onChange={(e) => setSettings({...settings, opacity: parseInt(e.target.value) / 100})}
+                                            className="w-full h-1 bg-slate-700 rounded appearance-none cursor-pointer accent-blue-500"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1">Border Width</label>
+                                    <input 
+                                        type="range" min="0" max="4" step="0.5" 
+                                        value={settings.borderWidth}
+                                        onChange={(e) => setSettings({...settings, borderWidth: parseFloat(e.target.value)})}
+                                        className="w-full h-1 bg-slate-700 rounded appearance-none cursor-pointer accent-blue-500"
+                                    />
+                                    <div className="text-[10px] text-slate-500 mt-1 text-right">
+                                        {settings.borderWidth === 0 ? "Seamless (Auto-Fill)" : `${settings.borderWidth}px`}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-700 bg-slate-900/50 rounded-b-xl text-right">
+                            <button onClick={onClose} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold text-sm">Close</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Mismatch Modal ---
+        const MismatchModal = ({ onClose, unmatchedItems, electionKeys, onApplyMapping }) => {
+            const [localMappings, setLocalMappings] = useState({});
+            const getSuggestions = (mapName) => {
+                const normMap = normalizeName(mapName);
+                const candidates = electionKeys.map(key => {
+                    const dist = levenshtein(normMap, key);
+                    const similarity = 1 - (dist / Math.max(normMap.length, key.length));
+                    return { key, dist, similarity };
+                });
+                return candidates.sort((a, b) => b.similarity - a.similarity).slice(0, 5);
+            };
+            const autoFix = () => {
+                const newMappings = { ...localMappings };
+                unmatchedItems.forEach(item => {
+                    const suggestions = getSuggestions(item.name);
+                    if (suggestions[0] && suggestions[0].similarity > 0.8) {
+                        newMappings[item.uid] = suggestions[0].key;
+                    }
+                });
+                setLocalMappings(newMappings);
+            };
+            return (
+                <div className="absolute inset-0 z-[2000] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-8">
+                    <div className="bg-slate-800 border border-slate-600 w-full max-w-4xl h-[80vh] rounded-xl shadow-2xl flex flex-col">
+                        <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 rounded-t-xl">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2"><IconFix /> Fix Data Mismatches</h2>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white">&times;</button>
+                        </div>
+                        <div className="p-4 bg-slate-800/50 border-b border-slate-700 flex justify-between items-center">
+                            <div className="text-sm text-slate-300">Found <span className="font-bold text-red-400">{unmatchedItems.length}</span> map areas with missing/ambiguous election data.</div>
+                            <button onClick={autoFix} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-sm font-semibold transition-colors">Auto-Fix High Confidence</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                            {unmatchedItems.map(item => {
+                                const suggestions = getSuggestions(item.name);
+                                const currentMap = localMappings[item.uid];
+                                return (
+                                    <div key={item.uid} className="flex items-center gap-4 p-3 bg-slate-900 rounded border border-slate-700">
+                                        <div className="flex-1"><div className="text-sm font-bold text-slate-200">{item.name}</div><div className="text-xs text-slate-500">ID: {item.uid}</div></div>
+                                        <div className="text-slate-500">→</div>
+                                        <div className="flex-1">
+                                            <select className="w-full bg-slate-800 border border-slate-600 text-white text-sm rounded p-1" value={currentMap || ""} onChange={(e) => setLocalMappings(prev => ({ ...prev, [item.uid]: e.target.value }))}>
+                                                <option value="">-- Select Data --</option>
+                                                {suggestions.map(s => (<option key={s.key} value={s.key}>{s.key} ({Math.round(s.similarity * 100)}% Match)</option>))}
+                                                <option disabled>──────────</option>
+                                                {electionKeys.map(k => (<option key={k} value={k}>{k}</option>))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="p-4 border-t border-slate-700 flex justify-end gap-2 bg-slate-900/50 rounded-b-xl">
+                            <button onClick={onClose} className="px-4 py-2 text-slate-400 hover:text-white text-sm">Cancel</button>
+                            <button onClick={() => { onApplyMapping(localMappings); onClose(); }} className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-sm shadow-lg shadow-green-900/20">Apply Fixes</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main Component ---
+
+        function App() {
+            // Settings State
+            const [settings, setSettings] = useState({
+                borderWidth: 1,
+                borderColor: '#ffffff',
+                marginMultiplier: 1,
+                voteSwing: 0,
+                labelMode: 'none',
+                labelSize: 10,
+                opacity: 0.6,
+                mapStyle: 'dark'
+            });
+            const [showSettings, setShowSettings] = useState(false);
+
+            // Data State
+            const [geoJsonData, setGeoJsonData] = useState(null);
+            const [electionData, setElectionData] = useState({}); 
+            
+            const [electionIndex, setElectionIndex] = useState({ byAsciiFull: {}, byDistrict: {}, byDistrictAscii: {} });
+const [loading, setLoading] = useState(false);
+            const [dataStatus, setDataStatus] = useState({ map: false, election: false });
+            const [matchStats, setMatchStats] = useState({ matched: 0, total: 0 });
+            const [loadReport, setLoadReport] = useState({ baseDir: '', maps: [], data: [] });
+
+            // Mapping State
+            const [manualMappings, setManualMappings] = useState({}); 
+            const [showFixModal, setShowFixModal] = useState(false);
+
+            // App State
+            const [viewMode, setViewMode] = useState('districts'); 
+            const [activeTool, setActiveTool] = useState('pointer'); 
+            const [searchQuery, setSearchQuery] = useState("");
+            const [searchResults, setSearchResults] = useState([]);
+            
+            // Districting State
+            const [districts, setDistricts] = useState([]);
+            const [activeDistrictId, setActiveDistrictId] = useState(null);
+            
+            // History State
+            const [history, setHistory] = useState([{}]); 
+            const [historyIndex, setHistoryIndex] = useState(0);
+            const assignments = history[historyIndex];
+
+            // Refs
+            const isPainting = useRef(false);
+            const pendingAssignments = useRef({});
+            const assignmentsRef = useRef({}); 
+            const activeDistrictIdRef = useRef(null);
+            const districtsRef = useRef([]);
+            const activeToolRef = useRef('pointer');
+            const tileLayerRef = useRef(null);
+            const historyRef = useRef(history);
+            const historyIndexRef = useRef(historyIndex);
+            
+            // Refs for styling access inside closures
+            const settingsRef = useRef(settings);
+            const viewModeRef = useRef(viewMode);
+            const electionDataRef = useRef(electionData);
+            
+            const electionIndexRef = useRef(electionIndex);
+const manualMappingsRef = useRef(manualMappings);
+            const loadedGeoJsonRef = useRef(null);
+
+            // Sync refs
+            useEffect(() => { assignmentsRef.current = assignments; }, [assignments]);
+            useEffect(() => { activeDistrictIdRef.current = activeDistrictId; }, [activeDistrictId]);
+            useEffect(() => { districtsRef.current = districts; }, [districts]);
+            useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
+            useEffect(() => { historyRef.current = history; historyIndexRef.current = historyIndex; }, [history, historyIndex]);
+            useEffect(() => { settingsRef.current = settings; }, [settings]);
+            useEffect(() => { viewModeRef.current = viewMode; }, [viewMode]);
+            useEffect(() => { electionDataRef.current = electionData; }, [electionData]);
+                        useEffect(() => { electionIndexRef.current = electionIndex; }, [electionIndex]);
+
+useEffect(() => { manualMappingsRef.current = manualMappings; }, [manualMappings]);
+
+            const mapRef = useRef(null);
+            const geoJsonLayerRef = useRef(null);
+            const labelsLayerRef = useRef(null);
+            const featureNameMap = useRef({});
+            const [hoveredFeature, setHoveredFeature] = useState(null);
+
+            // --- AUTO LOAD DEFAULT DATA ---
+            useEffect(() => {
+                // Minimal CSV parser (handles quotes)
+                const parseCsv = (csvText) => {
+                    const lines = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim().length > 0);
+                    if (lines.length === 0) return [];
+                    const parseLine = (line) => {
+                        const out = [];
+                        let cur = '';
+                        let inQuotes = false;
+                        for (let i = 0; i < line.length; i++) {
+                            const ch = line[i];
+                            if (ch === '"') {
+                                // Escaped quote
+                                if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+                                else { inQuotes = !inQuotes; }
+                            } else if (ch === ',' && !inQuotes) {
+                                out.push(cur);
+                                cur = '';
+                            } else {
+                                cur += ch;
+                            }
+                        }
+                        out.push(cur);
+                        return out.map(s => s.trim());
+                    };
+
+                    const header = parseLine(lines[0]);
+                    const rows = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const cols = parseLine(lines[i]);
+                        const row = {};
+                        for (let j = 0; j < header.length; j++) row[header[j]] = cols[j] ?? '';
+                        rows.push(row);
+                    }
+                    return rows;
+                };
+
+                const loadData = async () => {
+                    setLoading(true);
+
+                    // Resolve a stable base directory for assets (GitHub Pages + trailing-slash safe)
+                    const __rawUrl = window.location.href.split('#')[0].split('?')[0];
+                    const __baseDir = (__rawUrl.endsWith('/'))
+                        ? __rawUrl
+                        : (__rawUrl.toLowerCase().endsWith('.html'))
+                            ? __rawUrl.slice(0, __rawUrl.lastIndexOf('/') + 1)
+                            : (__rawUrl + '/');
+
+                    const fetchAsset = (p) => fetch(new URL(p, __baseDir).toString(), { cache: 'no-store' });
+
+                    const __mapReport = [];
+                    const __dataReport = [];
+                    setLoadReport({ baseDir: __baseDir, maps: [], data: [] });
+
+                    try {
+                        // 1) Map (single GeoJSON)
+                        const mapResp = await fetchAsset(DEFAULT_GEOJSON_FILE);
+                        if (!mapResp.ok) throw new Error(`Failed to load ${DEFAULT_GEOJSON_FILE} (${mapResp.status})`);
+                        const gj = await mapResp.json();
+
+                        const feats = (gj.features || [])
+                            .filter(f => f && f.geometry && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon'))
+                            .map((f, index) => {
+                                f.properties = f.properties || {};
+                                const rid = f.properties['@id'] || f.properties.id || f.id || `idx_${index}`;
+                                const uid = String(rid).replace(/[^a-zA-Z0-9_]+/g, '_');
+                                f.properties._customId = uid;
+
+                                const rawName = f.properties.name || f.properties.Name || f.properties.NAME || 'Unknown';
+                                f.properties.name = rawName;
+                                featureNameMap.current[uid] = rawName;
+                                return f;
+                            });
+
+                        __mapReport.push({ file: DEFAULT_GEOJSON_FILE, ok: true, features: feats.length });
+
+                        if (feats.length > 0) {
+                            setGeoJsonData({ type: 'FeatureCollection', features: feats });
+                            setDataStatus(prev => ({ ...prev, map: true }));
+                        } else {
+                            __mapReport.push({ file: DEFAULT_GEOJSON_FILE, ok: false, error: 'No polygon features found' });
+                        }
+
+                        // 2) Election data (single CSV)
+                        const dataResp = await fetchAsset(DEFAULT_ELECTION_CSV_FILE);
+                        if (!dataResp.ok) throw new Error(`Failed to load ${DEFAULT_ELECTION_CSV_FILE} (${dataResp.status})`);
+                        const csvText = await dataResp.text();
+                        const rows = parseCsv(csvText);
+                        __dataReport.push({ file: DEFAULT_ELECTION_CSV_FILE, ok: true, rows: rows.length });
+
+                        const newElectionData = {};
+                        rows.forEach(r => {
+                            const districtRaw = (r.district ?? r.District ?? '').toString().trim();
+                            if (!districtRaw) return;
+
+                            const fullKey = normalizeName(districtRaw);
+                            const rte = parseInt(r.erdogan ?? r.Erdogan ?? 0) || 0;
+                            const kk = parseInt(r.kilicdaroglu ?? r.Kilicdaroglu ?? 0) || 0;
+
+                            if (!newElectionData[fullKey]) {
+                                newElectionData[fullKey] = { rte: 0, kk: 0, total: 0, rawName: districtRaw };
+                            }
+                            newElectionData[fullKey].rte += rte;
+                            newElectionData[fullKey].kk += kk;
+                            newElectionData[fullKey].total += (rte + kk);
+                        });
+
+                        // Build indexes for fast / safe matching
+                        const byAsciiFull = {};
+                        const byDistrict = {};
+                        const byDistrictAscii = {};
+
+                        Object.keys(newElectionData).forEach(fullKey => {
+                            const asciiFull = toAscii(fullKey);
+                            if (!byAsciiFull[asciiFull]) byAsciiFull[asciiFull] = fullKey;
+
+                            const districtPart = fullKey.replace(/^[^ ]+\s+/, ''); // remove province token
+                            const asciiDistrict = toAscii(districtPart);
+
+                            if (!byDistrict[districtPart]) byDistrict[districtPart] = [];
+                            if (!byDistrict[districtPart].includes(fullKey)) byDistrict[districtPart].push(fullKey);
+
+                            if (!byDistrictAscii[asciiDistrict]) byDistrictAscii[asciiDistrict] = [];
+                            if (!byDistrictAscii[asciiDistrict].includes(fullKey)) byDistrictAscii[asciiDistrict].push(fullKey);
+                        });
+
+                        setElectionData(newElectionData);
+                        setElectionIndex({ byAsciiFull, byDistrict, byDistrictAscii });
+                        setDataStatus(prev => ({ ...prev, election: true }));
+
+                        setLoadReport({ baseDir: __baseDir, maps: __mapReport, data: __dataReport });
+
+                    } catch (err) {
+                        console.error('Default load error', err);
+                        __showFatal(`Load error: ${err?.message || String(err)}`);
+                        setLoadReport({ baseDir: __baseDir, maps: __mapReport, data: __dataReport });
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                loadData();
+            }, []); // Run once on mount
+
+            // --- Data Retrieval with Swing Logic ---
+
+            const getDataForFeature = useCallback((uid, name) => {
+                const elData = electionData;
+                const idx = electionIndex;
+
+                let raw = null;
+
+                // 1) Manual mapping always wins
+                const mappedKey = manualMappings[uid];
+                if (mappedKey && elData[mappedKey]) {
+                    raw = elData[mappedKey];
+                } else {
+                    const normalized = normalizeName(name);
+                    const asciiTarget = toAscii(normalized);
+
+                    // 2) Direct / ASCII direct match (covers "Nevsehir merkez" vs "NEVŞEHİR MERKEZ")
+                    if (elData[normalized]) raw = elData[normalized];
+                    else if (idx?.byAsciiFull?.[asciiTarget] && elData[idx.byAsciiFull[asciiTarget]]) raw = elData[idx.byAsciiFull[asciiTarget]];
+                    else {
+                        // 3) Suffix match via district index (safe: only auto-match if exactly 1 candidate)
+                        const candidates = idx?.byDistrict?.[normalized] || idx?.byDistrictAscii?.[asciiTarget];
+                        if (candidates && candidates.length === 1) raw = elData[candidates[0]];
+                        else raw = null; // 0 = no data; >1 = ambiguous (same district name exists in multiple provinces)
+                    }
+                }
+
+                if (!raw) return null;
+
+                // Apply swing (purely visual simulation)
+                if (settings.voteSwing === 0) return raw;
+
+                const total = raw.total;
+                if (total === 0) return raw;
+
+                const shift = settings.voteSwing / 100;
+
+                let newRTEShare = Math.max(0, Math.min(1, (raw.rte / total) + shift));
+                let newKKShare = Math.max(0, Math.min(1, (raw.kk / total) - shift));
+
+                return {
+                    ...raw,
+                    rte: Math.round(total * newRTEShare),
+                    kk: Math.round(total * newKKShare),
+                };
+            }, [electionData, electionIndex, manualMappings, settings.voteSwing]);
+
+            // --- Helper for ref-based data retrieval (for style function) ---
+            const getDataRef = (uid, name) => {
+                const elData = electionDataRef.current;
+                const idx = electionIndexRef.current;
+                const mMappings = manualMappingsRef.current;
+                const currSettings = settingsRef.current;
+
+                let raw = null;
+
+                const mappedKey = mMappings[uid];
+                if (mappedKey && elData[mappedKey]) {
+                    raw = elData[mappedKey];
+                } else {
+                    const normalized = normalizeName(name);
+                    const asciiTarget = toAscii(normalized);
+
+                    if (elData[normalized]) raw = elData[normalized];
+                    else if (idx?.byAsciiFull?.[asciiTarget] && elData[idx.byAsciiFull[asciiTarget]]) raw = elData[idx.byAsciiFull[asciiTarget]];
+                    else {
+                        const candidates = idx?.byDistrict?.[normalized] || idx?.byDistrictAscii?.[asciiTarget];
+                        if (candidates && candidates.length === 1) raw = elData[candidates[0]];
+                        else raw = null;
+                    }
+                }
+
+                if (!raw) return null;
+                if (currSettings.voteSwing === 0) return raw;
+
+                const total = raw.total;
+                if (total === 0) return raw;
+
+                const shift = currSettings.voteSwing / 100;
+                let newRTEShare = Math.max(0, Math.min(1, (raw.rte / total) + shift));
+                let newKKShare = Math.max(0, Math.min(1, (raw.kk / total) - shift));
+
+                return {
+                    ...raw,
+                    rte: Math.round(total * newRTEShare),
+                    kk: Math.round(total * newKKShare),
+                };
+            };
+
+
+// --- Precompute district vote totals for 'election_district' view ---
+            const districtVoteStats = useMemo(() => {
+                const stats = {};
+                districts.forEach(d => { stats[d.id] = { rte: 0, kk: 0, total: 0 }; });
+
+                Object.entries(assignments).forEach(([uid, districtId]) => {
+                    if (!districtId) return;
+                    const name = featureNameMap.current[uid];
+                    if (!name) return;
+                    const data = getDataForFeature(uid, name);
+                    if (!data || data.total === 0) return;
+
+                    if (!stats[districtId]) stats[districtId] = { rte: 0, kk: 0, total: 0 };
+                    stats[districtId].rte += data.rte;
+                    stats[districtId].kk += data.kk;
+                    stats[districtId].total += data.total;
+                });
+
+                return stats;
+            }, [districts, assignments, getDataForFeature]);
+
+            const districtVoteStatsRef = useRef({});
+            useEffect(() => { districtVoteStatsRef.current = districtVoteStats; }, [districtVoteStats]);
+
+// --- Central Style Function ---
+            const getFeatureStyle = (feature) => {
+                const uid = feature.properties._customId;
+                const name = feature.properties.name || feature.properties.Name;
+                
+                const currAssignments = assignmentsRef.current;
+                const currDistricts = districtsRef.current;
+                const currSettings = settingsRef.current;
+                const currViewMode = viewModeRef.current;
+                const activeId = activeDistrictIdRef.current;
+
+                const districtId = currAssignments[uid];
+                const district = currDistricts.find(d => d.id === districtId);
+                const data = getDataRef(uid, name);
+                
+                let fillColor = '#334155'; 
+                let fillOpacity = 0.2;
+                let strokeColor = currSettings.borderColor; 
+                let weight = currSettings.borderWidth;
+                let opacity = 1; 
+
+                const isUnmatched = showFixModal && !data;
+
+                if (isUnmatched) {
+                    fillColor = '#ef4444'; fillOpacity = 0.8; strokeColor = '#fca5a5'; weight = 2;
+                } else if (currViewMode === 'districts') {
+                    if (district) { fillColor = district.color; fillOpacity = currSettings.opacity; }
+                } else if (currViewMode === 'election_raw') {
+                    if (data && data.total > 0) { fillColor = getElectionColor(data.rte, data.kk, currSettings.marginMultiplier); fillOpacity = 0.8; }
+                } else if (currViewMode === 'election_district') {
+                    if (district) {
+                        const ds = districtVoteStatsRef.current[districtId];
+                        if (ds && ds.total > 0) {
+                            fillColor = getElectionColor(ds.rte, ds.kk, currSettings.marginMultiplier);
+                            fillOpacity = 0.8;
+                        } else {
+                            fillOpacity = 0.1;
+                        }
+                    } else { fillOpacity = 0.1; }
+                }
+
+                if (!isUnmatched) {
+                    if (activeId && districtId === activeId) { 
+                        weight = Math.max(3, currSettings.borderWidth + 1); 
+                        strokeColor = '#fff'; 
+                        opacity = 1;
+                    } else if (currSettings.borderWidth === 0) {
+                        strokeColor = fillColor;
+                        weight = 1; 
+                        opacity = fillOpacity;
+                    } else {
+                        if (currViewMode !== 'districts' && district) {
+                            strokeColor = district.color;
+                            weight = Math.max(1.5, currSettings.borderWidth);
+                        }
+                    }
+                }
+
+                return { fillColor, weight, opacity, color: strokeColor, fillOpacity };
+            };
+
+            // --- Helpers ---
+            const getUnmatchedFeatures = () => {
+                if (!geoJsonData) return [];
+                return geoJsonData.features.filter(f => {
+                    const uid = f.properties._customId;
+                    const name = f.properties.name || f.properties.Name;
+                    return !getDataForFeature(uid, name);
+                }).map(f => ({
+                    uid: f.properties._customId,
+                    name: f.properties.name || f.properties.Name
+                }));
+            };
+
+            const pushHistory = (newAssignments) => {
+                const newHistory = history.slice(0, historyIndex + 1);
+                newHistory.push(newAssignments);
+                if (newHistory.length > 50) newHistory.shift();
+                setHistory(newHistory);
+                setHistoryIndex(newHistory.length - 1);
+            };
+
+            const undo = () => { if (historyIndex > 0) setHistoryIndex(historyIndex - 1); };
+            const redo = () => { if (historyIndex < history.length - 1) setHistoryIndex(historyIndex + 1); };
+
+            // --- Search Logic ---
+            useEffect(() => {
+                if (!searchQuery || !geoJsonData) {
+                    setSearchResults([]);
+                    return;
+                }
+                const query = normalizeName(searchQuery);
+                const results = geoJsonData.features.filter(f => {
+                    const name = normalizeName(f.properties.name || f.properties.Name);
+                    return name.includes(query);
+                }).slice(0, 10);
+                setSearchResults(results);
+            }, [searchQuery, geoJsonData]);
+
+            const zoomToFeature = (feature) => {
+                if (!mapRef.current) return;
+                let targetLayer = null;
+                
+                mapRef.current.eachLayer(layer => {
+                    if (layer.feature && layer.feature.properties._customId === feature.properties._customId) {
+                        targetLayer = layer;
+                    }
+                });
+
+                if (targetLayer) {
+                    mapRef.current.fitBounds(targetLayer.getBounds(), { padding: [50, 50], maxZoom: 14 });
+                    const prevStyle = getFeatureStyle(targetLayer.feature);
+                    targetLayer.setStyle({ color: '#ffff00', weight: 5, opacity: 1 });
+                    
+                    setTimeout(() => {
+                        targetLayer.setStyle(getFeatureStyle(targetLayer.feature));
+                    }, 1500);
+                }
+                setSearchQuery("");
+            };
+
+            // --- File Handling ---
+            
+            // NOTE: Auto-load handles this now, but keeping for reference if needed
+            const handleMapUpload = (e) => {
+                 // ... previous logic
+            };
+            const handleElectionUpload = (e) => {
+                // ... previous logic
+            };
+
+            // Calculate Match Stats
+            useEffect(() => {
+                let totalFeatures = 0;
+                let matched = 0;
+                let unmatched = 0;
+
+                if (geoJsonData && geoJsonData.features) {
+                    totalFeatures = geoJsonData.features.length;
+                    geoJsonData.features.forEach(f => {
+                        const uid = f.properties._customId;
+                        const name = f.properties.name;
+                        const d = getDataForFeature(uid, name);
+                        if (d) matched++;
+                        else unmatched++;
+                    });
+                }
+
+                setMatchStats({ total: totalFeatures, matched, unmatched });
+            }, [geoJsonData, getDataForFeature]);
+
+            const handleExport = () => {
+                const exportObj = { assignments, manualMappings, settings };
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "turkey_districting_save.json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            };
+
+            const handleImport = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const json = JSON.parse(event.target.result);
+                        if (json.assignments) {
+                            pushHistory(json.assignments);
+                            if (json.manualMappings) setManualMappings(json.manualMappings);
+                            if (json.settings) setSettings(json.settings);
+                        } else { pushHistory(json); }
+                    } catch (err) { alert("Invalid JSON"); }
+                };
+                reader.readAsText(file);
+            };
+
+            // --- District Logic ---
+            const addDistrict = () => {
+                const newId = Date.now();
+                setDistricts([...districts, { id: newId, name: `District ${districts.length + 1}`, color: generateColor(districts.length), locked: false }]);
+                setActiveDistrictId(newId);
+                setActiveTool('brush'); 
+            };
+            const removeDistrict = (id) => {
+                setDistricts(districts.filter(d => d.id !== id));
+                const newAssignments = { ...assignments };
+                Object.keys(newAssignments).forEach(key => { if (newAssignments[key] === id) delete newAssignments[key]; });
+                pushHistory(newAssignments);
+                if (activeDistrictId === id) setActiveDistrictId(null);
+            };
+            const clearDistrict = (id) => {
+                const newAssignments = { ...assignments };
+                let changed = false;
+                Object.keys(newAssignments).forEach(key => { if (newAssignments[key] === id) { delete newAssignments[key]; changed = true; } });
+                if (changed) pushHistory(newAssignments);
+            };
+            const toggleLock = (id) => setDistricts(districts.map(d => d.id === id ? { ...d, locked: !d.locked } : d));
+            const updateDistrictColor = (id, color) => setDistricts(districts.map(d => d.id === id ? { ...d, color } : d));
+            const updateDistrictName = (id, name) => setDistricts(districts.map(d => d.id === id ? { ...d, name } : d));
+
+            const getStatsForDistrict = (districtId) => {
+                let rte = 0, kk = 0, total = 0, pop = 0;
+                Object.keys(assignments).forEach(featureId => {
+                    if (assignments[featureId] === districtId) {
+                        const name = featureNameMap.current[featureId];
+                        if (name) {
+                            const data = getDataForFeature(featureId, name);
+                            if (data) { rte += data.rte; kk += data.kk; total += data.total; }
+                            pop++; 
+                        }
+                    }
+                });
+                return { rte, kk, total, count: pop };
+            };
+
+            const seatCount = useMemo(() => {
+                let rteSeats = 0;
+                let kkSeats = 0;
+                districts.forEach(d => {
+                    const stats = getStatsForDistrict(d.id);
+                    if (stats.total > 0) {
+                        if (stats.rte > stats.kk) rteSeats++;
+                        else if (stats.kk > stats.rte) kkSeats++;
+                    }
+                });
+                return { rte: rteSeats, kk: kkSeats };
+            }, [districts, assignments, electionData, settings.voteSwing]); 
+
+            // --- Map Logic ---
+
+            const applyAssignment = (uid, layer) => {
+                const tool = activeToolRef.current;
+                const activeId = activeDistrictIdRef.current;
+                
+                if (tool === 'eraser') {
+                    if (assignmentsRef.current[uid]) {
+                        pendingAssignments.current[uid] = undefined;
+                        // Visual feedback only
+                        layer.setStyle({ fillColor: '#334155', fillOpacity: 0.2 });
+                        return true;
+                    }
+                    return false;
+                }
+                if (!activeId) {
+                    if (!isPainting.current) alert("Please select a District from the sidebar first!");
+                    return false;
+                }
+                const currentAssignedId = assignmentsRef.current[uid];
+                const currentAssignedDistrict = districtsRef.current.find(d => d.id === currentAssignedId);
+                if (currentAssignedDistrict && currentAssignedDistrict.locked) return false;
+
+                const activeDistrict = districtsRef.current.find(d => d.id === activeId);
+                if (activeDistrict && currentAssignedId !== activeId) {
+                    pendingAssignments.current[uid] = activeId;
+                    if (viewMode === 'districts') {
+                        layer.setStyle({ fillColor: activeDistrict.color, fillOpacity: settings.opacity });
+                    }
+                    return true;
+                }
+                return false;
+            };
+
+            const finishPaint = () => {
+                isPainting.current = false;
+                if (Object.keys(pendingAssignments.current).length > 0) {
+                    const currentHistory = historyRef.current;
+                    const currentIndex = historyIndexRef.current;
+                    const currentAssignments = currentHistory[currentIndex];
+                    
+                    const newAssignments = { ...currentAssignments, ...pendingAssignments.current };
+                    Object.keys(newAssignments).forEach(key => { if (newAssignments[key] === undefined) delete newAssignments[key]; });
+                    
+                    const newHistory = currentHistory.slice(0, currentIndex + 1);
+                    newHistory.push(newAssignments);
+                    if (newHistory.length > 50) newHistory.shift();
+                    
+                    setHistory(newHistory);
+                    setHistoryIndex(newHistory.length - 1);
+                    
+                    pendingAssignments.current = {};
+                }
+            };
+
+            useEffect(() => {
+                if (!mapRef.current) {
+                    const map = L.map('map-container', { zoomControl: false, attributionControl: false, doubleClickZoom: false }).setView([39.0, 35.0], 6);
+                    L.control.zoom({ position: 'topright' }).addTo(map);
+                    tileLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+                    window.addEventListener('mouseup', finishPaint);
+                    mapRef.current = map;
+                }
+                return () => { window.removeEventListener('mouseup', finishPaint); }
+            }, []);
+
+            useEffect(() => {
+                if (mapRef.current && tileLayerRef.current) {
+                    const url = settings.mapStyle === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+                    tileLayerRef.current.setUrl(url);
+                }
+            }, [settings.mapStyle]);
+
+            useEffect(() => {
+                const container = document.getElementById('map-container');
+                if (container) container.className = `cursor-${activeTool}-tool`;
+                if (mapRef.current) {
+                    if (activeTool === 'brush' || activeTool === 'eraser') mapRef.current.dragging.disable();
+                    else mapRef.current.dragging.enable();
+                }
+            }, [activeTool]);
+
+            // Optimized Layer Management
+            useEffect(() => {
+                if (!mapRef.current || !geoJsonData) return;
+                
+                const isNewData = loadedGeoJsonRef.current !== geoJsonData;
+
+                if (!geoJsonLayerRef.current || isNewData) {
+                    loadedGeoJsonRef.current = geoJsonData;
+                    
+                    if (geoJsonLayerRef.current) mapRef.current.removeLayer(geoJsonLayerRef.current);
+                    
+                    const onEachFeature = (feature, layer) => {
+                        const uid = feature.properties._customId;
+                        const name = feature.properties.name || feature.properties.Name;
+
+                        layer.on('click', () => { if (activeToolRef.current === 'pointer') if (applyAssignment(uid, layer)) finishPaint(); });
+                        layer.on('mousedown', () => { if (activeToolRef.current === 'brush' || activeToolRef.current === 'eraser') { isPainting.current = true; applyAssignment(uid, layer); }});
+                        layer.on('mouseover', () => {
+                            setHoveredFeature({ name, districtId: assignmentsRef.current[uid], data: getDataRef(uid, name), normalizedName: normalizeName(name) });
+                            
+                            if (!isPainting.current) { 
+                                layer.setStyle({ weight: Math.max(3, settings.borderWidth + 2), opacity: 1, color: '#ffffff' }); 
+                                layer.bringToFront(); 
+                            } else { 
+                                applyAssignment(uid, layer); 
+                            }
+                        });
+                        layer.on('mouseout', () => {
+                            setHoveredFeature(null);
+                            if (!pendingAssignments.current[uid]) {
+                                const style = getFeatureStyle(feature);
+                                layer.setStyle(style);
+                            }
+                        });
+                    };
+
+                    const geoLayer = L.geoJSON(geoJsonData, {
+                        style: (feature) => ({ fillColor: '#334155', weight: 1, color: '#64748b', fillOpacity: 0.2 }),
+                        onEachFeature: onEachFeature,
+                        pointToLayer: (feature, latlng) => L.circleMarker(latlng, { radius: 0, opacity: 0, fillOpacity: 0 }),
+                        dataVersion: geoJsonData
+                    }).addTo(mapRef.current);
+                    
+                    geoJsonLayerRef.current = geoLayer;
+                    
+                    if (geoLayer.getLayers().length > 0) {
+                        try {
+                            mapRef.current.fitBounds(geoLayer.getBounds());
+                        } catch(e) {}
+                    }
+                }
+
+                if (geoJsonLayerRef.current) {
+                    geoJsonLayerRef.current.eachLayer(layer => {
+                        if (layer.feature && layer.feature.geometry.type !== 'Point') {
+                            const style = getFeatureStyle(layer.feature);
+                            layer.setStyle(style);
+                        }
+                    });
+                }
+
+                if (labelsLayerRef.current) mapRef.current.removeLayer(labelsLayerRef.current);
+                if (settings.labelMode !== 'none') {
+                    const labels = [];
+                    geoJsonLayerRef.current.eachLayer(layer => {
+                        if (layer.feature.geometry.type !== 'Point') {
+                             const center = layer.getBounds().getCenter();
+                             const name = layer.feature.properties.name || layer.feature.properties.Name;
+                             const uid = layer.feature.properties._customId;
+                             
+                             let html = "";
+                             if (settings.labelMode === 'name') {
+                                 html = name.replace('MAHALLESİ', '').replace('MAH.', '').trim();
+                             } else if (settings.labelMode === 'total') {
+                                 const data = getDataRef(uid, name); // use Ref version inside Loop
+                                 html = data ? `<div class="font-mono">${formatNumber(data.total)}</div>` : "";
+                             } else if (settings.labelMode === 'results') {
+                                 const data = getDataRef(uid, name); // use Ref version inside Loop
+                                 if (data && data.total > 0) {
+                                     const rtePct = calculatePercentage(data.rte, data.total);
+                                     const kkPct = calculatePercentage(data.kk, data.total);
+                                     html = `<div class="flex flex-col text-[${Math.max(8, settings.labelSize - 2)}px]"><span class="text-orange-400">R:${rtePct}%</span><span class="text-red-400">K:${kkPct}%</span></div>`;
+                                 }
+                             }
+
+                             if (html) {
+                                 const label = L.marker(center, {
+                                     icon: L.divIcon({
+                                         className: `neighborhood-label ${settings.mapStyle === 'light' ? 'light-mode' : ''}`,
+                                         html: `<div style="font-size: ${settings.labelSize}px">${html}</div>`,
+                                         iconSize: [60, 20],
+                                         iconAnchor: [30, 10]
+                                     }),
+                                     interactive: false
+                                 });
+                                 labels.push(label);
+                             }
+                        }
+                    });
+                    labelsLayerRef.current = L.layerGroup(labels).addTo(mapRef.current);
+                }
+
+            }, [geoJsonData, districts, assignments, electionData, viewMode, activeDistrictId, settings, activeTool, getDataForFeature, showFixModal, manualMappings]);
+
+            return (
+                <div className="flex h-screen w-screen font-sans">
+                    {showFixModal && (
+                        <MismatchModal 
+                            onClose={() => setShowFixModal(false)} 
+                            unmatchedItems={getUnmatchedFeatures()}
+                            electionKeys={Object.keys(electionData)}
+                            onApplyMapping={(newMappings) => setManualMappings(prev => ({ ...prev, ...newMappings }))}
+                        />
+                    )}
+                    {showSettings && (
+                        <SettingsModal 
+                            onClose={() => setShowSettings(false)}
+                            settings={settings}
+                            setSettings={setSettings}
+                        />
+                    )}
+
+                    <div className="w-80 bg-slate-900 border-r border-slate-700 flex flex-col shadow-2xl z-20 flex-shrink-0">
+                        <div className="p-4 bg-slate-800 border-b border-slate-700">
+                            <div className="flex justify-between items-center mb-4">
+                                <h1 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                                    <span className="p-1 bg-blue-600 rounded">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                                    </span>
+                                    Turkey
+                                </h1>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setSettings(s => ({...s, mapStyle: s.mapStyle === 'dark' ? 'light' : 'dark'}))} className="text-slate-400 hover:text-white p-1 hover:bg-slate-700 rounded transition-colors" title="Toggle Map Theme">{settings.mapStyle === 'dark' ? <IconSun /> : <IconMoon />}</button>
+                                    <button onClick={() => setShowSettings(true)} className="text-slate-400 hover:text-white p-1 hover:bg-slate-700 rounded transition-colors" title="Settings"><IconSettings /></button>
+                                    <button onClick={handleExport} className="text-slate-400 hover:text-white p-1 hover:bg-slate-700 rounded transition-colors" title="Export JSON"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg></button>
+                                    <label className="text-slate-400 hover:text-white p-1 hover:bg-slate-700 rounded transition-colors cursor-pointer" title="Import JSON">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                                        <input type="file" className="hidden" accept=".json" onChange={handleImport} />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="flex bg-slate-900/80 rounded-lg p-2 items-center justify-between mb-3 border border-slate-700">
+                                <div className="text-center flex-1 border-r border-slate-700">
+                                    <div className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">RTE</div>
+                                    <div className="text-2xl font-black text-white leading-none">{seatCount.rte}</div>
+                                </div>
+                                <div className="text-center px-2">
+                                    <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Seats</div>
+                                </div>
+                                <div className="text-center flex-1 border-l border-slate-700">
+                                    <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider">KK</div>
+                                    <div className="text-2xl font-black text-white leading-none">{seatCount.kk}</div>
+                                </div>
+                            </div>
+
+                            <div className="relative">
+                                <div className="relative group">
+                                    <input type="text" placeholder="Search neighborhood..." className="w-full bg-slate-900 text-white text-xs rounded border border-slate-700 px-3 py-2 pl-8 focus:outline-none focus:border-blue-500 transition-colors" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                                    <div className="absolute left-2.5 top-2 text-slate-500 group-focus-within:text-blue-500"><IconSearch /></div>
+                                </div>
+                                {searchResults.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 bg-slate-800 border border-slate-600 rounded-b shadow-xl z-50 max-h-48 overflow-y-auto mt-1">
+                                        {searchResults.map(f => (
+                                            <div key={f.properties._customId} className="px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer border-b border-slate-700 last:border-0 truncate" onClick={() => zoomToFeature(f)} title={f.properties.name || f.properties.Name}>{f.properties.name || f.properties.Name}</div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-3 bg-slate-900 border-b border-slate-700 space-y-3">
+                            <div className="flex bg-slate-800 rounded-lg p-1">
+                                <button onClick={() => setViewMode('districts')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'districts' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Districts</button>
+                                <button onClick={() => setViewMode('election_raw')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'election_raw' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Map Vote</button>
+                                <button onClick={() => setViewMode('election_district')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'election_district' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Dist Vote</button>
+                            </div>
+                            
+                            {settings.voteSwing !== 0 && (
+                                <div className="bg-blue-900/30 border border-blue-500/30 rounded px-2 py-1 text-[10px] text-blue-200 text-center animate-pulse">
+                                    Swing Active: {settings.voteSwing > 0 ? `RTE +${settings.voteSwing}%` : `KK +${Math.abs(settings.voteSwing)}%`}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-3 border-b border-slate-700 bg-slate-800/50">
+                            {dataStatus.map && dataStatus.election && (
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex justify-between items-center px-1">
+                                        <span className="text-[10px] text-slate-400">Match Rate:</span>
+                                        <span className={`text-[10px] font-bold font-mono ${matchStats.matched / matchStats.total > 0.9 ? 'text-green-400' : 'text-orange-400'}`}>
+                                            {Math.round((matchStats.matched / matchStats.total) * 100)}% ({matchStats.matched}/{matchStats.total})
+                                        </span>
+                                    </div>
+                                    {matchStats.matched < matchStats.total && (
+                                        <button onClick={() => setShowFixModal(true)} className="w-full bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-500 border border-yellow-600/50 rounded py-1 text-[10px] font-bold uppercase tracking-wide flex items-center justify-center gap-1 transition-colors animate-pulse">
+                                            <IconFix /> Fix {matchStats.total - matchStats.matched} Mismatches
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                             {!dataStatus.map && loading && (
+                                 <div className="text-[10px] text-slate-500 text-center py-2 animate-pulse">
+                                     Loading Default Data...
+                                 </div>
+                             )}
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto sidebar-scroll p-4 space-y-3">
+                             <div className="flex justify-between items-center mb-2">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Districts</h3>
+                                <button onClick={addDistrict} className="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 transition-colors shadow-lg shadow-emerald-900/20">+ NEW</button>
+                            </div>
+
+                            {districts.length === 0 && <div className="text-center text-slate-500 py-8 text-sm">Click + NEW to start</div>}
+
+                            {districts.map(district => {
+                                const stats = getStatsForDistrict(district.id);
+                                const isActive = activeDistrictId === district.id;
+                                const margin = stats.total > 0 ? (stats.rte - stats.kk) / stats.total * 100 : 0;
+                                const marginStr = stats.total > 0 ? (margin > 0 ? `R+${margin.toFixed(1)}` : `K+${Math.abs(margin).toFixed(1)}`) : "Even";
+                                const marginColor = stats.total > 0 ? (margin > 0 ? "text-orange-400" : "text-red-400") : "text-slate-400";
+                                
+                                return (
+                                    <div key={district.id} onClick={() => setActiveDistrictId(district.id)} className={`group relative rounded-lg p-3 border transition-all cursor-pointer ${isActive ? 'bg-slate-800 border-slate-500 ring-1 ring-slate-500 shadow-lg' : 'bg-slate-800/50 border-transparent hover:bg-slate-800 hover:border-slate-700'}`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="relative">
+                                                    <input type="color" value={district.color} onChange={(e) => updateDistrictColor(district.id, e.target.value)} className="w-4 h-4 rounded-full overflow-hidden cursor-pointer opacity-0 absolute inset-0" />
+                                                    <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: district.color }}></div>
+                                                </div>
+                                                <input type="text" value={district.name} onChange={(e) => updateDistrictName(district.id, e.target.value)} className="bg-transparent text-slate-200 font-semibold text-sm w-20 focus:outline-none focus:text-white placeholder-slate-600" />
+                                            </div>
+                                            <div className="flex gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                 <button onClick={(e) => { e.stopPropagation(); clearDistrict(district.id); }} className="text-slate-500 hover:text-white p-1 rounded hover:bg-slate-700" title="Clear All Assignments">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleLock(district.id); }} className={`p-1 rounded hover:bg-slate-700 ${district.locked ? 'text-yellow-500' : 'text-slate-500'}`} title={district.locked ? "Unlock" : "Lock"}>
+                                                    {district.locked ? <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>}
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); removeDistrict(district.id); }} className="text-slate-500 hover:text-red-400 p-1 rounded hover:bg-slate-700" title="Delete District">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-end mb-1">
+                                            <span className={`text-xs font-bold font-mono ${marginColor}`}>{marginStr}%</span>
+                                            <span className="text-[10px] text-slate-400 font-mono">{formatNumber(stats.total)} Votes</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden flex">
+                                            <div className="bg-orange-500 h-full" style={{ width: `${calculatePercentage(stats.rte, stats.total)}%` }}></div>
+                                            <div className="bg-red-500 h-full" style={{ width: `${calculatePercentage(stats.kk, stats.total)}%` }}></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 relative bg-slate-900">
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 rounded-lg shadow-xl border border-slate-600 p-1 flex items-center gap-1 z-[500]">
+                            <button onClick={() => setActiveTool('pointer')} className={`p-2 rounded ${activeTool === 'pointer' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Pointer (Click to Assign, Drag Map)"><IconPointer /></button>
+                            <button onClick={() => setActiveTool('brush')} className={`p-2 rounded ${activeTool === 'brush' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Brush (Drag to Paint)"><IconBrush /></button>
+                            <button onClick={() => setActiveTool('eraser')} className={`p-2 rounded ${activeTool === 'eraser' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} title="Eraser (Click or Drag to Remove)"><IconEraser /></button>
+                            <div className="w-px h-6 bg-slate-600 mx-1"></div>
+                            <button onClick={undo} disabled={historyIndex <= 0} className="p-2 rounded text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent" title="Undo"><IconUndo /></button>
+                            <button onClick={redo} disabled={historyIndex >= history.length - 1} className="p-2 rounded text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent" title="Redo"><IconRedo /></button>
+                        </div>
+
+                        <div id="map-container" className="h-full w-full outline-none"></div>
+                        
+                        {loading && (
+                            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-[1000] flex items-center justify-center flex-col text-white">
+                                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                <div className="font-semibold tracking-wide">Loading Data from Repository...</div>
+                            </div>
+                        )}
+                        {!dataStatus.map && !loading && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
+                                <div className="bg-slate-800/90 backdrop-blur border border-slate-700 p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
+                                    <h2 className="text-xl font-bold text-white mb-2">Setup Required</h2>
+                                    <div className="mt-3 text-[11px] text-slate-300 font-mono break-all">
+                                        Base: {loadReport.baseDir || '(unknown)'}
+                                    </div>
+                                    <div className="mt-3 text-left text-[11px] text-slate-300">
+                                        <div className="font-semibold text-slate-200 mb-1">GeoJSON:</div>
+                                        <div className="font-mono text-slate-400 max-h-24 overflow-auto">
+                                            {(loadReport.maps || []).map((r, idx) => (
+                                                <div key={idx}>{r.ok ? 'OK' : 'FAIL'} — {r.file}{r.ok ? ` (${r.features})` : (r.status ? ` (HTTP ${r.status})` : '')}{r.error ? ` — ${r.error}` : ''}</div>
+                                            ))}
+                                        </div>
+                                        <div className="font-semibold text-slate-200 mt-2 mb-1">Data:</div>
+                                        <div className="font-mono text-slate-400 max-h-24 overflow-auto">
+                                            {(loadReport.data || []).map((r, idx) => (
+                                                <div key={idx}>{r.ok ? 'OK' : 'FAIL'} — {r.file}{r.ok && r.rows !== null ? ` (${r.rows})` : ''}{(!r.ok && r.status) ? ` (HTTP ${r.status})` : ''}{r.error ? ` — ${r.error}` : ''}</div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <p className="text-slate-400 text-sm mb-6">Ensure your .geojson and .json files are in the same folder as this HTML file.</p>
+                                </div>
+                            </div>
+                        )}
+                        {hoveredFeature && (
+                            <div className="absolute bottom-6 right-6 z-[1000] bg-slate-800/95 backdrop-blur border border-slate-600 p-4 rounded-lg shadow-2xl w-64 pointer-events-none transition-all duration-75">
+                                <h4 className="text-sm font-bold text-white mb-1 truncate">{hoveredFeature.name}</h4>
+                                <div className="text-xs text-slate-400 mb-3 pb-3 border-b border-slate-700">
+                                    {hoveredFeature.districtId 
+                                        ? <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor: districts.find(d => d.id === hoveredFeature.districtId)?.color}}></span>{districts.find(d => d.id === hoveredFeature.districtId)?.name}</span>
+                                        : "Unassigned"}
+                                </div>
+                                {hoveredFeature.data ? (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-xs"><span className="text-orange-400 font-medium">R.T. Erdoğan</span><span className="text-white font-mono">{calculatePercentage(hoveredFeature.data.rte, hoveredFeature.data.total)}%</span></div>
+                                        <div className="w-full bg-slate-700 h-1 rounded-full overflow-hidden"><div className="bg-orange-500 h-full" style={{width: `${calculatePercentage(hoveredFeature.data.rte, hoveredFeature.data.total)}%`}}></div></div>
+                                        <div className="flex justify-between items-center text-xs mt-1"><span className="text-red-400 font-medium">K. Kılıçdaroğlu</span><span className="text-white font-mono">{calculatePercentage(hoveredFeature.data.kk, hoveredFeature.data.total)}%</span></div>
+                                        <div className="w-full bg-slate-700 h-1 rounded-full overflow-hidden"><div className="bg-red-500 h-full" style={{width: `${calculatePercentage(hoveredFeature.data.kk, hoveredFeature.data.total)}%`}}></div></div>
+                                        <div className="text-[10px] text-center text-slate-500 mt-1">Total: {formatNumber(hoveredFeature.data.total)}</div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-1">
+                                        <div className="text-xs text-red-400 font-bold italic">No Data Match</div>
+                                        <div className="text-[10px] text-slate-500">Key: {hoveredFeature.normalizedName}</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div> 
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
